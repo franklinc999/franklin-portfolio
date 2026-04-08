@@ -5,6 +5,17 @@
   --font-mono: 'JetBrains Mono', 'Courier New', monospace;
   --font-body: 'Satoshi', 'Inter', sans-serif;
 
+  /* Container max-widths (Tailwind v4 requires these for max-w-* utilities) */
+  --container-sm: 640px;
+  --container-md: 768px;
+  --container-lg: 1024px;
+  --container-xl: 1280px;
+  --container-2xl: 1400px;
+  --container-3xl: 48rem;   /* 768px */
+  --container-4xl: 56rem;   /* 896px */
+  --container-5xl: 64rem;   /* 1024px */
+  --container-6xl: 72rem;   /* 1152px */
+
   --color-bg: #0a0a0c;
   --color-surface: #111115;
   --color-surface-2: #18181d;
