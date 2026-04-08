@@ -43,21 +43,7 @@ function initAnimations() {
     );
   });
 
-  // Badge scroll - float to corner
-  var badgeAnchor = document.getElementById("badge-anchor");
-  if (badgeAnchor) {
-    ScrollTrigger.create({
-      trigger: badgeAnchor,
-      start: "bottom top+=200",
-      end: "bottom top",
-      onEnter: function() {
-        badgeAnchor.classList.add("badge-fixed");
-      },
-      onLeaveBack: function() {
-        badgeAnchor.classList.remove("badge-fixed");
-      },
-    });
-  }
+  // Badge is now 3D canvas, no pinning needed
 
   // Bento items stagger
   document.querySelectorAll(".bento-section").forEach(function(section) {

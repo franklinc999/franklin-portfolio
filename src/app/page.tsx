@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, lazy, Suspense } from "react";
 import { ArrowUpRight, Mail, MapPin, GraduationCap, Briefcase, ChevronDown } from "lucide-react";
+
+const Badge3D = lazy(() => import("@/components/Badge3D"));
 
 function LinkedinIcon({ size = 18, className = "" }: { size?: number; className?: string }) {
   return (
@@ -313,50 +315,59 @@ function Badge() {
 
 function Hero() {
   return (
-    <section className="relative min-h-screen flex flex-col items-center justify-center px-6 overflow-hidden">
-      {/* Background gradient orbs */}
-      <div className="absolute top-1/4 -left-32 w-96 h-96 rounded-full bg-[var(--color-accent)] opacity-[0.03] blur-[120px]" />
-      <div className="absolute bottom-1/4 -right-32 w-96 h-96 rounded-full bg-[var(--color-accent-2)] opacity-[0.03] blur-[120px]" />
+    <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden">
+      {/* 3D Canvas - full hero background */}
+      <div className="absolute inset-0 z-0">
+        <Suspense
+          fallback={
+            <div className="w-full h-full flex items-center justify-center">
+              <div className="w-6 h-6 border-2 border-[var(--color-accent)] border-t-transparent rounded-full animate-spin" />
+            </div>
+          }
+        >
+          <Badge3D />
+        </Suspense>
+      </div>
 
-      <div className="flex flex-col lg:flex-row items-center gap-16 lg:gap-24 max-w-6xl mx-auto w-full">
-        {/* Left: Text */}
-        <div className="flex-1 text-center lg:text-left">
-          <p className="font-mono text-xs uppercase tracking-[0.3em] text-[var(--color-text-faint)] mb-4 hero-reveal">
-            Strategy & Product
-          </p>
-          <h1 className="font-serif text-5xl sm:text-6xl lg:text-7xl text-white leading-[1.05] hero-reveal">
-            Franklin
-            <br />
-            <span className="italic text-[var(--color-accent)]">Cheng</span>
-          </h1>
-          <p className="mt-6 text-[var(--color-text-muted)] max-w-md text-base leading-relaxed hero-reveal">
-            Associate Consultant at Sia Partners building go-to-market strategy
-            for Fortune 500 clients. UPenn PPE grad. Shipping AI-powered tools on the side.
-          </p>
-          <div className="flex items-center gap-4 mt-8 justify-center lg:justify-start hero-reveal">
-            <a
-              href="#work"
-              className="px-6 py-3 rounded-full bg-white/5 border border-[var(--color-border)] text-sm font-medium text-white hover:bg-white/10 hover:border-[var(--color-border-glow)] transition-all duration-300"
-            >
-              View Work
-            </a>
-            <a
-              href="#contact"
-              className="px-6 py-3 rounded-full text-sm font-medium text-[var(--color-text-muted)] hover:text-white transition-colors duration-200"
-            >
-              Get in Touch
-            </a>
-          </div>
-        </div>
-
-        {/* Right: Badge */}
-        <div className="flex-shrink-0 hero-reveal" id="badge-anchor">
-          <Badge />
+      {/* Text overlay - bottom left */}
+      <div className="absolute bottom-24 left-8 lg:left-16 z-10 max-w-lg">
+        <p className="font-mono text-xs uppercase tracking-[0.3em] text-[var(--color-text-faint)] mb-4 hero-reveal">
+          Strategy & Product
+        </p>
+        <h1 className="font-serif text-5xl sm:text-6xl lg:text-7xl text-white leading-[1.05] hero-reveal">
+          Franklin
+          <br />
+          <span className="italic text-[var(--color-accent)]">Cheng</span>
+        </h1>
+        <p className="mt-4 text-[var(--color-text-muted)] max-w-sm text-sm leading-relaxed hero-reveal">
+          Associate Consultant at Sia Partners. UPenn PPE. Shipping
+          AI-powered tools between client engagements.
+        </p>
+        <div className="flex items-center gap-4 mt-6 hero-reveal">
+          <a
+            href="#work"
+            className="px-5 py-2.5 rounded-full bg-white/5 border border-[var(--color-border)] text-sm font-medium text-white hover:bg-white/10 hover:border-[var(--color-border-glow)] transition-all duration-300"
+          >
+            View Work
+          </a>
+          <a
+            href="#contact"
+            className="px-5 py-2.5 rounded-full text-sm font-medium text-[var(--color-text-muted)] hover:text-white transition-colors duration-200"
+          >
+            Get in Touch
+          </a>
         </div>
       </div>
 
+      {/* Drag hint */}
+      <div className="absolute bottom-24 right-8 lg:right-16 z-10 hero-reveal">
+        <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--color-text-faint)] text-right">
+          Drag the badge
+        </p>
+      </div>
+
       {/* Scroll indicator */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-[var(--color-text-faint)]">
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-[var(--color-text-faint)] z-10">
         <span className="text-[10px] font-mono uppercase tracking-widest">Scroll</span>
         <ChevronDown size={14} className="animate-bounce" />
       </div>
