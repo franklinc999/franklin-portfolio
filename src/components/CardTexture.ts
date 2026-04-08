@@ -4,6 +4,7 @@ import * as THREE from "three";
  * Generates a CanvasTexture for the liquid-glass badge face.
  * Renders Franklin's credentials, stats, and iridescent styling onto a 2D canvas,
  * which then gets mapped onto the 3D card mesh.
+ * Returns a texture that auto-updates when the profile photo loads.
  */
 export function createCardTexture(): THREE.CanvasTexture {
   const w = 512;
@@ -55,17 +56,21 @@ export function createCardTexture(): THREE.CanvasTexture {
   ctx.letterSpacing = "2px";
   ctx.fillText("CLEARED", w - 92, 31);
 
-  // --- Photo area placeholder ---
+  // --- Photo area ---
   const photoY = 50;
   const photoH = 220;
-  const photoGrad = ctx.createLinearGradient(32, photoY, w - 32, photoY + photoH);
+  const photoW = w - 64;
+  const photoX = 32;
+
+  // Draw placeholder gradient first
+  const photoGrad = ctx.createLinearGradient(photoX, photoY, photoX + photoW, photoY + photoH);
   photoGrad.addColorStop(0, "rgba(91,184,212,0.1)");
   photoGrad.addColorStop(1, "rgba(167,139,250,0.08)");
   ctx.fillStyle = photoGrad;
-  roundRect(ctx, 32, photoY, w - 64, photoH, 16);
+  roundRect(ctx, photoX, photoY, photoW, photoH, 16);
   ctx.fill();
 
-  // FC initials
+  // FC initials as fallback
   ctx.fillStyle = "rgba(255,255,255,0.12)";
   ctx.font = 'italic 80px "Instrument Serif", Georgia, serif';
   ctx.textAlign = "center";
@@ -159,6 +164,41 @@ export function createCardTexture(): THREE.CanvasTexture {
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.anisotropy = 16;
+
+  // Async: load profile photo and redraw over the placeholder
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+  img.onload = () => {
+    // Save current canvas state
+    ctx.save();
+    // Clip to rounded rect
+    roundRect(ctx, photoX, photoY, photoW, photoH, 16);
+    ctx.clip();
+    // Draw photo covering the area (object-fit: cover)
+    const imgAspect = img.width / img.height;
+    const areaAspect = photoW / photoH;
+    let sx = 0, sy = 0, sw = img.width, sh = img.height;
+    if (imgAspect > areaAspect) {
+      sw = img.height * areaAspect;
+      sx = (img.width - sw) / 2;
+    } else {
+      sh = img.width / areaAspect;
+      sy = (img.height - sh) / 2;
+    }
+    ctx.drawImage(img, sx, sy, sw, sh, photoX, photoY, photoW, photoH);
+    // Subtle dark overlay for contrast with text below
+    const overlay = ctx.createLinearGradient(photoX, photoY, photoX, photoY + photoH);
+    overlay.addColorStop(0, "rgba(0,0,0,0)");
+    overlay.addColorStop(0.7, "rgba(0,0,0,0)");
+    overlay.addColorStop(1, "rgba(0,0,0,0.4)");
+    ctx.fillStyle = overlay;
+    ctx.fillRect(photoX, photoY, photoW, photoH);
+    ctx.restore();
+    // Update the texture
+    texture.needsUpdate = true;
+  };
+  img.src = "/assets/profile-card.jpg";
+
   return texture;
 }
 

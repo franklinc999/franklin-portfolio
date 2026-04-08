@@ -40,7 +40,7 @@ declare module "@react-three/fiber" {
 export default function Badge3D() {
   return (
     <div className="w-full h-full" style={{ minHeight: "500px" }}>
-      <Canvas camera={{ position: [0, 0, 13], fov: 25 }} dpr={[1, 2]}>
+      <Canvas camera={{ position: [0, 0, 15], fov: 25 }} dpr={[1, 2]}>
         <ambientLight intensity={Math.PI} />
         <Physics interpolate gravity={[0, -40, 0]} timeStep={1 / 60}>
           <Band />
@@ -236,8 +236,8 @@ function Band({ maxSpeed = 50, minSpeed = 10 }) {
         >
           <CuboidCollider args={[0.8, 1.125, 0.01]} />
           <group
-            scale={2.25}
-            position={[0, -1.2, -0.05]}
+            scale={1.8}
+            position={[0, -1.0, -0.05]}
             onPointerOver={() => hover(true)}
             onPointerOut={() => hover(false)}
             onPointerUp={(e) => {
