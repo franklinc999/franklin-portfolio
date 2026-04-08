@@ -287,9 +287,8 @@ function Band({ maxSpeed = 50, minSpeed = 10 }) {
             <Html
               position={[0, 0.5, 0.01]}
               transform
-              occlude
-              distanceFactor={4.5}
-              style={{ pointerEvents: "none" }}
+              distanceFactor={1.8}
+              pointerEvents="none"
             >
               <CardFace />
             </Html>
