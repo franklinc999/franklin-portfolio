@@ -117,20 +117,19 @@ function Band({ maxSpeed = 50, minSpeed = 10 }) {
   const [dragged, drag] = useState<THREE.Vector3 | false>(false);
   const [hovered, hover] = useState(false);
 
-  // Create the card face texture
-  const cardTexture = useMemo(() => {
-    if (typeof document === "undefined") return null;
-    return createCardTexture();
-  }, []);
+  // Create textures client-side only (useEffect guarantees we're in the browser)
+  const [cardTexture, setCardTexture] = useState<THREE.CanvasTexture | null>(null);
+  const [bandTexture, setBandTexture] = useState<THREE.CanvasTexture | null>(null);
 
-  // Create a band texture (subtle dashed line pattern)
-  const bandTexture = useMemo(() => {
-    if (typeof document === "undefined") return null;
+  useEffect(() => {
+    // Card face texture with credentials + photo
+    setCardTexture(createCardTexture());
+
+    // Band/lanyard texture
     const c = document.createElement("canvas");
     c.width = 64;
     c.height = 64;
     const ctx = c.getContext("2d")!;
-    // Subtle lanyard pattern
     ctx.fillStyle = "#1a1a22";
     ctx.fillRect(0, 0, 64, 64);
     ctx.fillStyle = "rgba(91,184,212,0.15)";
@@ -141,7 +140,7 @@ function Band({ maxSpeed = 50, minSpeed = 10 }) {
     ctx.fillRect(0, 45, 64, 1);
     const tex = new THREE.CanvasTexture(c);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    return tex;
+    setBandTexture(tex);
   }, []);
 
   useRopeJoint(fixed, j1, [[0, 0, 0], [0, 0, 0], 1]);
