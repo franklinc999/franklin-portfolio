@@ -85,14 +85,14 @@ export default function WorkPage() {
 
       <section className="py-16 px-6">
         <div className="max-w-6xl mx-auto">
-          <div className="mb-12 scroll-reveal">
+          <div className="mb-12 scroll-reveal text-center">
             <p className="font-mono text-xs uppercase tracking-[0.3em] text-[var(--color-text-faint)] mb-2">
               Consulting
             </p>
             <h1 className="font-serif text-4xl lg:text-5xl text-white">
               Selected Engagements
             </h1>
-            <p className="mt-3 text-[var(--color-text-muted)] text-sm max-w-lg">
+            <p className="mt-3 text-[var(--color-text-muted)] text-sm max-w-lg mx-auto">
               Client names anonymized per NDA. Outcomes and scope are representative.
             </p>
           </div>

@@ -1,10 +1,8 @@
 import * as THREE from "three";
 
 /**
- * Generates a CanvasTexture for the liquid-glass badge face.
- * Renders Franklin's credentials, stats, and iridescent styling onto a 2D canvas,
- * which then gets mapped onto the 3D card mesh.
- * Returns a texture that auto-updates when the profile photo loads.
+ * Preloads the profile image, then draws the full card texture with the photo embedded.
+ * Returns a texture that starts with a placeholder and updates once the photo loads.
  */
 export function createCardTexture(): THREE.CanvasTexture {
   const w = 512;
@@ -14,16 +12,51 @@ export function createCardTexture(): THREE.CanvasTexture {
   canvas.height = h;
   const ctx = canvas.getContext("2d")!;
 
+  const photoX = 32;
+  const photoY = 50;
+  const photoW = w - 64;
+  const photoH = 220;
+
+  // Draw the full card (without photo first)
+  drawCard(ctx, w, h, photoX, photoY, photoW, photoH, null);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.anisotropy = 16;
+
+  // Load photo and redraw the entire card with it
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+  img.onload = () => {
+    // Clear and redraw everything with the photo
+    ctx.clearRect(0, 0, w, h);
+    drawCard(ctx, w, h, photoX, photoY, photoW, photoH, img);
+    texture.needsUpdate = true;
+  };
+  img.src = "/assets/profile-card.jpg";
+
+  return texture;
+}
+
+function drawCard(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  photoX: number,
+  photoY: number,
+  photoW: number,
+  photoH: number,
+  photo: HTMLImageElement | null
+) {
   // --- Background: dark frosted glass ---
   const bg = ctx.createLinearGradient(0, 0, w, h);
-  bg.addColorStop(0, "rgba(17,17,23,0.95)");
-  bg.addColorStop(0.5, "rgba(22,22,30,0.92)");
-  bg.addColorStop(1, "rgba(15,15,20,0.95)");
+  bg.addColorStop(0, "rgba(17,17,23,0.97)");
+  bg.addColorStop(0.5, "rgba(22,22,30,0.95)");
+  bg.addColorStop(1, "rgba(15,15,20,0.97)");
   ctx.fillStyle = bg;
   roundRect(ctx, 0, 0, w, h, 24);
   ctx.fill();
 
-  // --- Iridescent sheen gradient overlay ---
+  // --- Iridescent sheen ---
   const sheen = ctx.createLinearGradient(0, 0, w, h);
   sheen.addColorStop(0, "rgba(91,184,212,0.08)");
   sheen.addColorStop(0.3, "rgba(167,139,250,0.05)");
@@ -43,7 +76,7 @@ export function createCardTexture(): THREE.CanvasTexture {
   roundRect(ctx, 1, 1, w - 2, h - 2, 23);
   ctx.stroke();
 
-  // --- Top: CLEARED badge ---
+  // --- CLEARED badge ---
   ctx.fillStyle = "rgba(91,184,212,0.12)";
   roundRect(ctx, w - 100, 16, 84, 22, 4);
   ctx.fill();
@@ -52,40 +85,59 @@ export function createCardTexture(): THREE.CanvasTexture {
   roundRect(ctx, w - 100, 16, 84, 22, 4);
   ctx.stroke();
   ctx.fillStyle = "#5bb8d4";
-  ctx.font = '500 9px "JetBrains Mono", monospace';
-  ctx.letterSpacing = "2px";
-  ctx.fillText("CLEARED", w - 92, 31);
+  ctx.font = '500 9px monospace';
+  ctx.fillText("CLEARED", w - 90, 31);
 
   // --- Photo area ---
-  const photoY = 50;
-  const photoH = 220;
-  const photoW = w - 64;
-  const photoX = 32;
-
-  // Draw placeholder gradient first
-  const photoGrad = ctx.createLinearGradient(photoX, photoY, photoX + photoW, photoY + photoH);
-  photoGrad.addColorStop(0, "rgba(91,184,212,0.1)");
-  photoGrad.addColorStop(1, "rgba(167,139,250,0.08)");
-  ctx.fillStyle = photoGrad;
-  roundRect(ctx, photoX, photoY, photoW, photoH, 16);
-  ctx.fill();
-
-  // FC initials as fallback
-  ctx.fillStyle = "rgba(255,255,255,0.12)";
-  ctx.font = 'italic 80px "Instrument Serif", Georgia, serif';
-  ctx.textAlign = "center";
-  ctx.fillText("FC", w / 2, photoY + photoH / 2 + 28);
-  ctx.textAlign = "left";
+  if (photo) {
+    // Draw the actual photo
+    ctx.save();
+    roundRect(ctx, photoX, photoY, photoW, photoH, 16);
+    ctx.clip();
+    // Cover-fit the image
+    const imgAspect = photo.width / photo.height;
+    const areaAspect = photoW / photoH;
+    let sx = 0, sy = 0, sw = photo.width, sh = photo.height;
+    if (imgAspect > areaAspect) {
+      sw = photo.height * areaAspect;
+      sx = (photo.width - sw) / 2;
+    } else {
+      sh = photo.width / areaAspect;
+      sy = (photo.height - sh) / 2;
+    }
+    ctx.drawImage(photo, sx, sy, sw, sh, photoX, photoY, photoW, photoH);
+    // Subtle dark vignette at bottom
+    const overlay = ctx.createLinearGradient(photoX, photoY, photoX, photoY + photoH);
+    overlay.addColorStop(0, "rgba(0,0,0,0)");
+    overlay.addColorStop(0.6, "rgba(0,0,0,0)");
+    overlay.addColorStop(1, "rgba(0,0,0,0.5)");
+    ctx.fillStyle = overlay;
+    ctx.fillRect(photoX, photoY, photoW, photoH);
+    ctx.restore();
+  } else {
+    // Placeholder gradient + initials
+    const photoGrad = ctx.createLinearGradient(photoX, photoY, photoX + photoW, photoY + photoH);
+    photoGrad.addColorStop(0, "rgba(91,184,212,0.12)");
+    photoGrad.addColorStop(1, "rgba(167,139,250,0.1)");
+    ctx.fillStyle = photoGrad;
+    roundRect(ctx, photoX, photoY, photoW, photoH, 16);
+    ctx.fill();
+    ctx.fillStyle = "rgba(255,255,255,0.15)";
+    ctx.font = 'italic 80px Georgia, serif';
+    ctx.textAlign = "center";
+    ctx.fillText("FC", w / 2, photoY + photoH / 2 + 28);
+    ctx.textAlign = "left";
+  }
 
   // --- Name ---
   const nameY = photoY + photoH + 40;
   ctx.fillStyle = "#ffffff";
-  ctx.font = '400 32px "Instrument Serif", Georgia, serif';
+  ctx.font = '400 32px Georgia, serif';
   ctx.fillText("Franklin Cheng", 32, nameY);
 
   // --- Title ---
   ctx.fillStyle = "#8a8a95";
-  ctx.font = '500 11px "JetBrains Mono", monospace';
+  ctx.font = '500 11px monospace';
   ctx.fillText("STRATEGIST & PRODUCT BUILDER", 32, nameY + 24);
 
   // --- Divider ---
@@ -111,20 +163,17 @@ export function createCardTexture(): THREE.CanvasTexture {
     { label: "CLIENTS", value: "F500" },
     { label: "LOCATION", value: "Los Angeles" },
   ];
-
   const colW = (w - 64) / 2;
   stats.forEach((s, i) => {
     const col = i % 2;
     const row = Math.floor(i / 2);
     const x = 32 + col * colW;
     const y = statsY + row * 48;
-
     ctx.fillStyle = "#55555f";
-    ctx.font = '500 8px "JetBrains Mono", monospace';
+    ctx.font = '500 8px monospace';
     ctx.fillText(s.label, x, y);
-
     ctx.fillStyle = "#b0b0b8";
-    ctx.font = '400 13px "Satoshi", sans-serif';
+    ctx.font = '400 13px sans-serif';
     ctx.fillText(s.value, x, y + 16);
   });
 
@@ -139,10 +188,8 @@ export function createCardTexture(): THREE.CanvasTexture {
 
   // --- Bottom: ID + dots ---
   ctx.fillStyle = "#55555f";
-  ctx.font = '500 9px "JetBrains Mono", monospace';
+  ctx.font = '500 9px monospace';
   ctx.fillText("ID-FC-2025", 32, h - 28);
-
-  // Rating dots
   const dotColors = ["#5bb8d4", "#5bb8d4", "#5bb8d4", "#5bb8d4", "#55555f"];
   dotColors.forEach((color, i) => {
     ctx.fillStyle = color;
@@ -151,64 +198,21 @@ export function createCardTexture(): THREE.CanvasTexture {
     ctx.fill();
   });
 
-  // --- Noise grain overlay ---
+  // --- Noise grain (subtle) ---
   const imageData = ctx.getImageData(0, 0, w, h);
   const data = imageData.data;
   for (let i = 0; i < data.length; i += 4) {
-    const noise = (Math.random() - 0.5) * 8;
+    const noise = (Math.random() - 0.5) * 6;
     data[i] += noise;
     data[i + 1] += noise;
     data[i + 2] += noise;
   }
   ctx.putImageData(imageData, 0, 0);
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.anisotropy = 16;
-
-  // Async: load profile photo and redraw over the placeholder
-  const img = new Image();
-  img.crossOrigin = "anonymous";
-  img.onload = () => {
-    // Save current canvas state
-    ctx.save();
-    // Clip to rounded rect
-    roundRect(ctx, photoX, photoY, photoW, photoH, 16);
-    ctx.clip();
-    // Draw photo covering the area (object-fit: cover)
-    const imgAspect = img.width / img.height;
-    const areaAspect = photoW / photoH;
-    let sx = 0, sy = 0, sw = img.width, sh = img.height;
-    if (imgAspect > areaAspect) {
-      sw = img.height * areaAspect;
-      sx = (img.width - sw) / 2;
-    } else {
-      sh = img.width / areaAspect;
-      sy = (img.height - sh) / 2;
-    }
-    ctx.drawImage(img, sx, sy, sw, sh, photoX, photoY, photoW, photoH);
-    // Subtle dark overlay for contrast with text below
-    const overlay = ctx.createLinearGradient(photoX, photoY, photoX, photoY + photoH);
-    overlay.addColorStop(0, "rgba(0,0,0,0)");
-    overlay.addColorStop(0.7, "rgba(0,0,0,0)");
-    overlay.addColorStop(1, "rgba(0,0,0,0.4)");
-    ctx.fillStyle = overlay;
-    ctx.fillRect(photoX, photoY, photoW, photoH);
-    ctx.restore();
-    // Update the texture
-    texture.needsUpdate = true;
-  };
-  img.src = "/assets/profile-card.jpg";
-
-  return texture;
 }
 
 function roundRect(
   ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  r: number
+  x: number, y: number, w: number, h: number, r: number
 ) {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
