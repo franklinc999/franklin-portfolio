@@ -50,6 +50,15 @@ const PROJECTS = [
     status: "Live",
   },
   {
+    name: "Interview Copilot",
+    year: "2026",
+    description:
+      "A real-time meeting and interview copilot that listens in, surfaces relevant context, and suggests responses on the fly. Built for high-stakes calls where you can't afford to fumble.",
+    link: "https://interview-copilot.pplx.app",
+    tags: ["AI", "Real-Time", "Productivity"],
+    status: "Live",
+  },
+  {
     name: "Automated Grocery Runner",
     year: "2026",
     description:
