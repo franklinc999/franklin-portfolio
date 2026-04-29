@@ -5,6 +5,15 @@ import { PageWrapper, Marquee } from "@/components/Shared";
 
 const PROJECTS = [
   {
+    name: "Signal // Noise",
+    year: "2026",
+    description:
+      "A twin-stick browser shooter where enemies are sound waves you tune your weapon to. Built as a portfolio piece for shooter-studio APM interviews — ships with a full PM design doc.",
+    link: "/play",
+    tags: ["Game Design", "Canvas", "Web Audio"],
+    status: "Live",
+  },
+  {
     name: "Three Good Things",
     year: "2025",
     description:
@@ -93,7 +102,7 @@ export default function ProjectsPage() {
               <a
                 key={i}
                 href={project.link}
-                target={project.link !== "#" ? "_blank" : undefined}
+                target={project.link !== "#" && !project.link.startsWith("/") ? "_blank" : undefined}
                 rel="noopener noreferrer"
                 className={`bento-item liquid-glass liquid-glass-border rounded-none p-6 block group ${
                   project.link === "#" ? "pointer-events-none" : "cursor-pointer"
