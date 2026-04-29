@@ -208,15 +208,15 @@ export default function DesignDocPage() {
           {/* Closing */}
           <Section label="Why I Built This">
             <p className="text-[var(--color-text-muted)] leading-relaxed mb-4">
-              I&apos;m applying for an APM role at a major shooter studio. Saying &quot;I love games&quot;
-              is the cheapest claim in the industry. Building a small game with a real opinion
-              about <span className="text-white">why it&apos;s built that way</span> is a more honest
-              signal — it&apos;s also a much better artifact for an interview conversation than
-              another screenshot of MW3 stats.
+              Saying &quot;I love games&quot; is the cheapest claim in the industry. Building a small
+              game with a real opinion about{" "}
+              <span className="text-white">why it&apos;s built that way</span> — the tuning calls,
+              the failure modes, the things I&apos;d measure if it shipped — is a more honest
+              signal, and a more interesting thing to talk about.
             </p>
             <p className="text-[var(--color-text-muted)] leading-relaxed">
               Shipped in roughly a day with Next.js + HTML5 Canvas + Web Audio. No engine,
-              no assets bought, no AI-generated art. The constraint was the point.
+              no bought assets, no AI-generated art. The constraint was the point.
             </p>
             <div className="mt-8 flex items-center gap-4">
               <Link

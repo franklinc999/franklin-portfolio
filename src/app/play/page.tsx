@@ -105,14 +105,14 @@ export default function PlayPage() {
               Why this exists
             </p>
             <h2 className="font-serif text-3xl text-white mb-6">
-              Built for an <span className="italic text-[var(--color-accent)]">APM</span> conversation
+              A small game with a <span className="italic text-[var(--color-accent)]">real opinion</span>
             </h2>
             <p className="text-[var(--color-text-muted)] text-sm leading-relaxed mb-4">
-              I wanted a small playable artifact that demonstrates how I think about game systems —
-              not just narrative claims about loving games. Signal // Noise is intentionally a
-              shooter, but the frequency-tuning twist lets me talk about something more
-              interesting than &quot;I made an arena clone&quot;: telegraph design, sensory readability,
-              risk-reward layering, and the quiet tuning numbers behind game feel.
+              I wanted a playable artifact that shows how I think about game systems — not just
+              narrative claims about loving games. Signal // Noise is intentionally a shooter,
+              but the frequency-tuning twist makes it about something more interesting than
+              &quot;I made an arena clone&quot;: telegraph design, sensory readability, risk-reward
+              layering, and the quiet tuning numbers behind game feel.
             </p>
             <p className="text-[var(--color-text-muted)] text-sm leading-relaxed">
               The companion design doc walks through the loop, the tuning targets I picked, the

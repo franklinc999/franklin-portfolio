@@ -8,7 +8,7 @@ const PROJECTS = [
     name: "Signal // Noise",
     year: "2026",
     description:
-      "A twin-stick browser shooter where enemies are sound waves you tune your weapon to. Built as a portfolio piece for shooter-studio APM interviews — ships with a full PM design doc.",
+      "A twin-stick browser shooter where enemies are sound waves you have to tune your weapon to. Built to study readability, telegraphing, and the tuning numbers behind game feel — ships with a full PM design doc.",
     link: "/play",
     tags: ["Game Design", "Canvas", "Web Audio"],
     status: "Live",
