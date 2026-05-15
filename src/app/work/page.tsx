@@ -70,7 +70,7 @@ const CONSULTING_PROJECTS = [
     client: "Major Financial Institution",
     title: "Commercial Cards Program Benchmarking",
     description:
-      "Built a competitive battlecard for US Commercial Cards (P-Cards and B2B Virtual Cards) for procurement and AP use cases. Structured the analysis into a market overview plus a six-player deep dive across features, capabilities, and distribution -- intentionally excluding T&E positioning to focus on the highest-margin spend categories.",
+      "Built a competitive battlecard for US Commercial Cards (P-Cards and B2B Virtual Cards) for procurement and AP use cases. Structured the analysis into a market overview plus a six-player deep dive across features, capabilities, and distribution, intentionally excluding T&E positioning to focus on the highest-margin spend categories.",
     tags: ["Commercial Cards", "B2B Payments", "Battlecard"],
     stat: { label: "Issuers Benchmarked", value: "6" },
     span: "col-span-1",
@@ -79,7 +79,7 @@ const CONSULTING_PROJECTS = [
     client: "Private Equity Fund",
     title: "Exotic Aftermarket Exhaust Supplier Diligence",
     description:
-      "Supported commercial diligence on an aftermarket exhaust systems supplier targeting the exotic and European performance segment. Built a 200-shop database of US tuning and performance retailers -- segmented by which carried competing premium brands (Novitec, Kline, Soul, Capristo, Akrapovic) versus white-space accounts -- to validate the target's distribution moat and growth runway.",
+      "Supported commercial diligence on an aftermarket exhaust systems supplier targeting the exotic and European performance segment. Built a 200-shop database of US tuning and performance retailers, segmented by which carried competing premium brands versus white-space accounts, to validate the target's distribution moat and growth runway.",
     tags: ["Due Diligence", "Automotive Aftermarket", "Channel Analysis"],
     stat: { label: "Shops Mapped", value: "200" },
     span: "col-span-1",
@@ -91,7 +91,7 @@ const CONSULTING_PROJECTS = [
       "Kicking off an operations diagnostic for a tire manufacturer, identifying inefficiencies across production, distribution, and sales incentives. Will pattern-match against prior insurance and PE turnaround work to surface quick wins and structural cost takeouts.",
     tags: ["Operations", "Manufacturing", "Upcoming"],
     stat: { label: "Engagement Status", value: "Q3" },
-    span: "col-span-2",
+    span: "col-span-1",
   },
 ];
 
