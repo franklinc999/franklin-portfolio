@@ -70,10 +70,28 @@ const CONSULTING_PROJECTS = [
     client: "Major Financial Institution",
     title: "Commercial Cards Program Benchmarking",
     description:
-      "Currently leading a competitive analysis of commercial card programs across major issuers, evaluating P-Card, virtual card, and B2B payment solutions for procurement and AP use cases.",
-    tags: ["Commercial Cards", "B2B Payments", "Active"],
+      "Built a competitive battlecard for US Commercial Cards (P-Cards and B2B Virtual Cards) for procurement and AP use cases. Structured the analysis into a market overview plus a six-player deep dive across features, capabilities, and distribution -- intentionally excluding T&E positioning to focus on the highest-margin spend categories.",
+    tags: ["Commercial Cards", "B2B Payments", "Battlecard"],
     stat: { label: "Issuers Benchmarked", value: "6" },
     span: "col-span-1",
+  },
+  {
+    client: "Private Equity Fund",
+    title: "Exotic Aftermarket Exhaust Supplier Diligence",
+    description:
+      "Supported commercial diligence on an aftermarket exhaust systems supplier targeting the exotic and European performance segment. Built a 200-shop database of US tuning and performance retailers -- segmented by which carried competing premium brands (Novitec, Kline, Soul, Capristo, Akrapovic) versus white-space accounts -- to validate the target's distribution moat and growth runway.",
+    tags: ["Due Diligence", "Automotive Aftermarket", "Channel Analysis"],
+    stat: { label: "Shops Mapped", value: "200" },
+    span: "col-span-1",
+  },
+  {
+    client: "Tire Manufacturer",
+    title: "Operations & Margin Optimization",
+    description:
+      "Kicking off an operations diagnostic for a tire manufacturer, identifying inefficiencies across production, distribution, and sales incentives. Will pattern-match against prior insurance and PE turnaround work to surface quick wins and structural cost takeouts.",
+    tags: ["Operations", "Manufacturing", "Upcoming"],
+    stat: { label: "Engagement Status", value: "Q3" },
+    span: "col-span-2",
   },
 ];
 
@@ -117,6 +135,12 @@ export default function WorkPage() {
                         <span className="font-mono text-[10px] text-green-400 uppercase tracking-wider">Active</span>
                       </span>
                     )}
+                    {project.tags.includes("Upcoming") && (
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-accent-2)] animate-pulse" />
+                        <span className="font-mono text-[10px] text-[var(--color-accent-2)] uppercase tracking-wider">Upcoming</span>
+                      </span>
+                    )}
                   </div>
                   <h3 className="font-serif text-lg text-white mb-2 leading-snug">
                     {project.title}
@@ -126,7 +150,7 @@ export default function WorkPage() {
                   </p>
                   <div className="flex items-end justify-between">
                     <div className="flex flex-wrap gap-1.5">
-                      {project.tags.filter(t => t !== "Active").map((tag) => (
+                      {project.tags.filter(t => t !== "Active" && t !== "Upcoming").map((tag) => (
                         <span
                           key={tag}
                           className="px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-faint)] border border-[var(--color-border)] rounded"
