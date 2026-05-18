@@ -5,12 +5,12 @@ import { ArrowUpRight, ArrowLeft } from "lucide-react";
 import { PageWrapper } from "@/components/Shared";
 
 const TUNING = [
-  { label: "Time-to-kill (matched)", value: "0.4-0.6s", note: "3 hits at 3 dmg, 0.13s cadence — fast enough to feel snappy without trivializing aim" },
-  { label: "Time-to-kill (mistuned)", value: "~5s", note: "0.4 dmg/hit. Punishing but not impossible — encourages tuning, doesn't lock you out" },
-  { label: "Reveal window", value: "~30% of cycle", note: "Pulse curve = sin(phase·2π) clamped — mostly hidden, briefly bright. Trains anticipation, not reaction" },
+  { label: "Time-to-kill (matched)", value: "0.4-0.6s", note: "3 hits at 3 dmg, 0.13s cadence, fast enough to feel snappy without trivializing aim" },
+  { label: "Time-to-kill (mistuned)", value: "~5s", note: "0.4 dmg/hit. Punishing but not impossible, encourages tuning, doesn't lock you out" },
+  { label: "Reveal window", value: "~30% of cycle", note: "Pulse curve = sin(phase·2π) clamped, mostly hidden, briefly bright. Trains anticipation, not reaction" },
   { label: "Multiplier ceiling", value: "×6", note: "+1 every 3 same-band kills, decays in 4s. Caps so chains stay readable" },
   { label: "Wave duration", value: "22-30s", note: "Lengthens slightly per wave to avoid back-to-back spawn cliffs" },
-  { label: "Player iframes", value: "1.0s", note: "Generous — early-game mistakes shouldn't snowball into instant death" },
+  { label: "Player iframes", value: "1.0s", note: "Generous, early-game mistakes shouldn't snowball into instant death" },
 ];
 
 const ENEMIES = [
@@ -21,7 +21,7 @@ const ENEMIES = [
 
 const METRICS = [
   { metric: "D1 retention proxy", target: ">40%", how: "% of first-session players who start a second run within 60s of game over" },
-  { metric: "Wave 3 reach rate", target: ">35%", how: "% of runs that survive past wave 3 — early-game tuning balance check" },
+  { metric: "Wave 3 reach rate", target: ">35%", how: "% of runs that survive past wave 3, early-game tuning balance check" },
   { metric: "Tuning swap frequency", target: "0.5-1.5/sec", how: "Median band-changes per second of play. Too low = enemies too clustered. Too high = tuner too punishing" },
   { metric: "Mistune ratio", target: "10-25%", how: "Off-band shots ÷ total shots. The desired range for &apos;feels intentional, not perfect&apos;" },
   { metric: "Multiplier engagement", target: "≥30% of runs reach ×3", how: "Confirms the chain mechanic is actually pulled into the moment-to-moment, not just an idle stat" },
@@ -74,8 +74,8 @@ export default function DesignDocPage() {
               (cyan / violet / amber) and matched-band shots do triple damage.
             </p>
             <p className="text-[var(--color-text-muted)] leading-relaxed">
-              The mechanic forces a constant micro-decision — &quot;is the closest threat worth
-              tuning to, or shoot down the cluster I&apos;m already aimed at?&quot; — that creates
+              The mechanic forces a constant micro-decision, &quot;is the closest threat worth
+              tuning to, or shoot down the cluster I&apos;m already aimed at?&quot;, that creates
               a richer loop than weapon-pickup variety would, with a fraction of the content cost.
             </p>
           </Section>
@@ -210,8 +210,8 @@ export default function DesignDocPage() {
             <p className="text-[var(--color-text-muted)] leading-relaxed mb-4">
               Saying &quot;I love games&quot; is the cheapest claim in the industry. Building a small
               game with a real opinion about{" "}
-              <span className="text-white">why it&apos;s built that way</span> — the tuning calls,
-              the failure modes, the things I&apos;d measure if it shipped — is a more honest
+              <span className="text-white">why it&apos;s built that way</span>, the tuning calls,
+              the failure modes, the things I&apos;d measure if it shipped, is a more honest
               signal, and a more interesting thing to talk about.
             </p>
             <p className="text-[var(--color-text-muted)] leading-relaxed">

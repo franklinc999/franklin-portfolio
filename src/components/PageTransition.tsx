@@ -33,7 +33,7 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
       const container = containerRef.current;
       if (!container) return;
 
-      // Page enter animation (skip on first mount for hero -- hero has its own)
+      // Page enter animation (skip on first mount for hero, hero has its own)
       if (!isFirstMount.current) {
         gsap.fromTo(
           container,

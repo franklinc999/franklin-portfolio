@@ -8,7 +8,7 @@ const PROJECTS = [
     name: "Signal // Noise",
     year: "2026",
     description:
-      "A twin-stick browser shooter where enemies are sound waves you have to tune your weapon to. Built to study readability, telegraphing, and the tuning numbers behind game feel — ships with a full PM design doc.",
+      "A twin-stick browser shooter where enemies are sound waves you have to tune your weapon to. Built to study readability, telegraphing, and the tuning numbers behind game feel, ships with a full PM design doc.",
     link: "/play",
     tags: ["Game Design", "Canvas", "Web Audio"],
     status: "Live",
@@ -93,7 +93,7 @@ export default function ProjectsPage() {
               Things I&apos;ve Built
             </h1>
             <p className="mt-3 text-[var(--color-text-muted)] text-sm max-w-lg mx-auto">
-              Side projects shipped between client engagements. Most are vibe-coded MVPs -- building towards more complex, polished products.
+              Side projects shipped between client engagements. Most are vibe-coded MVPs, building towards more complex, polished products.
             </p>
           </div>
 

@@ -19,12 +19,12 @@ const PILLARS = [
   {
     icon: Radio,
     title: "Tune the band",
-    body: "Three frequencies — LOW, MID, HIGH. Match an enemy's band for 3× damage. Mistune and they barely flinch. The wheel, 1·2·3, or Q/E swaps bands instantly.",
+    body: "Three frequencies, LOW, MID, HIGH. Match an enemy's band for 3× damage. Mistune and they barely flinch. The wheel, 1·2·3, or Q/E swaps bands instantly.",
   },
   {
     icon: Waves,
     title: "Hidden in the noise",
-    body: "Enemies are mostly invisible. They pulse on a rhythm — that's your read window. Learning to anticipate pulses replaces traditional aiming difficulty.",
+    body: "Enemies are mostly invisible. They pulse on a rhythm, that's your read window. Learning to anticipate pulses replaces traditional aiming difficulty.",
   },
   {
     icon: Gamepad2,
@@ -49,7 +49,7 @@ export default function PlayPage() {
               Signal <span className="italic text-[var(--color-accent)]">{"// noise"}</span>
             </h1>
             <p className="mt-3 text-[var(--color-text-muted)] text-sm max-w-xl mx-auto">
-              A twin-stick decoder I built to study readability, telegraphing, and tuning loops —
+              A twin-stick decoder I built to study readability, telegraphing, and tuning loops -
               the design fundamentals that make shooters feel good.
             </p>
             <div className="mt-4 flex items-center justify-center gap-3">
@@ -108,7 +108,7 @@ export default function PlayPage() {
               A small game with a <span className="italic text-[var(--color-accent)]">real opinion</span>
             </h2>
             <p className="text-[var(--color-text-muted)] text-sm leading-relaxed mb-4">
-              I wanted a playable artifact that shows how I think about game systems — not just
+              I wanted a playable artifact that shows how I think about game systems, not just
               narrative claims about loving games. Signal // Noise is intentionally a shooter,
               but the frequency-tuning twist makes it about something more interesting than
               &quot;I made an arena clone&quot;: telegraph design, sensory readability, risk-reward

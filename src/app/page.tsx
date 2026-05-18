@@ -75,13 +75,13 @@ function About() {
         <div className="space-y-4 mb-10 scroll-reveal">
           <p className="text-[var(--color-text-muted)] leading-relaxed">
             From the San Gabriel Valley to UPenn, I studied Philosophy, Politics & Economics with
-            minors in Consumer Psychology and East Asian Area Studies -- a foundation that lets me
+            minors in Consumer Psychology and East Asian Area Studies, a foundation that lets me
             see products through the lens of both human behavior and market structure.
           </p>
           <p className="text-[var(--color-text-muted)] leading-relaxed">
             At Sia Partners, I build competitive intelligence and go-to-market strategy for clients
             spanning payments, insurance, and enterprise tech. On the side, I ship lightweight tools
-            powered by AI -- because the best product sense comes from building, not just advising.
+            powered by AI, because the best product sense comes from building, not just advising.
           </p>
         </div>
 

@@ -3,7 +3,7 @@ import { PageTransition } from "@/components/PageTransition";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Franklin Cheng -- Strategist & Product Builder",
+  title: "Franklin Cheng, Strategist & Product Builder",
   description:
     "Strategy consultant and product builder. UPenn PPE grad crafting AI-powered tools and go-to-market strategy for Fortune 500 clients.",
 };
