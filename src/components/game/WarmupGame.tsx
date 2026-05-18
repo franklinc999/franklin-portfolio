@@ -86,6 +86,36 @@ export default function WarmupGame() {
 // SETTINGS SCREEN
 // ============================================================
 function SettingsScreen({ settings, setSettings, onContinue }: { settings: Settings; setSettings: (s: Settings) => void; onContinue: () => void; }) {
+  // Use string-backed input state so the user can clear the field freely.
+  // Commit to settings only when they blur or type a valid number.
+  const [dpiStr, setDpiStr] = useState(String(settings.dpi));
+  const [sensStr, setSensStr] = useState(String(settings.sens));
+
+  // If parent settings change (e.g. on mount with localStorage), sync
+  useEffect(() => { setDpiStr(String(settings.dpi)); }, [settings.dpi]);
+  useEffect(() => { setSensStr(String(settings.sens)); }, [settings.sens]);
+
+  const commitDpi = (raw: string) => {
+    const n = parseFloat(raw);
+    if (!Number.isFinite(n) || n <= 0) {
+      setDpiStr(String(settings.dpi)); // revert
+      return;
+    }
+    const clamped = Math.max(100, Math.min(20000, n));
+    setSettings({ ...settings, dpi: clamped });
+    setDpiStr(String(clamped));
+  };
+  const commitSens = (raw: string) => {
+    const n = parseFloat(raw);
+    if (!Number.isFinite(n) || n <= 0) {
+      setSensStr(String(settings.sens));
+      return;
+    }
+    const clamped = Math.max(0.01, Math.min(20, n));
+    setSettings({ ...settings, sens: clamped });
+    setSensStr(String(clamped));
+  };
+
   const cm360 = cmPer360(settings.dpi, settings.sens, settings.game);
   const edpi = settings.dpi * settings.sens;
   return (
@@ -111,18 +141,44 @@ function SettingsScreen({ settings, setSettings, onContinue }: { settings: Setti
 
         <label className="block mb-5">
           <span className="text-[10px] font-mono uppercase tracking-widest text-[var(--color-text-faint)] block mb-2">Mouse DPI</span>
-          <input type="number" value={settings.dpi}
-            onChange={(e) => setSettings({ ...settings, dpi: Math.max(100, Math.min(20000, Number(e.target.value) || 800)) })}
+          <input
+            type="text"
+            inputMode="numeric"
+            value={dpiStr}
+            onChange={(e) => {
+              const v = e.target.value;
+              setDpiStr(v);
+              // Live-commit only if the value is a complete valid number; otherwise just hold the string
+              const n = parseFloat(v);
+              if (Number.isFinite(n) && n >= 100 && n <= 20000) {
+                setSettings({ ...settings, dpi: n });
+              }
+            }}
+            onBlur={(e) => commitDpi(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
             className="w-full bg-black/40 border border-[var(--color-border)] rounded-lg px-4 py-2.5 text-white font-mono text-sm focus:outline-none focus:border-[var(--color-accent-2)] transition-colors"
-            min={100} max={20000} step={50} />
+          />
+          <span className="text-[10px] font-mono text-[var(--color-text-faint)] mt-1 block">Range 100, 20000</span>
         </label>
 
         <label className="block mb-8">
           <span className="text-[10px] font-mono uppercase tracking-widest text-[var(--color-text-faint)] block mb-2">In-game sensitivity</span>
-          <input type="number" value={settings.sens}
-            onChange={(e) => setSettings({ ...settings, sens: Math.max(0.01, Math.min(20, Number(e.target.value) || 0.5)) })}
+          <input
+            type="text"
+            inputMode="decimal"
+            value={sensStr}
+            onChange={(e) => {
+              const v = e.target.value;
+              setSensStr(v);
+              const n = parseFloat(v);
+              if (Number.isFinite(n) && n >= 0.01 && n <= 20) {
+                setSettings({ ...settings, sens: n });
+              }
+            }}
+            onBlur={(e) => commitSens(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
             className="w-full bg-black/40 border border-[var(--color-border)] rounded-lg px-4 py-2.5 text-white font-mono text-sm focus:outline-none focus:border-[var(--color-accent-2)] transition-colors"
-            step={0.01} min={0.01} />
+          />
         </label>
 
         <div className="grid grid-cols-2 gap-3 mb-8">
