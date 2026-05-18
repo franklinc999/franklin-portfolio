@@ -5,11 +5,20 @@ import { PageWrapper, Marquee } from "@/components/Shared";
 
 const PROJECTS = [
   {
+    name: "Range Warmup",
+    year: "2026",
+    description:
+      "A browser FPS aim trainer that actually matches your real game sens. Pick Valorant, CoD, or Apex, plug in your DPI and in-game sens, and the cm/360 math scales mouse input so muscle memory carries over. Three drills: reaction, tracking, and a third-person peek mode.",
+    link: "/play/warmup",
+    tags: ["Game Design", "Canvas", "FPS Trainer"],
+    status: "Live",
+  },
+  {
     name: "Signal // Noise",
     year: "2026",
     description:
       "A twin-stick browser shooter where enemies are sound waves you have to tune your weapon to. Built to study readability, telegraphing, and the tuning numbers behind game feel, ships with a full PM design doc.",
-    link: "/play",
+    link: "/play/signal",
     tags: ["Game Design", "Canvas", "Web Audio"],
     status: "Live",
   },

@@ -327,10 +327,9 @@ function GameCanvas({ mode, settings, onExit }: { mode: Mode; settings: Settings
     const onMove = (e: MouseEvent) => {
       if (!running) return;
       const deg = degPerCountRef.current;
-      // Convert mouse counts (movementX) to radians of camera rotation.
-      camRef.current.yaw += (e.movementX * deg * Math.PI) / 180;
+      // Mouse right = view turns right (yaw decreases in our convention so world rotates left)
+      camRef.current.yaw -= (e.movementX * deg * Math.PI) / 180;
       camRef.current.pitch -= (e.movementY * deg * Math.PI) / 180;
-      // Clamp pitch
       camRef.current.pitch = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, camRef.current.pitch));
     };
 
@@ -350,23 +349,45 @@ function GameCanvas({ mode, settings, onExit }: { mode: Mode; settings: Settings
 
       const targets = targetsRef.current;
       let hit = false;
-      // We want to find the closest target whose projection contains the screen center.
       let bestIdx = -1, bestZ = Infinity;
+      // For peek mode, camera is at (peek * 1.6, 0.5, -2.5). For FP modes, camera is at origin.
+      const camPos: Vec3 = mode === "peek"
+        ? { x: peekRef.current.offset * 1.6, y: 0.5, z: -2.5 }
+        : { x: 0, y: 0, z: 0 };
+
+      // Cover-block occlusion: if peek mode and the ray to target passes through the cover block, skip.
       for (let i = 0; i < targets.length; i++) {
         const t = targets[i];
-        // For peek mode, apply peek offset: camera sits at +peekOffset on X axis
-        const camPos: Vec3 = mode === "peek" ? { x: peekRef.current.offset * 1.2, y: 0, z: 0 } : { x: 0, y: 0, z: 0 };
         const rel: Vec3 = { x: t.pos.x - camPos.x, y: t.pos.y - camPos.y, z: t.pos.z - camPos.z };
-        // Inverse rotation: rotate world by -yaw around Y, then -pitch around X
         const r1 = rotateY(rel, -totalYaw);
         const r2 = rotateX(r1, -totalPitch);
         const proj = project(r2);
         if (!proj) continue;
-        // Distance from screen center
         const dx = proj.sx - CANVAS_W / 2;
         const dy = proj.sy - CANVAS_H / 2;
         const screenR = t.r * proj.scale;
         if (dx * dx + dy * dy <= screenR * screenR && r2.z < bestZ) {
+          // For peek, check if the cover block is between camera and target
+          if (mode === "peek") {
+            // Cover block: x in [-1.2, 1.2], y in [-3, 2.5], z = 3.5
+            // Ray from camera (camPos) toward target.pos
+            const dirX = t.pos.x - camPos.x;
+            const dirY = t.pos.y - camPos.y;
+            const dirZ = t.pos.z - camPos.z;
+            const blockZ = 3.5;
+            // Parametric t at which ray hits z=blockZ plane
+            if (dirZ > 0) {
+              const tHit = (blockZ - camPos.z) / dirZ;
+              if (tHit > 0 && tHit < 1) {
+                const hitX = camPos.x + dirX * tHit;
+                const hitY = camPos.y + dirY * tHit;
+                if (hitX > -1.2 && hitX < 1.2 && hitY > -3 && hitY < 2.5) {
+                  // Blocked by cover
+                  continue;
+                }
+              }
+            }
+          }
           bestZ = r2.z;
           bestIdx = i;
         }
@@ -515,16 +536,21 @@ function GameCanvas({ mode, settings, onExit }: { mode: Mode; settings: Settings
       peekRef.current.target = target;
       peekRef.current.offset += (target - peekRef.current.offset) * Math.min(1, dt * 0.008);
 
-      // Spawn targets crossing the back of the lane (behind cover gap)
-      if (targets.length === 0 && Math.random() < dt / 600) {
-        const fromLeft = Math.random() > 0.5;
-        const z = 12;
+      // Spawn targets on either side of the lane behind cover.
+      // Targets appear past the corner of the cover block (x=+/-1.2) and pace along the back lane.
+      if (targets.length === 0 && Math.random() < dt / 500) {
+        // Side: -1 = left of cover, +1 = right of cover
+        const side = Math.random() > 0.5 ? 1 : -1;
+        const z = 8 + Math.random() * 6; // varied depth
+        // Spawn just past the cover edge, then strafe outward (away from cover)
+        const startX = side * (2.0 + Math.random() * 1.5);
+        const speed = (1.5 + Math.random() * 1.2) * side; // strafe outward
         targets.push({
-          pos: { x: fromLeft ? -8 : 8, y: 0.2 + (Math.random() - 0.5) * 0.8, z },
-          vel: { x: (fromLeft ? 1 : -1) * (3 + Math.random() * 1.5), y: 0, z: 0 },
-          r: 0.45,
+          pos: { x: startX, y: 0.2 + (Math.random() - 0.5) * 0.6, z },
+          vel: { x: speed, y: 0, z: 0 },
+          r: 0.5,
           spawnAt: now,
-          lifeMs: 5000,
+          lifeMs: 3500,
         });
         stats.spawned++;
       }
@@ -532,7 +558,7 @@ function GameCanvas({ mode, settings, onExit }: { mode: Mode; settings: Settings
       for (let i = targets.length - 1; i >= 0; i--) {
         const t = targets[i];
         t.pos.x += (t.vel?.x ?? 0) * dt / 1000;
-        if (t.pos.x < -12 || t.pos.x > 12 || now - t.spawnAt > (t.lifeMs ?? 5000)) {
+        if (Math.abs(t.pos.x) > 10 || now - t.spawnAt > (t.lifeMs ?? 3500)) {
           targets.splice(i, 1);
         }
       }
@@ -691,38 +717,59 @@ function GameCanvas({ mode, settings, onExit }: { mode: Mode; settings: Settings
     }
   }
 
+  // Aim-Labs-style 3D sphere: strong directional shading, specular highlight, contact shadow.
   function drawTargetSphere(ctx: CanvasRenderingContext2D, sx: number, sy: number, r: number, m: Mode, now: number, age: number) {
     if (r < 1) return;
-    const pulse = 1 + Math.sin(now / 150) * 0.04;
     const color = m === "reaction" ? "167,139,250" : "91,184,212";
-    // Outer ring
+
+    // Contact shadow on ground (simple ellipse below)
+    ctx.save();
+    ctx.fillStyle = "rgba(0,0,0,0.35)";
     ctx.beginPath();
-    ctx.arc(sx, sy, r * pulse, 0, Math.PI * 2);
-    ctx.strokeStyle = `rgb(${color})`;
-    ctx.lineWidth = Math.max(1, r * 0.06);
+    ctx.ellipse(sx, sy + r * 0.95, r * 0.85, r * 0.18, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Main sphere body with strong radial shading (light from upper-left)
+    const lx = sx - r * 0.4;
+    const ly = sy - r * 0.4;
+    const body = ctx.createRadialGradient(lx, ly, r * 0.05, sx, sy, r * 1.05);
+    body.addColorStop(0, `rgba(${color},1)`);
+    body.addColorStop(0.35, `rgba(${color},0.85)`);
+    body.addColorStop(0.75, `rgba(${color},0.35)`);
+    body.addColorStop(1, `rgba(20,20,28,0.95)`);
+    ctx.fillStyle = body;
+    ctx.beginPath();
+    ctx.arc(sx, sy, r, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Dark rim (terminator)
+    ctx.strokeStyle = `rgba(10,10,16,0.6)`;
+    ctx.lineWidth = Math.max(1, r * 0.04);
     ctx.stroke();
-    // Inner
-    const g = ctx.createRadialGradient(sx - r * 0.3, sy - r * 0.3, 0, sx, sy, r);
-    g.addColorStop(0, `rgba(${color},0.9)`);
-    g.addColorStop(0.6, `rgba(${color},0.5)`);
-    g.addColorStop(1, `rgba(${color},0.15)`);
-    ctx.fillStyle = g;
+
+    // Specular highlight (small bright spot)
+    const spec = ctx.createRadialGradient(lx, ly, 0, lx, ly, r * 0.35);
+    spec.addColorStop(0, "rgba(255,255,255,0.9)");
+    spec.addColorStop(0.5, "rgba(255,255,255,0.25)");
+    spec.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = spec;
     ctx.beginPath();
-    ctx.arc(sx, sy, r * 0.85, 0, Math.PI * 2);
+    ctx.arc(lx, ly, r * 0.35, 0, Math.PI * 2);
     ctx.fill();
-    // Center dot
-    ctx.fillStyle = "#ffffff";
-    ctx.beginPath();
-    ctx.arc(sx, sy, Math.max(2, r * 0.08), 0, Math.PI * 2);
-    ctx.fill();
-    // Spawn flash
-    if (age < 200) {
+
+    // Subtle pulse outer ring (only when fresh)
+    if (age < 400) {
+      const t = 1 - age / 400;
+      ctx.strokeStyle = `rgba(${color},${t * 0.8})`;
+      ctx.lineWidth = Math.max(1, r * 0.06) * (1 + t * 0.5);
       ctx.beginPath();
-      ctx.arc(sx, sy, r * (1 + (1 - age / 200) * 1.0), 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(255,255,255,${(1 - age / 200) * 0.7})`;
-      ctx.lineWidth = 2;
+      ctx.arc(sx, sy, r * (1.02 + t * 0.15), 0, Math.PI * 2);
       ctx.stroke();
     }
+
+    // Center marker (very subtle, helps you read center)
+    void now;
   }
 
   function drawCrosshair(ctx: CanvasRenderingContext2D, cx: number, cy: number) {
@@ -802,34 +849,33 @@ function GameCanvas({ mode, settings, onExit }: { mode: Mode; settings: Settings
   }
 
   // ----- Third-person scene (Peek) -----
+  // Mental model: there's a single cover block centered at world (0, 0, 3.5).
+  // The PLAYER+camera sits at (camX, 0.5, -2.5) where camX = peek * 1.6 (shifts L/R).
+  // When A is held, camera shifts left; the cover block's right edge is now to your right,
+  // and you can see PAST the LEFT edge of the cover into the lane. Targets spawn beyond.
   function drawPeekScene(ctx: CanvasRenderingContext2D, isRunning: boolean, now: number) {
-    // For peek, camera is OVER-THE-SHOULDER. Camera sits behind and slightly above the character.
-    // The character is at world origin and leans left/right via peekRef.
-    // To keep the math simple, we render the world from a fixed camera position,
-    // then overlay the character/cover sprites in screen space.
-
-    // Background: sky + floor
-    drawSkyAndFloor(ctx, 0);
-
-    // Render targets in 3D, but the camera is slightly behind the player so
-    // we offset camera position +z by negative amount (we're at z=-2 looking +z).
-    const cameraZOffset = -2.5;
-    const cameraYOffset = 0.5;
     const peek = peekRef.current.offset;
+    const cam = camRef.current;
+    const totalYaw = cam.yaw + recoilRef.current.yaw;
+    const totalPitch = cam.pitch + recoilRef.current.pitch;
 
-    // Range floor grid + back wall
-    drawRangeWallsPeek(ctx, cameraZOffset, cameraYOffset);
+    drawSkyAndFloor(ctx, totalPitch);
 
-    // Cover wall in 3D space: a slab in front of the player at z = 2
-    // The slab has a gap; the gap reveals more when leaning.
-    drawCoverWall(ctx, peek, cameraZOffset, cameraYOffset);
+    const camYOffset = 0.5;
+    const camZOffset = -2.5;
+    const camXOffset = peek * 1.6;
 
-    // Targets
+    // Range floor + back wall (relative to camera position, applying yaw rotation)
+    drawRangeWallsPeek3D(ctx, camXOffset, camYOffset, camZOffset, totalYaw, totalPitch);
+
+    // Project targets considering camera position AND camera rotation
     const targets = targetsRef.current;
     const projected = targets.map((t) => {
-      const rel = { x: t.pos.x, y: t.pos.y - cameraYOffset, z: t.pos.z - cameraZOffset };
-      const p = project(rel);
-      return { t, p, z: rel.z };
+      const rel: Vec3 = { x: t.pos.x - camXOffset, y: t.pos.y - camYOffset, z: t.pos.z - camZOffset };
+      const r1 = rotateY(rel, -totalYaw);
+      const r2 = rotateX(r1, -totalPitch);
+      const p = project(r2);
+      return { t, p, z: r2.z };
     }).filter(o => o.p !== null).sort((a, b) => b.z - a.z);
 
     for (const { t, p } of projected) {
@@ -838,15 +884,108 @@ function GameCanvas({ mode, settings, onExit }: { mode: Mode; settings: Settings
       drawTargetHumanoid(ctx, p.sx, p.sy, screenR, now - t.spawnAt);
     }
 
-    // Cover foreground (in front of targets to occlude them)
-    drawCoverWallForeground(ctx, peek);
+    // Cover block (foreground, occludes targets behind it)
+    drawCoverBlock3D(ctx, camXOffset, camYOffset, camZOffset, totalYaw, totalPitch);
 
-    // Character (over-the-shoulder)
+    // Character viewmodel (over the shoulder, leans with peek)
     drawCharacter(ctx, peek);
 
     if (isRunning) {
       drawHUD(ctx, "peek", now);
-      drawCrosshair(ctx, CANVAS_W / 2 + peek * 60, CANVAS_H / 2);
+      drawCrosshair(ctx, CANVAS_W / 2, CANVAS_H / 2);
+    }
+  }
+
+  function drawRangeWallsPeek3D(
+    ctx: CanvasRenderingContext2D,
+    camX: number, camY: number, camZ: number,
+    yaw: number, pitch: number
+  ) {
+    const transform = (p: Vec3) => {
+      const rel = { x: p.x - camX, y: p.y - camY, z: p.z - camZ };
+      return project(rotateX(rotateY(rel, -yaw), -pitch));
+    };
+
+    // Floor grid
+    ctx.strokeStyle = "rgba(91,184,212,0.08)";
+    ctx.lineWidth = 1;
+    for (let z = 3; z <= 28; z += 2) {
+      const a = transform({ x: -14, y: -1.5, z });
+      const b = transform({ x: 14, y: -1.5, z });
+      if (a && b) { ctx.beginPath(); ctx.moveTo(a.sx, a.sy); ctx.lineTo(b.sx, b.sy); ctx.stroke(); }
+    }
+    for (let x = -12; x <= 12; x += 2) {
+      const a = transform({ x, y: -1.5, z: 3 });
+      const b = transform({ x, y: -1.5, z: 28 });
+      if (a && b) { ctx.beginPath(); ctx.moveTo(a.sx, a.sy); ctx.lineTo(b.sx, b.sy); ctx.stroke(); }
+    }
+    // Back wall
+    const back = [
+      { x: -14, y: -3, z: 28 }, { x: 14, y: -3, z: 28 },
+      { x: 14, y: 4, z: 28 }, { x: -14, y: 4, z: 28 },
+    ].map(transform);
+    if (back.every((p) => p)) {
+      ctx.beginPath();
+      ctx.moveTo(back[0]!.sx, back[0]!.sy);
+      for (let i = 1; i < 4; i++) ctx.lineTo(back[i]!.sx, back[i]!.sy);
+      ctx.closePath();
+      ctx.fillStyle = "rgba(20,20,28,0.45)";
+      ctx.fill();
+      ctx.strokeStyle = "rgba(91,184,212,0.2)";
+      ctx.stroke();
+    }
+  }
+
+  // Single cover block in world space at (0, ..., 3.5), fully camera-rotated
+  function drawCoverBlock3D(
+    ctx: CanvasRenderingContext2D,
+    camX: number, camY: number, camZ: number,
+    yaw: number, pitch: number
+  ) {
+    const transform = (p: Vec3) => {
+      const rel = { x: p.x - camX, y: p.y - camY, z: p.z - camZ };
+      return project(rotateX(rotateY(rel, -yaw), -pitch));
+    };
+    const blockHalfW = 1.2;
+    const blockZ = 3.5;
+    // Front face
+    const front = [
+      { x: -blockHalfW, y: -3, z: blockZ },
+      { x: blockHalfW, y: -3, z: blockZ },
+      { x: blockHalfW, y: 2.5, z: blockZ },
+      { x: -blockHalfW, y: 2.5, z: blockZ },
+    ].map(transform);
+    if (front.every((p) => p)) {
+      ctx.beginPath();
+      ctx.moveTo(front[0]!.sx, front[0]!.sy);
+      for (let i = 1; i < 4; i++) ctx.lineTo(front[i]!.sx, front[i]!.sy);
+      ctx.closePath();
+      ctx.fillStyle = "#0c0c14";
+      ctx.fill();
+      ctx.strokeStyle = "rgba(91,184,212,0.4)";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      // Horizontal stripes for texture
+      ctx.strokeStyle = "rgba(255,255,255,0.04)";
+      ctx.lineWidth = 1;
+      for (let y = -3; y <= 2.5; y += 0.4) {
+        const a = transform({ x: -blockHalfW, y, z: blockZ });
+        const b = transform({ x: blockHalfW, y, z: blockZ });
+        if (a && b) { ctx.beginPath(); ctx.moveTo(a.sx, a.sy); ctx.lineTo(b.sx, b.sy); ctx.stroke(); }
+      }
+    }
+    // Top edge highlight
+    const topEdge = [
+      { x: -blockHalfW, y: 2.5, z: blockZ },
+      { x: blockHalfW, y: 2.5, z: blockZ },
+    ].map(transform);
+    if (topEdge.every((p) => p)) {
+      ctx.strokeStyle = "rgba(167,139,250,0.4)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(topEdge[0]!.sx, topEdge[0]!.sy);
+      ctx.lineTo(topEdge[1]!.sx, topEdge[1]!.sy);
+      ctx.stroke();
     }
   }
 
@@ -901,58 +1040,45 @@ function GameCanvas({ mode, settings, onExit }: { mode: Mode; settings: Settings
     void peek; void camZ; void camY;
   }
 
-  // Foreground cover wall - drawn after targets to occlude
+  // Single center cover block. Player peeks AROUND the corner.
+  // When peek=+1 (D), player's body shifts right so they can see past the right edge.
+  // When peek=-1 (A), player shifts left, sees past left edge.
   function drawCoverWallForeground(ctx: CanvasRenderingContext2D, peek: number) {
-    // Project the cover wall at z=4.5 (in front of player, behind targets which are at z=12).
-    // Wait - targets are at z=12 in world, camera at z=-2.5 -> camera-space z=14.5
-    // Cover at world z=4 -> camera-space z=6.5, in front of targets. Good.
+    // Cover block in world space, centered at x=0 (NOT shifted by peek).
+    // The PLAYER shifts left/right via camera offset, so peeking around the edge happens naturally.
+    // We compute the camera's x position from peek (handled in drawPeekScene + hit tests).
+    const camXOffset = peek * 1.6; // camera shifts horizontally
     const camZ = -2.5, camY = 0.5;
-    const wallZ = 4 - camZ; // 6.5
-    // Lean: when peeking right (peek=+1), the visible slit shifts right by adjusting where the wall ENDS on left
-    // Slit center in world X (we model the slit by drawing the wall as two slabs)
-    const baseGapHalf = 0.3;
-    const peekGapHalf = baseGapHalf + Math.abs(peek) * 1.0;
-    const slitCenterX = -peek * 1.8; // wall shifts opposite to lean
+    const wallZ = 3.5 - camZ; // 6.0
 
-    const leftSlab = [
-      { x: -10, y: -3 - camY, z: wallZ },
-      { x: slitCenterX - peekGapHalf, y: -3 - camY, z: wallZ },
-      { x: slitCenterX - peekGapHalf, y: 4 - camY, z: wallZ },
-      { x: -10, y: 4 - camY, z: wallZ },
+    // Single cover block: 2.4 units wide, full height
+    const blockHalfW = 1.2;
+    const corners = [
+      { x: -blockHalfW - camXOffset, y: -3 - camY, z: wallZ },
+      { x: blockHalfW - camXOffset, y: -3 - camY, z: wallZ },
+      { x: blockHalfW - camXOffset, y: 4 - camY, z: wallZ },
+      { x: -blockHalfW - camXOffset, y: 4 - camY, z: wallZ },
     ];
-    const rightSlab = [
-      { x: slitCenterX + peekGapHalf, y: -3 - camY, z: wallZ },
-      { x: 10, y: -3 - camY, z: wallZ },
-      { x: 10, y: 4 - camY, z: wallZ },
-      { x: slitCenterX + peekGapHalf, y: 4 - camY, z: wallZ },
-    ];
+    const p = corners.map(project);
+    if (p.every((x) => x)) {
+      ctx.beginPath();
+      ctx.moveTo(p[0]!.sx, p[0]!.sy);
+      for (let i = 1; i < 4; i++) ctx.lineTo(p[i]!.sx, p[i]!.sy);
+      ctx.closePath();
+      ctx.fillStyle = "#0c0c14";
+      ctx.fill();
+      ctx.strokeStyle = "rgba(91,184,212,0.3)";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
 
-    [leftSlab, rightSlab].forEach((slab) => {
-      const p = slab.map(project);
-      if (p.every((x) => x)) {
-        ctx.beginPath();
-        ctx.moveTo(p[0]!.sx, p[0]!.sy);
-        for (let i = 1; i < 4; i++) ctx.lineTo(p[i]!.sx, p[i]!.sy);
-        ctx.closePath();
-        ctx.fillStyle = "#0c0c14";
-        ctx.fill();
-        // Edge accent
-        ctx.strokeStyle = "rgba(91,184,212,0.3)";
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-      }
-    });
-
-    // Texture lines on the wall
-    ctx.strokeStyle = "rgba(255,255,255,0.03)";
+    // Wall texture lines (horizontal stripes for concrete feel)
+    ctx.strokeStyle = "rgba(255,255,255,0.04)";
     ctx.lineWidth = 1;
-    for (let y = -3; y < 4; y += 0.4) {
-      const a = project({ x: -10, y: y - camY, z: wallZ });
-      const b = project({ x: slitCenterX - peekGapHalf, y: y - camY, z: wallZ });
-      const c = project({ x: slitCenterX + peekGapHalf, y: y - camY, z: wallZ });
-      const d = project({ x: 10, y: y - camY, z: wallZ });
+    for (let y = -3; y < 4; y += 0.35) {
+      const a = project({ x: -blockHalfW - camXOffset, y: y - camY, z: wallZ });
+      const b = project({ x: blockHalfW - camXOffset, y: y - camY, z: wallZ });
       if (a && b) { ctx.beginPath(); ctx.moveTo(a.sx, a.sy); ctx.lineTo(b.sx, b.sy); ctx.stroke(); }
-      if (c && d) { ctx.beginPath(); ctx.moveTo(c.sx, c.sy); ctx.lineTo(d.sx, d.sy); ctx.stroke(); }
     }
   }
 
