@@ -277,6 +277,8 @@ function GameCanvas({ mode, settings, onExit }: { mode: Mode; settings: Settings
 
   // First-person camera: yaw (left/right) and pitch (up/down) in radians
   const camRef = useRef({ yaw: 0, pitch: 0 });
+  // Audio context for shoot/hit sounds
+  const audioCtxRef = useRef<AudioContext | null>(null);
   // Recoil applied to view (pulls camera up + slight horiz spread)
   const recoilRef = useRef({ yaw: 0, pitch: 0 });
   // Camera shake amplitude
@@ -314,6 +316,16 @@ function GameCanvas({ mode, settings, onExit }: { mode: Mode; settings: Settings
     } catch {}
   }, []);
 
+  // Cleanup audio context on unmount
+  useEffect(() => {
+    return () => {
+      if (audioCtxRef.current) {
+        try { audioCtxRef.current.close(); } catch {}
+        audioCtxRef.current = null;
+      }
+    };
+  }, []);
+
   const saveHighScore = useCallback((m: Mode, value: number, betterIsLower: boolean) => {
     setHighScores((prev) => {
       const current = prev[m];
@@ -325,6 +337,75 @@ function GameCanvas({ mode, settings, onExit }: { mode: Mode; settings: Settings
       return next;
     });
   }, []);
+
+  // ===== Audio =====
+  function ensureAudio() {
+    if (typeof window === "undefined") return null;
+    if (!audioCtxRef.current) {
+      const Ctor = (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext);
+      try { audioCtxRef.current = new Ctor(); } catch { return null; }
+    }
+    return audioCtxRef.current;
+  }
+
+  function playShoot() {
+    const ctx = ensureAudio();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    // Punchy gunshot: noise burst through lowpass with steep envelope, plus low thump
+    const bufLen = Math.floor(ctx.sampleRate * 0.15);
+    const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < bufLen; i++) data[i] = (Math.random() * 2 - 1);
+    const noise = ctx.createBufferSource();
+    noise.buffer = buf;
+    const lp = ctx.createBiquadFilter();
+    lp.type = "lowpass";
+    lp.frequency.setValueAtTime(2400, now);
+    lp.frequency.exponentialRampToValueAtTime(400, now + 0.12);
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.45, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
+    noise.connect(lp); lp.connect(gain); gain.connect(ctx.destination);
+    noise.start(now); noise.stop(now + 0.15);
+
+    // Sub thump
+    const osc = ctx.createOscillator();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(120, now);
+    osc.frequency.exponentialRampToValueAtTime(40, now + 0.1);
+    const og = ctx.createGain();
+    og.gain.setValueAtTime(0.35, now);
+    og.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+    osc.connect(og); og.connect(ctx.destination);
+    osc.start(now); osc.stop(now + 0.12);
+  }
+
+  function playHit() {
+    const ctx = ensureAudio();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    // Crisp metallic ping
+    const osc = ctx.createOscillator();
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(1200, now);
+    osc.frequency.exponentialRampToValueAtTime(2400, now + 0.04);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.25, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+    osc.connect(g); g.connect(ctx.destination);
+    osc.start(now); osc.stop(now + 0.2);
+
+    // Second harmonic for sparkle
+    const o2 = ctx.createOscillator();
+    o2.type = "sine";
+    o2.frequency.setValueAtTime(2800, now);
+    const g2 = ctx.createGain();
+    g2.gain.setValueAtTime(0.12, now);
+    g2.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+    o2.connect(g2); g2.connect(ctx.destination);
+    o2.start(now); o2.stop(now + 0.14);
+  }
 
   const startRound = useCallback(() => {
     statsRef.current = { hits: 0, misses: 0, reactionTimes: [], onTargetMs: 0, totalMs: 0, spawned: 0 };
@@ -396,6 +477,7 @@ function GameCanvas({ mode, settings, onExit }: { mode: Mode; settings: Settings
       shakeRef.current = 8;
       recoilRef.current.pitch -= 0.02 + Math.random() * 0.015;
       recoilRef.current.yaw += (Math.random() - 0.5) * 0.012;
+      playShoot();
 
       // Hit test: project all targets, check distance from center
       const cam = camRef.current;
@@ -422,22 +504,24 @@ function GameCanvas({ mode, settings, onExit }: { mode: Mode; settings: Settings
         const dx = proj.sx - CANVAS_W / 2;
         const dy = proj.sy - CANVAS_H / 2;
         const screenR = t.r * proj.scale;
-        if (dx * dx + dy * dy <= screenR * screenR && r2.z < bestZ) {
+        // Use a generous minimum hitbox so distant/small targets are still clickable.
+        const hitRadius = Math.max(screenR, 18);
+        if (dx * dx + dy * dy <= hitRadius * hitRadius && r2.z < bestZ) {
           // For peek, check if the cover block is between camera and target
           if (mode === "peek") {
-            // Cover block: x in [-1.2, 1.2], y in [-3, 2.5], z = 3.5
-            // Ray from camera (camPos) toward target.pos
+            // Cover block: x in [-1.6, 1.6], y in [-3, 2.5], z = 1.5
             const dirX = t.pos.x - camPos.x;
             const dirY = t.pos.y - camPos.y;
             const dirZ = t.pos.z - camPos.z;
-            const blockZ = 3.5;
+            const blockZ = 1.5;
+            const blockHalfW = 1.6;
             // Parametric t at which ray hits z=blockZ plane
             if (dirZ > 0) {
               const tHit = (blockZ - camPos.z) / dirZ;
               if (tHit > 0 && tHit < 1) {
                 const hitX = camPos.x + dirX * tHit;
                 const hitY = camPos.y + dirY * tHit;
-                if (hitX > -1.2 && hitX < 1.2 && hitY > -3 && hitY < 2.5) {
+                if (hitX > -blockHalfW && hitX < blockHalfW && hitY > -3 && hitY < 2.5) {
                   // Blocked by cover
                   continue;
                 }
@@ -453,6 +537,7 @@ function GameCanvas({ mode, settings, onExit }: { mode: Mode; settings: Settings
         statsRef.current.reactionTimes.push(performance.now() - targets[bestIdx].spawnAt);
         statsRef.current.hits++;
         targets.splice(bestIdx, 1);
+        playHit();
       }
       if (!hit) statsRef.current.misses++;
     };
@@ -592,15 +677,15 @@ function GameCanvas({ mode, settings, onExit }: { mode: Mode; settings: Settings
       peekRef.current.target = target;
       peekRef.current.offset += (target - peekRef.current.offset) * Math.min(1, dt * 0.008);
 
-      // Spawn targets on either side of the lane behind cover.
-      // Targets appear past the corner of the cover block (x=+/-1.2) and pace along the back lane.
+      // Spawn targets behind the cover at moderate depth.
+      // Cover is at z=1.5 in world space (close to player). Targets at z=5-7.
+      // Targets must stay close to the cover line of sight - if you don't peek, you can't see them.
       if (targets.length === 0 && Math.random() < dt / 500) {
-        // Side: -1 = left of cover, +1 = right of cover
         const side = Math.random() > 0.5 ? 1 : -1;
-        const z = 8 + Math.random() * 6; // varied depth
-        // Spawn just past the cover edge, then strafe outward (away from cover)
-        const startX = side * (2.0 + Math.random() * 1.5);
-        const speed = (1.5 + Math.random() * 1.2) * side; // strafe outward
+        const z = 5 + Math.random() * 2.5;
+        // Spawn close to the cover edge so peeking is required
+        const startX = side * (1.6 + Math.random() * 0.8);
+        const speed = (1.2 + Math.random() * 0.8) * side;
         targets.push({
           pos: { x: startX, y: 0.2 + (Math.random() - 0.5) * 0.6, z },
           vel: { x: speed, y: 0, z: 0 },
@@ -610,11 +695,10 @@ function GameCanvas({ mode, settings, onExit }: { mode: Mode; settings: Settings
         });
         stats.spawned++;
       }
-      // Move targets
       for (let i = targets.length - 1; i >= 0; i--) {
         const t = targets[i];
         t.pos.x += (t.vel?.x ?? 0) * dt / 1000;
-        if (Math.abs(t.pos.x) > 10 || now - t.spawnAt > (t.lifeMs ?? 3500)) {
+        if (Math.abs(t.pos.x) > 6 || now - t.spawnAt > (t.lifeMs ?? 3500)) {
           targets.splice(i, 1);
         }
       }
@@ -1002,8 +1086,8 @@ function GameCanvas({ mode, settings, onExit }: { mode: Mode; settings: Settings
       const rel = { x: p.x - camX, y: p.y - camY, z: p.z - camZ };
       return project(rotateX(rotateY(rel, -yaw), -pitch));
     };
-    const blockHalfW = 1.2;
-    const blockZ = 3.5;
+    const blockHalfW = 1.6;
+    const blockZ = 1.5;
     // Front face
     const front = [
       { x: -blockHalfW, y: -3, z: blockZ },
