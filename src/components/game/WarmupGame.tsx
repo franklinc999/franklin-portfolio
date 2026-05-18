@@ -329,7 +329,7 @@ function GameCanvas({ mode, settings, onExit }: { mode: Mode; settings: Settings
       const deg = degPerCountRef.current;
       // Mouse right = view turns right (yaw decreases in our convention so world rotates left)
       camRef.current.yaw -= (e.movementX * deg * Math.PI) / 180;
-      camRef.current.pitch -= (e.movementY * deg * Math.PI) / 180;
+      camRef.current.pitch += (e.movementY * deg * Math.PI) / 180;
       camRef.current.pitch = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, camRef.current.pitch));
     };
 
