@@ -16,8 +16,14 @@ Usage:
 Requires: pip install -r requirements.txt  (optional: pillow-heif for .HEIC)
 and ffprobe (brew install ffmpeg).
 """
+import os as _os
+
+_os.environ.setdefault("GLOG_minloglevel", "2")  # keep mediapipe quiet
+_os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "3")
+
 import argparse
 import datetime as dt
+import hashlib
 import html
 import json
 import os
@@ -95,25 +101,102 @@ def photo_date(path, img):
 
 
 # ---------------------------------------------------------------- scoring
+MODEL_URL = "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task"
+MODEL_PATH = Path(__file__).parent / "models" / "face_landmarker.task"
+_LM = None
+
+
+def ensure_model():
+    """fetch the MediaPipe model file (no mediapipe import, safe before forking workers)"""
+    if MODEL_PATH.exists():
+        return
+    try:
+        import urllib.request
+
+        MODEL_PATH.parent.mkdir(exist_ok=True)
+        tmp = MODEL_PATH.with_suffix(".part")
+        urllib.request.urlretrieve(MODEL_URL, tmp)
+        tmp.rename(MODEL_PATH)
+    except Exception as e:
+        print(f"(could not download face model: {e})", file=sys.stderr)
+
+
+def _landmarker():
+    """MediaPipe Face Landmarker: finds up to 4 faces and gives a 0..1 smile score per face.
+    Much better than Haar cascades on real phone photos. Returns None if mediapipe isn't usable."""
+    global _LM
+    if _LM is None:
+        try:
+            import mediapipe as mp  # noqa: F401
+            from mediapipe.tasks import python as mpt
+            from mediapipe.tasks.python import vision
+
+            ensure_model()
+            opts = vision.FaceLandmarkerOptions(
+                base_options=mpt.BaseOptions(model_asset_path=str(MODEL_PATH)),
+                output_face_blendshapes=True, num_faces=4, min_face_detection_confidence=0.5,
+                running_mode=vision.RunningMode.IMAGE,
+            )
+            _LM = vision.FaceLandmarker.create_from_options(opts)
+        except Exception as e:  # pragma: no cover
+            print(f"(mediapipe unavailable, falling back to Haar: {e})", file=sys.stderr)
+            _LM = False
+    return _LM or None
+
+
+def faces_mediapipe(lm, small_bgr):
+    import mediapipe as mp
+
+    rgb = cv2.cvtColor(small_bgr, cv2.COLOR_BGR2RGB)
+    r = lm.detect(mp.Image(image_format=mp.ImageFormat.SRGB, data=np.ascontiguousarray(rgb)))
+    n = len(r.face_landmarks)
+    area, smiles = 0.0, 0.0
+    for pts, bs in zip(r.face_landmarks, r.face_blendshapes or [[]] * n):
+        xs = [p.x for p in pts]
+        ys = [p.y for p in pts]
+        area = max(area, (max(xs) - min(xs)) * (max(ys) - min(ys)))
+        d = {c.category_name: c.score for c in bs}
+        smiles += (d.get("mouthSmileLeft", 0) + d.get("mouthSmileRight", 0)) / 2  # 0..1 per face
+    return n, area, smiles
+
+
+def read_frame(cap, path, t):
+    """OpenCV first; if it can't decode (some iPhone HEVC), ask ffmpeg for the frame."""
+    cap.set(cv2.CAP_PROP_POS_MSEC, t * 1000)
+    ok, frame = cap.read()
+    if ok:
+        return frame
+    try:
+        png = subprocess.run(["ffmpeg", "-v", "error", "-ss", f"{t:.2f}", "-i", str(path), "-frames:v", "1",
+                              "-f", "image2pipe", "-vcodec", "png", "-"], capture_output=True, timeout=60).stdout
+        if png:
+            return cv2.imdecode(np.frombuffer(png, np.uint8), cv2.IMREAD_COLOR)
+    except Exception:
+        pass
+    return None
+
+
 def frame_metrics(bgr):
     """Return dict of raw metrics for one frame (BGR uint8)."""
-    face_c, smile_c = _cascades()
     h, w = bgr.shape[:2]
-    scale = 480.0 / max(h, w)
+    scale = 640.0 / max(h, w)
     small = cv2.resize(bgr, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_AREA)
     gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
     sharp = float(cv2.Laplacian(gray, cv2.CV_64F).var())
     bright = float(gray.mean()) / 255.0
     sat = float(cv2.cvtColor(small, cv2.COLOR_BGR2HSV)[..., 1].mean()) / 255.0
-    faces = face_c.detectMultiScale(gray, scaleFactor=1.15, minNeighbors=5, minSize=(28, 28))
-    n_faces = len(faces)
-    face_area = 0.0
-    smiles = 0
-    for (x, y, fw, fh) in faces:
-        face_area = max(face_area, (fw * fh) / float(gray.shape[0] * gray.shape[1]))
-        roi = gray[y + fh // 2 : y + fh, x : x + fw]
-        if roi.size and len(smile_c.detectMultiScale(roi, scaleFactor=1.7, minNeighbors=18, minSize=(12, 12))):
-            smiles += 1
+    lm = _landmarker()
+    if lm:
+        n_faces, face_area, smiles = faces_mediapipe(lm, small)
+    else:
+        face_c, smile_c = _cascades()
+        faces = face_c.detectMultiScale(gray, scaleFactor=1.15, minNeighbors=5, minSize=(28, 28))
+        n_faces, face_area, smiles = len(faces), 0.0, 0.0
+        for (x, y, fw, fh) in faces:
+            face_area = max(face_area, (fw * fh) / float(gray.shape[0] * gray.shape[1]))
+            roi = gray[y + fh // 2 : y + fh, x : x + fw]
+            if roi.size and len(smile_c.detectMultiScale(roi, scaleFactor=1.7, minNeighbors=18, minSize=(12, 12))):
+                smiles += 1.0
     return {"sharp": sharp, "bright": bright, "sat": sat, "faces": n_faces, "face_area": face_area, "smiles": smiles, "gray": gray}
 
 
@@ -123,13 +206,38 @@ def score(m, motion=None):
     faces = min(1.0, m["faces"] / 2.0)  # two people in frame is the sweet spot
     closeness = min(1.0, m["face_area"] * 12)
     smile = min(1.0, m["smiles"] / 2.0)
-    s = 0.25 * faces + 0.12 * closeness + 0.2 * smile + 0.2 * sharp_n + 0.13 * exposure + 0.05 * m["sat"]
+    s = 0.22 * faces + 0.1 * closeness + 0.28 * smile + 0.2 * sharp_n + 0.15 * exposure + 0.05 * m["sat"]
     if motion is not None:
         # a little motion is alive; a lot is shaky
         s += 0.05 * (1.0 - abs(min(motion, 0.2) - 0.06) / 0.14)
         if motion > 0.25:
             s -= 0.15
     return float(max(0.0, s))
+
+
+def sidecar_persons(path):
+    """People Apple Photos recognized, from an osxphotos `--sidecar json` file next to the media."""
+    for sc in (Path(str(path) + ".json"), path.with_suffix(".json")):
+        if sc.exists():
+            try:
+                found = set()
+
+                def walk(o):
+                    if isinstance(o, dict):
+                        for k, v in o.items():
+                            if "PersonInImage" in k or k.lower() in ("persons", "regionpersondisplayname"):
+                                found.update([v] if isinstance(v, str) else [x for x in v if isinstance(x, str)])
+                            else:
+                                walk(v)
+                    elif isinstance(o, list):
+                        for x in o:
+                            walk(x)
+
+                walk(json.loads(sc.read_text()))
+                return sorted(found)
+            except Exception:
+                return []
+    return []
 
 
 def dhash(gray):
@@ -144,7 +252,8 @@ def analyze(path_str, thumbs_dir, clip_len, step):
     ext = path.suffix.lower()
     rec = {"path": str(path), "name": path.name, "type": "video" if ext in VIDEO_EXT else "photo"}
     try:
-        thumb = Path(thumbs_dir) / (str(abs(hash(str(path)))) + ".jpg")
+        thumb = Path(thumbs_dir) / (hashlib.md5(str(path).encode()).hexdigest()[:16] + ".jpg")
+        rec["persons"] = sidecar_persons(path)
         if rec["type"] == "photo":
             img = Image.open(path)
             d = photo_date(path, img)
@@ -161,15 +270,14 @@ def analyze(path_str, thumbs_dir, clip_len, step):
             cap = cv2.VideoCapture(str(path))
             fps = cap.get(cv2.CAP_PROP_FPS) or 30
             n = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
-            dur = n / fps if n else float((meta.get("format") or {}).get("duration") or 0)
+            dur = float((meta.get("format") or {}).get("duration") or 0) or (n / fps if n else 0)
             samples = []
             prev = None
             t = 0.25
             best_frame = None
             while t < max(dur - 0.1, 0.3):
-                cap.set(cv2.CAP_PROP_POS_MSEC, t * 1000)
-                ok, frame = cap.read()
-                if not ok:
+                frame = read_frame(cap, path, t)
+                if frame is None:
                     break
                 m = frame_metrics(frame)
                 motion = float(np.mean(cv2.absdiff(m["gray"], prev)) / 255.0) if prev is not None and prev.shape == m["gray"].shape else 0.05
@@ -195,7 +303,7 @@ def analyze(path_str, thumbs_dir, clip_len, step):
             t_out = min(dur, t_in + clip_len)
             rec.update(
                 date=d, duration=round(dur, 2), score=best_v, t_in=round(t_in, 2), t_out=round(t_out, 2),
-                faces=max(s[2] for s in samples), smiles=sum(s[3] for s in samples),
+                faces=max(s[2] for s in samples), smiles=max(s[3] for s in samples),
                 motion=float(np.mean([s[4] for s in samples])), hash=dhash(best_frame[2]),
             )
             # thumbnail from best moment
@@ -262,6 +370,10 @@ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.st
 </script>"""
 
 
+def label_for(d):
+    return "&hearts; both of you" if d.get("together") else f'{d.get("faces", 0)} faces'
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("folders", nargs="+")
@@ -269,6 +381,8 @@ def main():
     ap.add_argument("--out", default="./scan")
     ap.add_argument("--clip-len", type=float, default=3.0, help="seconds to take from each video")
     ap.add_argument("--step", type=float, default=0.5, help="seconds between sampled frames")
+    ap.add_argument("--people", nargs="*", default=["Michelle", "Franklin"],
+                    help="names as they appear in Photos > People (read from osxphotos json sidecars)")
     ap.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 2) - 1))
     a = ap.parse_args()
 
@@ -288,6 +402,7 @@ def main():
         sys.exit("no photos/videos found")
     if not HEIF:
         print("note: pip install pillow-heif to include .HEIC photos", file=sys.stderr)
+    ensure_model()  # download the face model once, before the worker processes start
     print(f"scanning {len(files)} files with {a.workers} workers...")
 
     recs = []
@@ -299,6 +414,13 @@ def main():
                 print(f"  {i}/{len(files)}", end="\r")
     print()
     recs = [r for r in recs if r.get("date") and r["date"] >= since and "error" not in r]
+    # Apple Photos knows who is who: both of you in frame beats everything else
+    names = [n.lower() for n in a.people]
+    for r in recs:
+        have = {p.lower() for p in r.get("persons", [])}
+        hits = sum(1 for n in names if any(n in h for h in have))
+        r["together"] = hits >= 2
+        r["score"] += 0.3 if hits >= 2 else 0.12 * hits
     before = len(recs)
     recs = dedupe(recs)
     recs.sort(key=lambda r: r["date"])
@@ -309,8 +431,9 @@ def main():
     months = sorted({r["date"].strftime("%Y-%m") for r in recs})
     print(f"\n{before} files since {a.since} ({before - len(recs)} near-duplicates removed)")
     print(f"  photos: {photos}   videos: {videos}   months with memories: {len(months)}")
-    print(f"  with both of you in frame (2+ faces): {sum(1 for r in recs if r.get('faces', 0) >= 2)}")
-    print(f"  with someone smiling: {sum(1 for r in recs if r.get('smiles', 0) > 0)}")
+    print(f"  tagged by Photos with both of you: {sum(1 for r in recs if r.get('together'))}")
+    print(f"  2+ faces in frame: {sum(1 for r in recs if r.get('faces', 0) >= 2)}")
+    print(f"  with someone smiling: {sum(1 for r in recs if r.get('smiles', 0) > 0.4)}")
 
     data = []
     for r in recs:
@@ -332,7 +455,7 @@ def main():
             badge = f'<span class=b>{"&#9654; " + str(round(d.get("t_out", 0) - d.get("t_in", 0), 1)) + "s" if d["type"] == "video" else ""} {int(d["score"] * 100)}</span>'
             cards.append(
                 f'<div class=c data-i={i} onclick="t(this)">{badge}<img loading=lazy src="{html.escape(d.get("thumb", ""))}">'
-                f'<div class=m>{d["date"][:10]} &middot; {d.get("faces", 0)} faces</div></div>'
+                f'<div class=m>{d["date"][:10]} &middot; {label_for(d)}</div></div>'
             )
         label = dt.datetime.strptime(mo, "%Y-%m").strftime("%B %Y").upper()
         sections.append(f"<h2>{label}</h2><div class=grid>{''.join(cards)}</div>")

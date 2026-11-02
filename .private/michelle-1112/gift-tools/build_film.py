@@ -77,24 +77,27 @@ def stamp_text(date_str):
     return f"'{d:%y} {d.month:>2} {d.day:>2}"
 
 
-def look_chain(W, H, i, fx, stamp, caption_file, fonts, grain, strength):
+def look_chain(W, H, i, fx, stamp, caption_file, fonts, grain, strength, lut=None):
     """the shared grade + texture chain applied after scaling to WxH"""
     f = []
+    if lut:
+        f.append(f"lut3d=file='{esc_path(lut)}':interp=tetrahedral")
     if fx == "step":
         # step-print: drop to 8fps, hold frames, then smear neighbours together
         f += [f"fps=8", f"fps={FPS}", "tmix=frames=4:weights='1 2 3 4'"]
     k = strength
     f += [
         # palette: lift blacks, push greens into shadows, amber into highlights
-        f"curves=r='0/0.04 0.5/{0.5 + 0.04 * k:.3f} 1/0.98':g='0/0.06 0.5/0.5 1/0.95':b='0/0.05 0.5/{0.5 - 0.06 * k:.3f} 1/0.86'",
-        f"colorbalance=rs={-0.05 * k:.3f}:gs={0.04 * k:.3f}:bs={0.02 * k:.3f}:rh={0.08 * k:.3f}:bh={-0.08 * k:.3f}",
-        f"eq=saturation={1 + 0.12 * k:.3f}:contrast={1 + 0.05 * k:.3f}",
+        # gently lifted, green-leaning blacks; creamy amber highlights; restrained magenta
+        f"curves=r='0/0.02 0.5/{0.5 + 0.015 * k:.3f} 1/0.98':g='0/0.045 0.5/{0.5 + 0.015 * k:.3f} 1/0.97':b='0/0.04 0.5/{0.5 - 0.05 * k:.3f} 1/0.88'",
+        f"colorbalance=rs={-0.05 * k:.3f}:gs={0.04 * k:.3f}:bs={0.01 * k:.3f}:rm={-0.01 * k:.3f}:gm={0.015 * k:.3f}:rh={0.02 * k:.3f}:gh={0.025 * k:.3f}:bh={-0.05 * k:.3f}",
+        f"eq=saturation={1 + 0.08 * k:.3f}:contrast={1 + 0.1 * k:.3f}:gamma=0.98",
     ]
     chain = ",".join(f)
     # halation: blur only the brights, tint red, screen it back on
     hal = (
-        f"split[base{i}][hi{i}];[hi{i}]curves=all='0/0 0.72/0 1/1',gblur=sigma={W / 40:.1f},"
-        f"colorchannelmixer=rr=1:gg=0.35:bb=0.2[h{i}];[base{i}][h{i}]blend=all_mode=screen:all_opacity={0.4 * k:.2f}"
+        f"format=gbrp,split[base{i}][hi{i}];[hi{i}]curves=all='0/0 0.9/0 1/1',gblur=sigma={W / 50:.1f},"
+        f"colorchannelmixer=rr=1:gg=0.42:bb=0.15[h{i}];[base{i}][h{i}]blend=all_mode=screen:all_opacity={0.35 * k:.2f},format=yuv420p"
     )
     weave = (
         f"scale={int(W * 1.02) // 2 * 2}:{int(H * 1.02) // 2 * 2},"
@@ -129,10 +132,10 @@ def render_clip(i, c, W, H, tmp, fonts, a):
         cap = os.path.join(tmp, f"cap{i:03d}.txt")
         Path(cap).write_text(c["caption"])
     stamp = stamp_text(c.get("date", "")) if a.stamp else None
-    chain, hal, tail = look_chain(W, H, i, c.get("fx", ""), stamp, cap, fonts, a.grain, a.strength)
+    chain, hal, tail = look_chain(W, H, i, c.get("fx", ""), stamp, cap, fonts, a.grain, a.strength, a.lut)
 
     if c["type"] == "photo":
-        dur = float(c.get("duration", a.photo_len))
+        dur = float(c.get("_planned") or c.get("duration", a.photo_len))
         frames = int(dur * FPS)
         # slow push in, alternating direction, rendered at 2x then downscaled to avoid zoompan jitter
         zin = i % 2 == 0
@@ -149,6 +152,13 @@ def render_clip(i, c, W, H, tmp, fonts, a):
         t_in = float(c.get("t_in", 0) or 0)
         t_out = float(c.get("t_out", t_in + 3) or t_in + 3)
         dur = max(0.5, t_out - t_in)
+        if c.get("_planned"):
+            src_len = float((probe(path).get("format") or {}).get("duration") or 0) or (t_in + dur)
+            speed0 = float(c.get("speed", 1.0))
+            dur = c["_planned"] * speed0  # source seconds needed
+            if t_in + dur > src_len:  # not enough footage after t_in: slide the window back
+                t_in = max(0.0, src_len - dur)
+                dur = min(dur, src_len - t_in)
         inputs = ["-ss", f"{t_in}", "-t", f"{dur}", "-i", path]
         audio = ["-f", "lavfi", "-t", f"{dur}", "-i", "anullsrc=r=48000:cl=stereo"]
         speed = float(c.get("speed", 1.0))
@@ -189,6 +199,47 @@ def card(i, text, sub, dur, W, H, tmp, fonts, a):
          "-i", "anullsrc=r=48000:cl=stereo", "-t", f"{dur}", "-c:v", "libx264", "-preset", a.preset, "-crf", "17",
          "-c:a", "aac", "-ar", "48000", "-ac", "2", out])
     return out, dur
+
+
+def beat_grid(music, every):
+    """Cut points from the song. Prefers Beat This! (downbeats), falls back to librosa."""
+    try:
+        from beat_this.inference import File2Beats  # pip install beat-this
+
+        beats, downbeats = File2Beats(checkpoint_path="final0", device="cpu", dbn=False)(music)
+        grid = list(downbeats) if every == 4 and len(downbeats) > 4 else list(beats)[::every]
+        print(f"  beat grid from Beat This!: {len(grid)} cut points")
+        return [float(x) for x in grid]
+    except Exception:
+        pass
+    try:
+        import librosa
+
+        y, sr = librosa.load(music, sr=22050, mono=True)
+        tempo, beats = librosa.beat.beat_track(y=y, sr=sr, units="time")
+        grid = [float(x) for x in list(beats)[::every]]
+        bpm = float(tempo[0]) if hasattr(tempo, "__len__") else float(tempo)
+        print(f"  beat grid from librosa (~{bpm:.0f} bpm): {len(grid)} cut points")
+        return grid
+    except Exception as e:
+        print(f"  (no beat sync: {e}; pip install librosa)", file=sys.stderr)
+        return []
+
+
+def plan_durations(picks, grid, xf, title_len, min_len, max_len):
+    """Give each clip a duration so every cut lands on the beat grid."""
+    if not grid:
+        return None
+    t = title_len - xf  # start of first clip on the output timeline
+    out = []
+    for c in picks:
+        want = c.get("duration") or (float(c.get("t_out", 3)) - float(c.get("t_in", 0)) if c["type"] == "video" else None) or 3.0
+        target = t + max(min_len, min(max_len, want))
+        nxt = min((g for g in grid if g >= t + min_len), key=lambda g: abs(g - target), default=None)
+        d = (nxt - t) if nxt and nxt - t <= max_len + 1 else max(min_len, min(max_len, want))
+        out.append(d + xf)
+        t += d
+    return out
 
 
 def probe(path):
@@ -256,6 +307,8 @@ def main():
     ap.add_argument("--end", default="to year three")
     ap.add_argument("--stamp-font")
     ap.add_argument("--serif-font")
+    ap.add_argument("--lut", help=".cube film LUT, e.g. CineStill 800T (applied before the grade)")
+    ap.add_argument("--beats", type=int, default=4, help="cut every N beats (4 = every bar); 0 disables beat sync")
     ap.add_argument("--preset", default="medium", help="x264 preset (ultrafast for drafts)")
     ap.add_argument("--poster", help="also save a poster jpg (e.g. film-poster.jpg)")
     a = ap.parse_args()
@@ -271,11 +324,24 @@ def main():
         print("warning: font not found, pass --stamp-font / --serif-font. Missing:",
               [k for k, v in fonts.items() if not v], file=sys.stderr)
 
+    title_len = 3.5
+    if a.music and a.beats:
+        grid = beat_grid(a.music, a.beats)
+        if grid and a.title:
+            # end the title card on the first bar after 3s so the first clip lands on a downbeat
+            first = min((g for g in grid if g >= 3.0), default=None)
+            if first and first < 6:
+                title_len = first + a.xfade
+        plan = plan_durations(picks, grid, a.xfade, title_len if a.title else a.xfade, 1.2, 4.5)
+        if plan:
+            for c, d in zip(picks, plan):
+                c["_planned"] = round(d, 3)
+
     tmp = tempfile.mkdtemp(prefix="film_")
     segs, keep = [], []
     try:
         if a.title:
-            segs.append(card(0, a.title, a.title_sub, 3.5, W, H, tmp, fonts, a))
+            segs.append(card(0, a.title, a.title_sub, title_len, W, H, tmp, fonts, a))
             keep.append(False)
         for i, c in enumerate(picks):
             print(f"  [{i + 1}/{len(picks)}] {Path(c['path']).name}")

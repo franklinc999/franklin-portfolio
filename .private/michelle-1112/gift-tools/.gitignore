@@ -1,7 +1,10 @@
 .venv/
 scan/
 fonts/
+models/
+luts/
 *.mp4
 *.mov
 picks.json
+captions.txt
 __pycache__/

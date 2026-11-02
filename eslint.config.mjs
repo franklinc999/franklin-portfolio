@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // private gift project, has its own tooling
+    ".private/**",
   ]),
 ]);
 

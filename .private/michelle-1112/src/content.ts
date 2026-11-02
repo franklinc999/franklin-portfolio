@@ -1,8 +1,10 @@
 /**
  * EVERYTHING PERSONAL LIVES HERE.
- * Edit this file (and drop media into /public/1112/) and the whole gift updates.
+ * Edit this file (and drop media into /public/media/) and the whole gift updates.
  * Anything in [brackets] is a placeholder for you to replace.
  */
+
+import { generatedMoments, generatedStats } from "./moments.generated";
 
 export type FlowerKind =
   | "rose"
@@ -16,7 +18,7 @@ export type FlowerKind =
 
 export const gift = {
   // --- who ---
-  her: "[Her Name]",
+  her: "Michelle",
   herNickname: "[nickname]",
   me: "Franklin",
 
@@ -38,29 +40,29 @@ export const gift = {
   mirror: {
     /** written in the fog by an invisible finger before she wipes */
     fogMessage: "happy 2 years",
-    /** revealed behind the fog. Put a photo of you two at /public/1112/mirror.jpg (portrait works best) */
-    image: "/1112/mirror.jpg",
+    /** revealed behind the fog. Put a photo of you two at /public/media/mirror.jpg (portrait works best) */
+    image: "media/mirror.jpg",
     underText: "two years of you",
   },
 
   // --- background music (starts after she unlocks, since browsers block autoplay) ---
   music: {
-    src: "/1112/song.mp3",
+    src: "media/song.mp3",
     title: "[our song]",
   },
 
   // --- the film ---
   film: {
     /** export from gift-tools/build_film.py, then drop it here. Keep it under ~90MB for GitHub. */
-    src: "/1112/film.mp4",
-    poster: "/1112/film-poster.jpg",
+    src: "media/film.mp4",
+    poster: "media/film-poster.jpg",
     title: "a film about us",
     subtitle: "shot over 730 days, developed for one",
   },
 
   // --- the letter (the long, honest one; keep the handwritten paper copy as the original) ---
   letter: {
-    greeting: "Dear [Her Name],",
+    greeting: "Dear Michelle,",
     paragraphs: [
       "[Start with a specific memory from the very beginning. The first time you knew. Where you were, what she was wearing, what you were scared to say.]",
       "[Year one: one small moment nobody else would remember. Small and specific beats big and general every time.]",
@@ -72,15 +74,17 @@ export const gift = {
     signature: "Franklin",
   },
 
-  // --- moments (film strip). Photos go in /public/1112/moments/ ---
-  moments: [
-    { date: "2024-11-12", title: "day one", caption: "[where it started]", src: "/1112/moments/01.jpg" },
-    { date: "2025-01-01", title: "[first new year]", caption: "[caption]", src: "/1112/moments/02.jpg" },
-    { date: "2025-05-20", title: "[first trip]", caption: "[caption]", src: "/1112/moments/03.jpg" },
-    { date: "2025-11-12", title: "one year", caption: "[caption]", src: "/1112/moments/04.jpg" },
-    { date: "2026-03-14", title: "[a random tuesday]", caption: "[caption]", src: "/1112/moments/05.jpg" },
-    { date: "2026-08-02", title: "[summer]", caption: "[caption]", src: "/1112/moments/06.jpg" },
-  ],
+  // --- moments (film strip). Photos go in /public/media/moments/ ---
+  moments: generatedMoments.length
+    ? generatedMoments
+    : [
+    { date: "2024-11-12", title: "day one", caption: "[where it started]", src: "media/moments/01.jpg" },
+    { date: "2025-01-01", title: "[first new year]", caption: "[caption]", src: "media/moments/02.jpg" },
+    { date: "2025-05-20", title: "[first trip]", caption: "[caption]", src: "media/moments/03.jpg" },
+    { date: "2025-11-12", title: "one year", caption: "[caption]", src: "media/moments/04.jpg" },
+    { date: "2026-03-14", title: "[a random tuesday]", caption: "[caption]", src: "media/moments/05.jpg" },
+    { date: "2026-08-02", title: "[summer]", caption: "[caption]", src: "media/moments/06.jpg" },
+    ],
 
   // --- bouquet: match this to the real flowers you buy. Tap a flower to read its note. ---
   bouquet: {
@@ -132,9 +136,13 @@ export const gift = {
 
   // --- small stats you can fill in (gift-tools/scan_library.py prints some of these for you) ---
   stats: [
-    { value: "[2,431]", label: "photos of us" },
-    { value: "[37]", label: "restaurants" },
-    { value: "[9]", label: "cities" },
+    ...(generatedStats.length
+      ? generatedStats
+      : [
+          { value: "[2,431]", label: "photos of us" },
+          { value: "[37]", label: "restaurants" },
+          { value: "[9]", label: "cities" },
+        ]),
     { value: "∞", label: "times you stole my hoodie" },
   ],
 

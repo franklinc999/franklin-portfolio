@@ -1,4 +1,3 @@
-"use client";
 
 import { useEffect, useState } from "react";
 import s from "../gift.module.css";
@@ -72,7 +71,7 @@ export function Film({ src, poster, title, subtitle }: { src: string; poster: st
             <div className={s.developing}>
               <div className={s.redLight} />
               <div>STILL DEVELOPING</div>
-              <div style={{ opacity: 0.5, fontSize: 14 }}>drop film.mp4 into /public/1112/</div>
+              <div style={{ opacity: 0.5, fontSize: 14 }}>drop film.mp4 into /public/media/</div>
             </div>
           )}
         </div>

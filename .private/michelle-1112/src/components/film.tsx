@@ -1,4 +1,3 @@
-"use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import s from "../gift.module.css";
@@ -97,7 +96,8 @@ export function useAssetExists(src: string) {
   useEffect(() => {
     let alive = true;
     fetch(src, { method: "HEAD" })
-      .then((r) => alive && setOk(r.ok))
+      // dev servers answer unknown paths with index.html, so a 200 that is HTML means "missing"
+      .then((r) => alive && setOk(r.ok && !(r.headers.get("content-type") || "").includes("text/html")))
       .catch(() => alive && setOk(false));
     return () => {
       alive = false;

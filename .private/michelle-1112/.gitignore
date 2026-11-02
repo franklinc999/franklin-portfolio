@@ -1,0 +1,5 @@
+node_modules/
+dist/
+# personal photos/videos stay on your Mac, not on GitHub
+public/media/*
+!public/media/README.md
