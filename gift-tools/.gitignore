@@ -1,0 +1,7 @@
+.venv/
+scan/
+fonts/
+*.mp4
+*.mov
+picks.json
+__pycache__/
