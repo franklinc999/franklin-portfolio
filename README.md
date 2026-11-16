@@ -50,7 +50,9 @@ The glass is liquid glass, not a blur filter. The ground is there so the glass h
 ## Motion
 
 - The ground drifts, headings ripple in, slabs rise into place on first scroll, a droplet lens follows
-  the cursor over open ground, the marquee follows scroll direction, and the phrase in the hero rolls.
+  the cursor over open ground, and the phrase in the hero rolls.
+- The sticker sheet under the hero is for hands, not eyes: peel a sticker, stick it anywhere on the page
+  or onto the badge. Stickers on the badge ride along with it and are kept in `localStorage`.
 - Pictures drift inside their frames and the glass drawing draws itself as it scrolls into view. Both are
   CSS scroll-driven animations behind `@supports`, so browsers without them simply show the final state.
 - `MotionToggle` (top right) pauses everything that moves on its own, and remembers the choice.
@@ -62,6 +64,11 @@ The glass is liquid glass, not a blur filter. The ground is there so the glass h
 `src/components/lab/` holds the pieces made to be played with: `AgentLine` (a toy pipeline you can
 break), `SensConverter` (mouse sensitivity between shooters), `TeaTimer` (gongfu steeps) and
 `SlabAnatomy` (the glass drawing).
+
+Two things on the site are paper instead of glass, because they are for hands: the sticker sheet
+(`Stickers.tsx`) and the postcard in the contact block (`Postcard.tsx`). The postcard has no backend. Its
+"Send it" link is a `mailto:` built from what was typed, so the message goes out from the visitor's own
+mail app.
 
 ## Fallbacks
 

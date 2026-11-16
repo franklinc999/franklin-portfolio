@@ -107,7 +107,7 @@
 [data-zone="arcade"] {
   --color-text: #fff3ef;
   --color-text-muted: #f1ccd1;
-  --color-text-faint: #dba1ac;
+  --color-text-faint: #efc6cd;
   --color-border: rgba(255, 214, 220, 0.2);
   --color-border-glow: rgba(255, 214, 220, 0.46);
   --color-accent: #ff8d97;
@@ -907,54 +907,170 @@
     opacity: 0;
   }
 
-  /* ---------- Marquee ---------- */
+  /* ---------- Stickers ---------- */
 
-  .marquee {
-    overflow: hidden;
-    border-radius: 0;
-    padding-block: clamp(14px, 1.8vw, 22px);
-    margin-block: clamp(28px, 4vw, 56px) clamp(40px, 6vw, 84px);
+  .stickers {
+    --sticker: clamp(46px, 15vw, 64px);
+    margin-block: clamp(20px, 3vw, 40px) clamp(44px, 6vw, 84px);
+    padding: 16px clamp(16px, 2.4vw, 30px) 18px;
   }
 
-  .marquee-track {
-    display: flex;
-    width: max-content;
-    will-change: transform;
-  }
-
-  .marquee-run {
-    display: flex;
-    flex: none;
+  .stickers-sheet {
+    display: grid;
+    gap: 14px 30px;
     align-items: center;
   }
 
-  .marquee-word {
+  .stickers-note {
     display: flex;
-    align-items: center;
-    gap: 0.7em;
-    padding-left: 0.7em;
-    font-stretch: 125%;
-    font-weight: 800;
-    font-size: clamp(1.75rem, 4.6vw, 3.75rem);
-    line-height: 1;
-    text-transform: uppercase;
-    white-space: nowrap;
-    color: transparent;
-    -webkit-text-stroke: 1.4px color-mix(in srgb, var(--color-text) 88%, transparent);
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px 18px;
   }
 
-  .marquee-word:nth-child(3n + 1) {
-    color: var(--color-text);
-    -webkit-text-stroke: 0;
+  .stickers-note .note {
+    text-shadow: none;
   }
 
-  .marquee-word::after {
+  .stickers-reset {
+    font-size: 0.875rem;
+  }
+
+  .sticker-slots {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    justify-items: center;
+    gap: 10px 4px;
+  }
+
+  .sticker-slots li {
+    position: relative;
+    width: var(--sticker);
+    height: var(--sticker);
+  }
+
+  /* Where a peeled sticker used to be. */
+  .sticker-slots li[data-empty]::after {
     content: "";
-    flex: none;
-    width: 0.24em;
-    height: 0.24em;
+    position: absolute;
+    inset: 14%;
+    border: 1.5px dashed color-mix(in srgb, var(--color-text) 36%, transparent);
     border-radius: 50%;
-    background: var(--signal);
+  }
+
+  .sticker-slots li:nth-child(odd) .sticker {
+    rotate: -6deg;
+  }
+
+  .sticker-slots li:nth-child(even) .sticker {
+    rotate: 5deg;
+  }
+
+  @media (min-width: 760px) {
+    .stickers {
+      --sticker: 76px;
+    }
+
+    .sticker-slots {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 16px;
+    }
+  }
+
+  @media (min-width: 1100px) {
+    .stickers-sheet {
+      grid-template-columns: minmax(0, 13.5rem) 1fr;
+    }
+
+    .stickers-note {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .sticker-slots {
+      flex-wrap: nowrap;
+      justify-content: space-between;
+    }
+  }
+
+  .sticker {
+    display: block;
+    width: var(--sticker, 76px);
+    height: var(--sticker, 76px);
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.42));
+    transition:
+      filter 0.16s ease,
+      scale 0.16s var(--ease-out);
+  }
+
+  .sticker svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .sticker:hover {
+      scale: 1.07;
+      filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.42));
+    }
+  }
+
+  /* Stickers that have left the sheet live in document space, above the page and under the nav. */
+  .sticker-layer {
+    --sticker: 76px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 40;
+    width: 100%;
+    height: 0;
+    pointer-events: none;
+  }
+
+  .sticker-layer .sticker,
+  .badge .sticker {
+    position: absolute;
+    translate: -50% -50%;
+    pointer-events: auto;
+  }
+
+  .badge .sticker {
+    --sticker: 54px;
+    z-index: 2;
+  }
+
+  .sticker[data-lifted] {
+    z-index: 2;
+    cursor: grabbing;
+    scale: 1.16;
+    filter: drop-shadow(0 18px 14px rgba(0, 0, 0, 0.46));
+    transition: none;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .sticker[data-placed] {
+      animation: sticker-press 0.28s var(--ease-out);
+    }
+  }
+
+  @keyframes sticker-press {
+    from {
+      scale: 1.16;
+    }
+    55% {
+      scale: 0.95;
+    }
+    to {
+      scale: 1;
+    }
   }
 
   /* ---------- Badge ---------- */
@@ -1514,6 +1630,24 @@
     background: var(--signal);
   }
 
+  /* The ring a station throws when it catches, leaks or restarts something. */
+  .line-pop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 34px;
+    height: 34px;
+    border: 2.5px solid var(--signal);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .line-pop[data-kind="bad"] {
+    border-color: #ff6272;
+  }
+
   .line-counts {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -1545,6 +1679,20 @@
 
   .line-counts [data-bad] dd {
     color: #ff8a96;
+  }
+
+  /* A count ticks up with a small kick, so the eye finds what just changed. */
+  @media (prefers-reduced-motion: no-preference) {
+    .line-counts dd[data-bump] {
+      transform-origin: left bottom;
+      animation: count-bump 0.24s var(--ease-out);
+    }
+  }
+
+  @keyframes count-bump {
+    from {
+      scale: 1.22;
+    }
   }
 
   .line-controls {
@@ -2075,8 +2223,159 @@
 
   .contact {
     display: grid;
-    gap: 16px;
+    gap: clamp(30px, 4.4vw, 60px);
+    align-items: center;
     padding-block: clamp(28px, 4.4vw, 56px);
+  }
+
+  @media (min-width: 1060px) {
+    .contact {
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    }
+  }
+
+  .contact-copy {
+    display: grid;
+    gap: 16px;
+  }
+
+  @media (min-width: 1060px) {
+    /* Side by side with the postcard, the headline gives up some size. */
+    .contact .display {
+      font-size: clamp(4.25rem, 7.4vw, 7rem);
+    }
+  }
+
+  /* ---------- Postcard ---------- */
+
+  /* Paper, not glass: the one object on the site you write on. */
+  .postcard {
+    --postcard-paper: #f4ecd9;
+    --postcard-ink: #1b2a33;
+    --color-accent: #b8481a;
+    --btn-bg: #10212e;
+    --btn-fg: #fbf6ea;
+    display: grid;
+    gap: 18px 26px;
+    padding: clamp(18px, 2.4vw, 28px);
+    border-radius: 6px;
+    background: var(--postcard-paper);
+    color: var(--postcard-ink);
+    text-shadow: none;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.6),
+      0 2px 6px rgba(0, 0, 0, 0.25),
+      0 28px 52px -24px rgba(0, 0, 0, 0.75);
+  }
+
+  @media (min-width: 620px) {
+    .postcard {
+      grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+      rotate: -1.2deg;
+    }
+
+    .postcard-side {
+      padding-left: 26px;
+      border-left: 1.5px solid color-mix(in srgb, var(--postcard-ink) 24%, transparent);
+    }
+  }
+
+  .postcard-message {
+    display: grid;
+    grid-template-rows: auto 1fr;
+  }
+
+  .postcard-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 650;
+    font-size: 0.9375rem;
+  }
+
+  .postcard textarea {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 12.6rem;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    resize: vertical;
+    font-family: var(--font-hand);
+    font-weight: 500;
+    font-size: 1.5rem;
+    line-height: 2.1rem;
+    color: var(--postcard-ink);
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent calc(2.1rem - 1.5px),
+      color-mix(in srgb, var(--postcard-ink) 20%, transparent) calc(2.1rem - 1.5px),
+      color-mix(in srgb, var(--postcard-ink) 20%, transparent) 2.1rem
+    );
+    background-attachment: local;
+  }
+
+  .postcard textarea::placeholder,
+  .postcard input::placeholder {
+    color: color-mix(in srgb, var(--postcard-ink) 70%, transparent);
+    opacity: 1;
+  }
+
+  .postcard-side {
+    display: grid;
+    gap: 12px;
+    align-content: start;
+  }
+
+  .postcard-stamp {
+    justify-self: end;
+    width: 168px;
+    max-width: 100%;
+    color: var(--postcard-ink);
+  }
+
+  .postcard-to,
+  .postcard-from input {
+    font-family: var(--font-hand);
+    font-weight: 500;
+    font-size: 1.5rem;
+    line-height: 1.9rem;
+    color: var(--postcard-ink);
+  }
+
+  .postcard-to span,
+  .postcard-from span {
+    display: block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: color-mix(in srgb, var(--postcard-ink) 80%, transparent);
+  }
+
+  .postcard-from input {
+    width: 100%;
+    padding: 0 0 3px;
+    border: 0;
+    border-bottom: 1.5px solid color-mix(in srgb, var(--postcard-ink) 42%, transparent);
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .postcard-send {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 14px;
+    margin-top: 6px;
+  }
+
+  .postcard-send p {
+    max-width: 20ch;
+    font-size: 0.8125rem;
+    line-height: 1.35;
+    color: color-mix(in srgb, var(--postcard-ink) 82%, transparent);
   }
 
   .contact-links {

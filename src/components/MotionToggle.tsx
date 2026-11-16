@@ -10,7 +10,7 @@ const KEY = "motion";
 
 /**
  * Pause button for everything that moves on its own: the drifting ground,
- * the marquee, the rolling phrase, the pipeline toy. The choice is remembered.
+ * the rolling phrase, the pipeline toy. The choice is remembered.
  */
 export function MotionToggle() {
   const paused = useMotionPaused();

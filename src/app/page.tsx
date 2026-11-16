@@ -3,9 +3,9 @@ import { Badge } from "@/components/Badge";
 import { FieldHeading } from "@/components/FieldHeading";
 import { Glass, GlassLink } from "@/components/Glass";
 import { HeroName } from "@/components/HeroName";
-import { Marquee } from "@/components/Marquee";
 import { Rotator } from "@/components/Rotator";
 import { Contact, PageWrapper } from "@/components/Shared";
+import { Stickers } from "@/components/Stickers";
 import { SHOTS } from "@/lib/shots";
 import { Zone } from "@/components/Zone";
 import { AgentLine } from "@/components/lab/AgentLine";
@@ -13,8 +13,6 @@ import { SensConverter } from "@/components/lab/SensConverter";
 import { TeaTimer } from "@/components/lab/TeaTimer";
 
 const ROLES = ["a product manager", "a builder of agents", "a maker of small games", "a Valorant and League regular", "a tea person"];
-
-const MARQUEE = ["Product", "Agents", "Shooters", "MOBAs", "Tea", "Pickleball", "Points", "Cooking", "Los Angeles"];
 
 const LOVES = ["Valorant", "League of Legends", "Call of Duty", "Cooking", "Tea", "Pickleball", "Credit card points"];
 
@@ -44,7 +42,7 @@ export default function Home() {
           </div>
         </section>
 
-        <Marquee words={MARQUEE} />
+        <Stickers />
 
         <section className="wrap" aria-labelledby="sides-title">
           <div className="zone-intro">

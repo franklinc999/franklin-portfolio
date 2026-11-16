@@ -174,7 +174,7 @@ vec3 paint(Theme th, vec2 pf, vec3 T, float soft) {
     float d = length(cell) * 22.0;
     float dot_ = 1.0 - smoothstep(size - aa * 0.5, size + aa * 0.5 + 0.6, d);
     // Dots are loud, so frosted glass has to quieten them more than it does lines.
-    float keep = (size + 1.0) / (size + 1.0 + soft * 2.4);
+    float keep = (size + 1.0) / (size + 1.0 + soft * 3.4);
     vec3 dc = mix(th.line, th.hot, smoothstep(0.74, 0.90, h));
     return mix(col, dc, dot_ * keep * (0.34 + 0.46 * h));
   }

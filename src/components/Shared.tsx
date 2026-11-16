@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Mail } from "lucide-react";
 import { FieldHeading } from "@/components/FieldHeading";
+import { Postcard } from "@/components/Postcard";
 import type { ThemeName } from "@/lib/field/shader";
 
 export const EMAIL = "franklinc999@gmail.com";
@@ -49,14 +50,17 @@ export function ContactLinks() {
 export function Contact({ heading = "h2" }: { heading?: "h1" | "h2" }) {
   return (
     <section className="contact" aria-labelledby="contact-title">
-      <FieldHeading as={heading} id="contact-title" className="display">
-        Say hello
-      </FieldHeading>
-      <p className="lede on-map">
-        I like talking about live games, agents that do real work, and anything worth building. I&rsquo;m in Los
-        Angeles.
-      </p>
-      <ContactLinks />
+      <div className="contact-copy">
+        <FieldHeading as={heading} id="contact-title" className="display">
+          Say hello
+        </FieldHeading>
+        <p className="lede on-map">
+          I like talking about live games, agents that do real work, and anything worth building. I&rsquo;m in Los
+          Angeles.
+        </p>
+        <ContactLinks />
+      </div>
+      <Postcard email={EMAIL} />
     </section>
   );
 }

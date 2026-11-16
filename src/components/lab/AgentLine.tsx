@@ -30,6 +30,7 @@ const GAP = 0.05; // closest two tasks may sit
 const SPAWN_EVERY = 1.2;
 const WATCHDOG_AFTER = 3.2; // seconds of silence before the watchdog steps in
 const POOL = 12;
+const POPS = 3;
 
 type Task = {
   t: number;
@@ -54,6 +55,8 @@ export function AgentLine() {
   const tokenRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const stationRefs = useRef<(HTMLLIElement | null)[]>([]);
   const dogRef = useRef<HTMLSpanElement>(null);
+  const popRefs = useRef<(HTMLSpanElement | null)[]>([]);
+  const popNext = useRef(0);
 
   const [counts, setCounts] = useState<Counts>({ shipped: 0, caught: 0, leaked: 0, restarts: 0 });
   const [checker, setChecker] = useState(true);
@@ -94,6 +97,24 @@ export function AgentLine() {
     let spawned = 0;
     let shippedAny = false;
     const active = STATIONS.map(() => 0);
+
+    // A ring that bursts from a station at the moment something happens there.
+    const pop = (station: number, kind: "good" | "bad") => {
+      const el = popRefs.current[popNext.current++ % POPS];
+      if (!el) return;
+      el.style.left = `${STATIONS[station].at * 100}%`;
+      el.dataset.kind = kind;
+      const still = field.reducedMotion;
+      el.animate(
+        still
+          ? [{ opacity: 0.9 }, { opacity: 0 }]
+          : [
+              { transform: "translate(-50%, -50%) scale(0.55)", opacity: 0.95 },
+              { transform: "translate(-50%, -50%) scale(2.3)", opacity: 0 },
+            ],
+        { duration: 480, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
+      );
+    };
 
     const io = new IntersectionObserver(([entry]) => {
       visible = entry.isIntersecting;
@@ -146,6 +167,7 @@ export function AgentLine() {
             task.hold = 0;
             if (station === CHECK && task.bad && c.checker) {
               task.retry = 0;
+              pop(CHECK, "good");
               setCounts((n) => ({ ...n, caught: n.caught + 1 }));
               setNote("The checker caught a bad one and sent it back round.");
               continue;
@@ -176,6 +198,7 @@ export function AgentLine() {
           quiet = 0;
           shippedAny = true;
           if (task.bad) {
+            pop(SHIP, "bad");
             setCounts((n) => ({ ...n, leaked: n.leaked + 1 }));
             setNote("A bad one shipped. Nothing was checking.");
           } else {
@@ -189,6 +212,7 @@ export function AgentLine() {
       if (shippedAny || c.stalled) quiet += dt;
       if (quiet >= WATCHDOG_AFTER && c.stalled) {
         c.stalled = false;
+        pop(WRITE, "good");
         setStalled(false);
         setCounts((n) => ({ ...n, restarts: n.restarts + 1 }));
         setNote("Nothing shipped for three seconds, so the watchdog restarted the writer.");
@@ -291,25 +315,42 @@ export function AgentLine() {
               className="line-token"
             />
           ))}
+          {Array.from({ length: POPS }, (_, i) => (
+            <span
+              key={`pop-${i}`}
+              ref={(el) => {
+                popRefs.current[i] = el;
+              }}
+              className="line-pop"
+            />
+          ))}
         </div>
       </div>
 
       <dl className="line-counts">
         <div>
           <dt>Shipped clean</dt>
-          <dd>{counts.shipped}</dd>
+          <dd key={counts.shipped} data-bump={counts.shipped > 0 ? "" : undefined}>
+            {counts.shipped}
+          </dd>
         </div>
         <div>
           <dt>Caught and fixed</dt>
-          <dd>{counts.caught}</dd>
+          <dd key={counts.caught} data-bump={counts.caught > 0 ? "" : undefined}>
+            {counts.caught}
+          </dd>
         </div>
         <div data-bad={counts.leaked > 0 ? "" : undefined}>
           <dt>Bad ones shipped</dt>
-          <dd>{counts.leaked}</dd>
+          <dd key={counts.leaked} data-bump={counts.leaked > 0 ? "" : undefined}>
+            {counts.leaked}
+          </dd>
         </div>
         <div>
           <dt>Restarts</dt>
-          <dd>{counts.restarts}</dd>
+          <dd key={counts.restarts} data-bump={counts.restarts > 0 ? "" : undefined}>
+            {counts.restarts}
+          </dd>
         </div>
       </dl>
 

@@ -692,7 +692,7 @@ function onPointerMove(e: PointerEvent) {
   pointerY = e.clientY;
   pointerTarget = 1;
   const over = e.target instanceof Element ? e.target : null;
-  pointerBusy = !!over?.closest(".glass, .nav, .motion-toggle, a, button, input, label");
+  pointerBusy = !!over?.closest(".glass, .sticker, .postcard, .nav, .motion-toggle, a, button, input, label");
   dirty = true;
 }
 

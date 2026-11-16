@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { field } from "@/lib/field/engine";
+import { stickerStore } from "@/lib/stickerStore";
 
 const POINTS = 10;
 const GRAVITY = 3400;
@@ -274,6 +275,8 @@ export function Badge() {
 
     const onDown = (e: PointerEvent) => {
       if (e.button !== 0 || !ready) return;
+      // A sticker on the badge is being peeled off; that is not a pull on the badge.
+      if (e.target instanceof Element && e.target.closest(".sticker")) return;
       e.preventDefault();
       card.setPointerCapture(e.pointerId);
       const m = local(e);
@@ -343,6 +346,7 @@ export function Badge() {
       ready = true;
       card.dataset.ready = "";
       stage.dataset.ready = "";
+      stickerStore.setBadge(card);
     };
     if (document.fonts?.status === "loaded") begin();
     else (document.fonts?.ready ?? Promise.resolve()).then(begin, begin);
@@ -350,6 +354,7 @@ export function Badge() {
 
     return () => {
       mounted = false;
+      stickerStore.setBadge(null);
       stop();
       unregister();
       card.removeEventListener("pointerdown", onDown);
