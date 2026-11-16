@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { Glass } from "@/components/Glass";
 import { PageIntro, PageWrapper } from "@/components/Shared";
+import { Zone } from "@/components/Zone";
 
 // The game leans on browser APIs, so it loads on the client only.
 const SignalNoiseGame = dynamic(() => import("@/components/game/SignalNoiseGame"), {
@@ -40,8 +41,9 @@ const KEYS = [
 
 export default function SignalPage() {
   return (
-    <PageWrapper>
-      <PageIntro title="Signal // Noise" back={{ href: "/play", label: "All games" }}>
+    <PageWrapper ground="arcade">
+      <Zone theme="arcade" as="div" className="zone-last">
+      <PageIntro title="Signal // Noise" titleClass="h-pixel" back={{ href: "/play", label: "All games" }}>
         A twin-stick decoder I built to study readability, telegraphing, and tuning loops, the fundamentals that make
         shooters feel good.
       </PageIntro>
@@ -104,6 +106,7 @@ export default function SignalPage() {
           </div>
         </Glass>
       </section>
+    </Zone>
     </PageWrapper>
   );
 }

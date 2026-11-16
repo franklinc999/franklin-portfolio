@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowUpRight, ArrowLeft } from "lucide-react";
 import { Glass } from "@/components/Glass";
 import { PageWrapper } from "@/components/Shared";
+import { Zone } from "@/components/Zone";
 
 const TUNING = [
   { label: "Time-to-kill (matched)", value: "0.4-0.6s", note: "3 hits at 3 dmg, 0.13s cadence, fast enough to feel snappy without trivializing aim" },
@@ -39,7 +40,8 @@ const SECTION = "py-10";
 
 export default function DesignDocPage() {
   return (
-    <PageWrapper>
+    <PageWrapper ground="arcade">
+      <Zone theme="arcade" as="div" className="zone-last">
       <article className="wrap doc-wrap">
         <Glass kind="sheet" className="game-doc">
         <div className="max-w-3xl mx-auto">
@@ -227,6 +229,7 @@ export default function DesignDocPage() {
         </div>
         </Glass>
       </article>
+    </Zone>
     </PageWrapper>
   );
 }

@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { Glass } from "@/components/Glass";
 import { PageIntro, PageWrapper } from "@/components/Shared";
+import { Zone } from "@/components/Zone";
 
 const WarmupGame = dynamic(() => import("@/components/game/WarmupGame"), {
   ssr: false,
@@ -31,8 +32,9 @@ const DRILLS = [
 
 export default function WarmupPage() {
   return (
-    <PageWrapper>
-      <PageIntro title="Range Warmup" back={{ href: "/play", label: "All games" }}>
+    <PageWrapper ground="arcade">
+      <Zone theme="arcade" as="div" className="zone-last">
+      <PageIntro title="Range Warmup" titleClass="h-pixel" back={{ href: "/play", label: "All games" }}>
         A sens-matched warmup for Call of Duty, Valorant, and Apex. Drill reaction time, tracking, and peek mechanics
         before you queue.
       </PageIntro>
@@ -79,6 +81,7 @@ export default function WarmupPage() {
           </div>
         </Glass>
       </section>
+    </Zone>
     </PageWrapper>
   );
 }

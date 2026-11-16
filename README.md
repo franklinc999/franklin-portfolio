@@ -7,37 +7,78 @@ npm install
 npm run dev
 ```
 
+## The idea
+
+One page, five grounds. The home page runs through five zones, and each one has its own terrain, palette
+and headline face, so scrolling feels like crossing a map rather than paging through cards:
+
+| Zone        | Ground                         | Headline face       | Holds                          |
+| ----------- | ------------------------------ | ------------------- | ------------------------------ |
+| `abyss`     | deep-sea contour map           | Archivo, expanded   | the hero, the three sides      |
+| `blueprint` | cobalt drafting grid           | Archivo + mono notes | agents and tools               |
+| `arcade`    | plum halftone dots             | Jersey 25           | games                          |
+| `paper`     | pale tea-green survey map      | Newsreader italic   | the personal part              |
+| `sunset`    | wine-to-orange terrain bands   | Archivo, expanded   | contact                        |
+
+Wrap a section in `<Zone theme="...">` and it gets that ground and that zone's ink. Zones meet along a
+wobbling coastline instead of a straight edge.
+
 ## How the glass works
 
-The look is liquid glass over a contour map. The map is there so the glass has something to bend.
+The glass is liquid glass, not a blur filter. The ground is there so the glass has something to bend.
 
-- `src/lib/field/shader.ts` is one fragment shader. It draws the map and, on top of it, every glass slab:
-  refraction along the bezel, a slight magnification, a little colour fringing, frost toward the centre,
-  a rim light and a shadow. Because the map is procedural, this looks the same in every browser.
-- `src/lib/field/engine.ts` owns the canvas and the frame loop. Glass elements register with it and it
-  passes their rectangles to the shader each frame. The canvas is viewport sized but anchored to the
-  document, so slabs never trail the text that sits on them while scrolling.
+- `src/lib/field/shader.ts` is one fragment shader. It draws the ground for every zone and, on top of it,
+  every glass slab: refraction along the bezel, a slight magnification, a little colour fringing, frost
+  toward the centre, a rim light and a shadow. Because the ground is procedural, this looks the same in
+  every browser. There is a drawing of the optics on `/projects#glass`, generated from the live presets.
+- `src/lib/field/engine.ts` owns the canvas and the frame loop. Glass elements, zones and field-drawn
+  headings register with it and it passes them to the shader each frame. The canvas is viewport sized but
+  anchored to the document, so slabs never trail the text that sits on them while scrolling.
 - `src/components/Glass.tsx` is the component to use. `kind` picks a preset from `PRESETS` in the engine:
   `panel`, `card`, `sheet` (frostier, for long reading), `badge` and `pill`. Tune bezel width, strength,
   frost and tint there.
-- `src/components/HeroName.tsx` hands the headline to the engine, which draws it into the map so the badge
-  can bend the letters. The real `<h1>` stays in the DOM for readers and search.
-- `src/components/Badge.tsx` is the badge on the lanyard: a small verlet rope, draggable.
-- `src/components/Nav.tsx` uses an SVG displacement filter as a `backdrop-filter` in Chromium, so page text
-  bends as it scrolls under the bar. Other browsers get a frosted bar.
+- `src/components/FieldHeading.tsx` and `HeroName.tsx` hand a heading to the engine, which draws it into
+  the ground so glass can bend the letters, and ripples it in the first time it is scrolled to. The real
+  heading stays in the DOM for readers and search. Field-drawn headings should use a `font-stretch` a
+  canvas can name exactly (112.5% or 125%), or the drawn words will not land on their DOM boxes.
+- `src/components/Badge.tsx` is the badge on the lanyard: a verlet rope with an elastic band. It can be
+  pulled anywhere on screen, stretches past its length, and snaps back and swings when let go.
+- `src/components/Nav.tsx` uses an SVG displacement filter as a `backdrop-filter` in Chromium, so page
+  content bends as it scrolls under the bar. Other browsers get a frosted bar. Its ink follows the ground
+  (`useToneUnder`): light over the dark zones, dark over the pale one.
 
-If WebGL 2 is missing, or the context is lost, every slab falls back to a frosted CSS surface and the
-headline is drawn by the DOM again. `prefers-reduced-motion` stops the map drift, the parallax and the
-badge's entrance swing.
+## Motion
+
+- The ground drifts, headings ripple in, slabs rise into place on first scroll, a droplet lens follows
+  the cursor over open ground, the marquee follows scroll direction, and the phrase in the hero rolls.
+- Pictures drift inside their frames and the glass drawing draws itself as it scrolls into view. Both are
+  CSS scroll-driven animations behind `@supports`, so browsers without them simply show the final state.
+- `MotionToggle` (top right) pauses everything that moves on its own, and remembers the choice.
+- `prefers-reduced-motion` removes movement and keeps fades. Use `useMotionOff()` in any new component
+  that animates by itself.
+
+## The small things built into the site
+
+`src/components/lab/` holds the pieces made to be played with: `AgentLine` (a toy pipeline you can
+break), `SensConverter` (mouse sensitivity between shooters), `TeaTimer` (gongfu steeps) and
+`SlabAnatomy` (the glass drawing).
+
+## Fallbacks
+
+If WebGL 2 is missing, or the context is lost, every slab falls back to a frosted CSS surface, each zone
+falls back to a flat colour of its own (see "Fallback grounds" in `globals.css`), and headings are drawn
+by the DOM again.
 
 Add `?still` to any URL for a motionless, full-quality render. The share image
-(`src/app/opengraph-image.jpg`) is a capture of the home page in that mode.
+(`src/app/opengraph-image.jpg`) is a capture of the home page in that mode, and the game screenshots in
+`public/assets/shots` are crops of real frames from the two games.
 
 ## Fonts
 
-Archivo is self-hosted from `src/app/fonts` and used across its width and weight axes. Instrument Serif
-and JetBrains Mono are loaded only on `/play`, because the Signal // Noise canvas draws with them. All
-three are under the SIL Open Font License; the licence files sit next to the fonts.
+All self-hosted from `src/app/fonts`, all under the SIL Open Font License (licence files sit next to the
+fonts): Archivo (the site's voice, used across its width and weight axes), Newsreader (the personal
+zone), Caveat (margin notes), Jersey 25 (the arcade) and JetBrains Mono (figures and annotations).
+Instrument Serif is loaded only on `/play`, because the Signal // Noise canvas draws with it.
 
 ## Deploying
 

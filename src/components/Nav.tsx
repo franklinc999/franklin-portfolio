@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Blocks, BriefcaseBusiness, Gamepad2, House, Mail } from "lucide-react";
 import { buildLensMap, supportsBackdropLens } from "@/lib/field/lens";
 import type { LensMap } from "@/lib/field/lens";
+import { useToneUnder } from "@/lib/useToneUnder";
 
 const ITEMS = [
   { label: "Home", href: "/", icon: House },
@@ -21,7 +22,8 @@ const useIsoLayoutEffect = typeof window === "undefined" ? useEffect : useLayout
  * Floating glass navigation: a capsule at the top on wide screens, a tab bar
  * at the bottom on phones. In Chromium it is a real lens, so page content
  * bends as it scrolls underneath. A second, smaller lens marks the current
- * page and slides to the next one on navigation.
+ * page and slides to the next one on navigation. Its ink follows the ground:
+ * light over the dark zones, dark over the pale one.
  */
 export function Nav() {
   const pathname = usePathname();
@@ -29,6 +31,7 @@ export function Nav() {
   const linkRefs = useRef<(HTMLAnchorElement | null)[]>([]);
   const [lens, setLens] = useState<LensMap | null>(null);
   const [mark, setMark] = useState<{ x: number; w: number } | null>(null);
+  useToneUnder(navRef);
 
   const active = ITEMS.findIndex((item) =>
     item.href === "/" ? pathname === "/" : pathname === item.href || pathname.startsWith(`${item.href}/`),

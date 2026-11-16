@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Mail } from "lucide-react";
-import { Glass } from "@/components/Glass";
+import { FieldHeading } from "@/components/FieldHeading";
+import type { ThemeName } from "@/lib/field/shader";
 
 export const EMAIL = "franklinc999@gmail.com";
 export const LINKEDIN = "https://www.linkedin.com/in/franklinch/";
@@ -44,43 +45,53 @@ export function ContactLinks() {
   );
 }
 
-/** Closing invitation used at the foot of the home page and on /contact. */
+/** Closing invitation. It sits straight on the ground, no slab, so the page ends in the open. */
 export function Contact({ heading = "h2" }: { heading?: "h1" | "h2" }) {
-  const Heading = heading;
   return (
-    <Glass as="section" className="contact" aria-labelledby="contact-title">
-      <Heading id="contact-title" className={heading === "h1" ? "h1" : "h2"}>
+    <section className="contact" aria-labelledby="contact-title">
+      <FieldHeading as={heading} id="contact-title" className="display">
         Say hello
-      </Heading>
-      <p className="lede">
-        I like talking about live ops, store design, agents that do real work, and games worth playing. I&rsquo;m in
-        Los Angeles.
+      </FieldHeading>
+      <p className="lede on-map">
+        I like talking about live games, agents that do real work, and anything worth building. I&rsquo;m in Los
+        Angeles.
       </p>
       <ContactLinks />
-    </Glass>
+    </section>
   );
 }
 
 export function Footer() {
   return (
     <footer className="footer wrap">
-      <span>&copy; {new Date().getFullYear()} Franklin Cheng</span>
-      <span>Personal site. Opinions are mine, not my employer&rsquo;s.</span>
+      <span className="on-map">&copy; {new Date().getFullYear()} Franklin Cheng</span>
+      <span className="on-map">Personal site. Opinions are mine, not my employer&rsquo;s.</span>
     </footer>
   );
 }
 
-export function PageWrapper({ children }: { children: React.ReactNode }) {
+/** `ground` names the zone the page ends in, so the footer takes that zone's ink. */
+export function PageWrapper({ children, ground = "abyss" }: { children: React.ReactNode; ground?: ThemeName }) {
   return (
     <>
       <main id="main">{children}</main>
-      <Footer />
+      <div data-zone={ground}>
+        <Footer />
+      </div>
     </>
   );
 }
 
-/** Heading block that opens every inner page. */
-export function PageIntro({ title, children, back }: { title: React.ReactNode; children?: React.ReactNode; back?: { href: string; label: string } }) {
+type IntroProps = {
+  title: string;
+  children?: React.ReactNode;
+  back?: { href: string; label: string };
+  /** Which face the title is set in. Defaults to the site's own. */
+  titleClass?: string;
+};
+
+/** Heading block that opens every inner page. The title is drawn into the ground. */
+export function PageIntro({ title, children, back, titleClass = "h1" }: IntroProps) {
   return (
     <header className="page-intro wrap">
       {back && (
@@ -88,7 +99,9 @@ export function PageIntro({ title, children, back }: { title: React.ReactNode; c
           {back.label}
         </Link>
       )}
-      <h1 className="h1">{title}</h1>
+      <FieldHeading as="h1" className={titleClass}>
+        {title}
+      </FieldHeading>
       {children && <p className="lede">{children}</p>}
     </header>
   );

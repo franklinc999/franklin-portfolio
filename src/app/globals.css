@@ -2,20 +2,32 @@
 
 /*
   Design notes
-  - Material: liquid glass over a contour map. The map (drawn in WebGL, see
-    src/lib/field) exists so the glass has something to bend. Slabs refract it
-    at the bezel, frost toward the centre and carry a rim light.
-  - Type: one family, Archivo, used across its width and weight axes.
-    Expanded for the name and headings, normal for reading, condensed for figures.
-  - Colour: a single blue-green ink ramp plus one accent, signal orange, used
-    for the lanyard, the high ground on the map and little else.
+  - Material: liquid glass. The ground behind it is drawn in WebGL (see
+    src/lib/field) and exists so the glass has something to bend.
+  - Zones: each stretch of a page has its own ground, ink and accent face.
+      abyss      contour map, blue-green      Archivo
+      blueprint  drafting grid, cobalt        + JetBrains Mono for annotations
+      arcade     halftone dots, plum and red  + Jersey 25 for headings
+      paper      light tea-green chart        + Newsreader for reading
+      sunset     bands of ember and orange    Archivo again, to close
+    Caveat is the handwriting used for margin notes in any zone.
+  - A zone sets the same handful of custom properties, so components never
+    need to know which zone they are in.
 */
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: swap;
+  src: url("./fonts/JetBrainsMono-Variable.woff2") format("woff2");
+}
 
 @theme {
   --font-sans: var(--font-archivo), "Helvetica Neue", Helvetica, Arial, sans-serif;
-  /* Aliases kept so the game components keep working. Both resolve to Archivo. */
+  /* Alias kept so the game components keep working. It resolves to Archivo. */
   --font-serif: var(--font-archivo), "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --font-mono: var(--font-archivo), "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
 
   --container-sm: 640px;
   --container-md: 768px;
@@ -40,9 +52,21 @@
 }
 
 :root {
+  --font-voice: var(--font-newsreader), Georgia, "Times New Roman", serif;
+  --font-hand: var(--font-caveat), "Bradley Hand", "Segoe Print", cursive;
+  --font-pixel: var(--font-jersey), var(--font-archivo), sans-serif;
+
   --signal: #ff8a3d;
-  --paper: #f1f7f8;
+  --halo: 3 14 24;
+  --btn-bg: #f1f7f8;
+  --btn-fg: #06202e;
+  --chip-bg: rgba(150, 205, 222, 0.1);
+  --chip-rim: rgba(214, 240, 248, 0.14);
+  --well: rgba(4, 18, 30, 0.34);
+  --stand-in: linear-gradient(160deg, rgba(150, 205, 222, 0.2), rgba(150, 205, 222, 0.1));
+
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --display-size: clamp(3rem, 13.4vw, 5.5rem);
   --gutter: 24px;
   --badge-w: 188px;
@@ -60,6 +84,110 @@
   :root {
     --badge-w: 252px;
   }
+}
+
+/* ---------- Zone inks ---------- */
+
+[data-zone="blueprint"] {
+  --color-text: #f3f6ff;
+  --color-text-muted: #d2ddff;
+  --color-text-faint: #c0cefa;
+  --color-border: rgba(214, 228, 255, 0.22);
+  --color-border-glow: rgba(214, 228, 255, 0.5);
+  --color-accent: #ffd166;
+  --signal: #ffd166;
+  --halo: 4 15 64;
+  --pool: 0.55;
+  --chip-bg: rgba(150, 180, 255, 0.14);
+  --chip-rim: rgba(214, 228, 255, 0.24);
+  --well: rgba(3, 12, 60, 0.42);
+  --stand-in: linear-gradient(160deg, rgba(120, 150, 255, 0.34), rgba(90, 120, 235, 0.22));
+}
+
+[data-zone="arcade"] {
+  --color-text: #fff3ef;
+  --color-text-muted: #f1ccd1;
+  --color-text-faint: #dba1ac;
+  --color-border: rgba(255, 214, 220, 0.2);
+  --color-border-glow: rgba(255, 214, 220, 0.46);
+  --color-accent: #ff8d97;
+  --color-accent-2: #ffd9a3;
+  --signal: #ff4d5e;
+  --halo: 9 3 8;
+  --pool: 0.82;
+  --chip-bg: rgba(255, 140, 160, 0.12);
+  --chip-rim: rgba(255, 214, 220, 0.2);
+  --well: rgba(10, 3, 9, 0.5);
+  --color-bg: rgba(10, 3, 9, 0.42);
+  --stand-in: linear-gradient(160deg, rgba(150, 60, 90, 0.36), rgba(90, 30, 55, 0.3));
+}
+
+[data-zone="paper"] {
+  --color-text: #0e2a21;
+  --color-text-muted: #27443a;
+  --color-text-faint: #456055;
+  --color-border: rgba(14, 42, 33, 0.18);
+  --color-border-glow: rgba(14, 42, 33, 0.4);
+  /* Notes on this sheet are written in pen: ink blue, not another orange. */
+  --color-accent: #1d3f96;
+  --signal: #2346a8;
+  --halo: 226 236 223;
+  --pool: 0.7;
+  --btn-bg: #0e2a21;
+  --btn-fg: #f3f8f2;
+  --chip-bg: rgba(255, 255, 255, 0.55);
+  --chip-rim: rgba(14, 42, 33, 0.18);
+  --well: rgba(255, 255, 255, 0.5);
+  --stand-in: linear-gradient(160deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.6));
+}
+
+[data-zone="sunset"] {
+  --color-text: #fff6ea;
+  --color-text-muted: #ffe0c8;
+  --color-text-faint: #f5c2a0;
+  --color-border: rgba(255, 228, 200, 0.22);
+  --color-border-glow: rgba(255, 228, 200, 0.5);
+  --signal: #ffd08a;
+  --halo: 31 7 9;
+  --pool: 0.66;
+  --chip-bg: rgba(48, 10, 12, 0.46);
+  --chip-rim: rgba(255, 228, 200, 0.24);
+  --well: rgba(31, 7, 9, 0.42);
+  --stand-in: linear-gradient(160deg, rgba(170, 70, 40, 0.42), rgba(110, 40, 30, 0.34));
+}
+
+/* Fallback grounds: what each zone looks like until the field has drawn, and
+   all it looks like where WebGL is unavailable. Once the field is on, the
+   colour fades out as the canvas fades in behind it. */
+[data-zone] {
+  transition: background-color 0.6s ease;
+}
+
+[data-zone="blueprint"] {
+  background-color: #0a2382;
+  background-image:
+    linear-gradient(rgba(214, 228, 255, 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(214, 228, 255, 0.09) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+[data-zone="arcade"] {
+  background-color: #14050d;
+  background-image: radial-gradient(rgba(255, 77, 94, 0.34) 1.6px, transparent 2.2px);
+  background-size: 22px 22px;
+}
+
+[data-zone="paper"] {
+  background-color: #dbe6da;
+}
+
+[data-zone="sunset"] {
+  background-color: #5c1c10;
+}
+
+.field-on [data-zone] {
+  background-color: transparent;
+  background-image: none;
 }
 
 @layer base {
@@ -134,6 +262,21 @@
     opacity: 1;
   }
 
+  /* A change of page: the ground dips and comes back as the new scene. */
+  .field-on .field canvas.field-dip {
+    animation: field-dip 0.75s ease both;
+  }
+
+  @keyframes field-dip {
+    from {
+      opacity: 0.1;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
+
   .app {
     position: relative;
     z-index: 1;
@@ -146,8 +289,8 @@
     z-index: 100;
     padding: 10px 16px;
     border-radius: 12px;
-    background: var(--paper);
-    color: var(--color-ink);
+    background: #f1f7f8;
+    color: #05172a;
     font-weight: 600;
     transform: translateY(-200%);
   }
@@ -163,8 +306,23 @@
     margin-inline: auto;
   }
 
+  .zone {
+    position: relative;
+    color: var(--color-text-muted);
+    padding-bottom: clamp(72px, 9vw, 124px);
+  }
+
+  /* Zones meet along a wobbling shoreline, so the top of each one keeps clear of it. */
+  .zone + .zone {
+    padding-top: clamp(136px, 15vw, 200px);
+  }
+
   .section {
     padding-block: clamp(44px, 6.5vw, 84px);
+  }
+
+  .stack > * + * {
+    margin-top: clamp(40px, 5.5vw, 72px);
   }
 
   .section-head {
@@ -174,6 +332,16 @@
     justify-content: space-between;
     gap: 8px 24px;
     margin-bottom: clamp(20px, 2.6vw, 32px);
+  }
+
+  .zone-intro {
+    display: grid;
+    gap: 16px;
+    margin-bottom: clamp(28px, 3.6vw, 48px);
+  }
+
+  .zone-intro .lede {
+    max-width: 34rem;
   }
 
   /* ---------- Type ---------- */
@@ -194,13 +362,27 @@
     white-space: nowrap;
   }
 
-  /* Once the field has drawn the letters into the map, hide the DOM copy. */
-  .field-text[data-live] {
-    color: transparent;
+  /* Headlines the field draws into the ground. Until it has, the DOM shows them. */
+  .field-text {
+    text-shadow:
+      0 0 1px rgb(var(--halo) / 0.9),
+      0 0 14px rgb(var(--halo) / 0.9),
+      0 0 30px rgb(var(--halo) / 0.7);
   }
 
+  .field-text[data-live] {
+    color: transparent;
+    text-shadow: none;
+  }
+
+  .field-heading [data-field-line] {
+    display: inline-block;
+  }
+
+  /* Field-drawn headings use widths a canvas can name exactly (112.5%, 125%),
+     so the drawn words land on the boxes the browser laid out. */
   .h1 {
-    font-stretch: 118%;
+    font-stretch: 112.5%;
     font-weight: 750;
     font-size: clamp(2.25rem, 5.6vw, 4.25rem);
     line-height: 1.04;
@@ -208,11 +390,39 @@
   }
 
   .h2 {
-    font-stretch: 112%;
+    font-stretch: 112.5%;
     font-weight: 700;
     font-size: clamp(1.625rem, 3vw, 2.375rem);
     line-height: 1.08;
     letter-spacing: -0.015em;
+  }
+
+  /* Zone headings: each zone speaks in its own face. */
+  .h-zone {
+    font-stretch: 125%;
+    font-weight: 800;
+    font-size: clamp(2.25rem, 5.4vw, 4.25rem);
+    line-height: 0.98;
+    letter-spacing: -0.02em;
+  }
+
+  .h-pixel {
+    font-family: var(--font-pixel);
+    font-stretch: 100%;
+    font-weight: 400;
+    font-size: clamp(3.5rem, 9.4vw, 7.5rem);
+    line-height: 0.82;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+  }
+
+  .h-voice {
+    font-family: var(--font-voice);
+    font-stretch: 100%;
+    font-weight: 580;
+    font-size: clamp(2.75rem, 6.6vw, 5.25rem);
+    line-height: 0.98;
+    letter-spacing: -0.028em;
   }
 
   .h3 {
@@ -237,22 +447,52 @@
     color: var(--color-text-faint);
   }
 
-  .fig {
-    font-stretch: 78%;
-    font-weight: 700;
-    font-size: clamp(3.25rem, 6.2vw, 5.25rem);
-    line-height: 0.88;
-    letter-spacing: -0.01em;
-    font-variant-numeric: tabular-nums lining-nums;
-    color: var(--color-text);
+  /* Drafting annotation, used in the blueprint zone. */
+  .annot {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    letter-spacing: 0.01em;
+    color: var(--color-text-faint);
   }
 
-  /* Text set straight on the map gets a halo, the way map labels do. */
-  .on-map {
+  /* A note in the margin, in handwriting. */
+  .note {
+    font-family: var(--font-hand);
+    font-weight: 600;
+    font-size: 1.5rem;
+    line-height: 1.05;
+    color: var(--signal);
     text-shadow:
-      0 0 1px rgba(3, 14, 24, 0.9),
-      0 0 12px rgba(3, 14, 24, 0.9),
-      0 0 28px rgba(3, 14, 24, 0.7);
+      0 0 1px rgb(var(--halo) / 0.9),
+      0 0 12px rgb(var(--halo) / 0.9);
+  }
+
+  .voice {
+    font-family: var(--font-voice);
+  }
+
+  /* Text set straight on the ground gets a halo, the way map labels do, and
+     a soft pool of the zone's own ground behind it so busy patterns (the
+     halftone dots most of all) never sit directly under a sentence. */
+  .on-map {
+    position: relative;
+    isolation: isolate;
+    text-shadow:
+      0 0 1px rgb(var(--halo) / 0.9),
+      0 0 12px rgb(var(--halo) / 0.9),
+      0 0 28px rgb(var(--halo) / 0.7);
+  }
+
+  .on-map::before {
+    content: "";
+    position: absolute;
+    inset: -0.55em -0.95em;
+    z-index: -1;
+    border-radius: 1.4em;
+    background: rgb(var(--halo) / var(--pool, 0.5));
+    filter: blur(16px);
+    pointer-events: none;
   }
 
   .text-link {
@@ -261,7 +501,7 @@
     text-decoration: underline;
     text-decoration-thickness: 1.5px;
     text-underline-offset: 5px;
-    text-decoration-color: rgba(238, 246, 248, 0.42);
+    text-decoration-color: color-mix(in srgb, var(--color-text) 42%, transparent);
     transition: text-decoration-color 0.2s ease;
   }
 
@@ -289,11 +529,11 @@
     z-index: -1;
     border-radius: inherit;
     pointer-events: none;
-    background: linear-gradient(160deg, rgba(150, 205, 222, 0.2), rgba(150, 205, 222, 0.1));
+    background: var(--stand-in);
     -webkit-backdrop-filter: blur(18px) saturate(1.5);
     backdrop-filter: blur(18px) saturate(1.5);
     box-shadow:
-      inset 0 0 0 1px rgba(214, 240, 248, 0.14),
+      inset 0 0 0 1px var(--chip-rim),
       inset 1px 1px 0 rgba(255, 255, 255, 0.4),
       inset -1px -1px 0 rgba(255, 255, 255, 0.12),
       0 20px 44px -22px rgba(0, 0, 0, 0.7);
@@ -307,25 +547,35 @@
     visibility: hidden;
   }
 
+  /* A slab scrolled to for the first time rises into place while the field
+     forms the glass under it. The engine drives --appear. */
+  .glass.rising {
+    opacity: var(--appear, 1);
+    transform: translate3d(0, calc((1 - var(--appear, 1)) * 30px), 0) scale(calc(0.95 + 0.05 * var(--appear, 1)));
+    will-change: transform, opacity;
+  }
+
   a.glass {
     outline-offset: 4px;
   }
 
   /* Small glass that sits in the DOM: buttons, chips, game chrome. */
   .liquid-glass,
-  .btn-glass {
+  .btn-glass,
+  .chip {
     position: relative;
-    background: rgba(150, 205, 222, 0.1);
+    background: var(--chip-bg);
     -webkit-backdrop-filter: blur(14px) saturate(1.6);
     backdrop-filter: blur(14px) saturate(1.6);
   }
 
   .liquid-glass-border,
   .liquid-glass-glow,
-  .btn-glass {
+  .btn-glass,
+  .chip {
     border: 1px solid transparent;
     box-shadow:
-      inset 0 0 0 1px rgba(214, 240, 248, 0.14),
+      inset 0 0 0 1px var(--chip-rim),
       inset 1px 1px 0 rgba(255, 255, 255, 0.34),
       inset -1px -1px 0 rgba(255, 255, 255, 0.1),
       0 10px 26px -16px rgba(0, 0, 0, 0.7);
@@ -333,13 +583,24 @@
 
   /* Inside a slab, nested surfaces go quiet instead of stacking glass on glass. */
   .glass .liquid-glass {
-    background: rgba(4, 18, 30, 0.3);
+    background: var(--well);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
 
   .glass .liquid-glass-border {
-    box-shadow: inset 0 0 0 1px rgba(214, 240, 248, 0.1);
+    box-shadow: inset 0 0 0 1px var(--color-border);
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 7px 14px;
+    border-radius: 999px;
+    font-weight: 550;
+    font-size: 0.9375rem;
+    line-height: 1.2;
+    color: var(--color-text);
   }
 
   /* ---------- Buttons ---------- */
@@ -352,33 +613,50 @@
     min-height: 48px;
     padding: 0 22px;
     border-radius: 999px;
+    font-family: var(--font-sans);
     font-stretch: 104%;
     font-weight: 600;
     font-size: 0.9688rem;
     line-height: 1;
     white-space: nowrap;
+    cursor: pointer;
     transition:
       background-color 0.2s ease,
       color 0.2s ease,
-      box-shadow 0.2s ease;
+      box-shadow 0.2s ease,
+      opacity 0.2s ease,
+      scale 0.14s var(--ease-out);
+  }
+
+  /* A press should feel like one. */
+  .btn:active:not(:disabled) {
+    scale: 0.97;
+  }
+
+  .btn:disabled {
+    opacity: 0.55;
+    cursor: default;
   }
 
   .btn-solid {
-    background: var(--paper);
-    color: #06202e;
+    background: var(--btn-bg);
+    color: var(--btn-fg);
     box-shadow: 0 10px 26px -14px rgba(0, 0, 0, 0.8);
-  }
-
-  .btn-solid:hover {
-    background: #fff;
   }
 
   .btn-glass {
     color: var(--color-text);
   }
 
-  .btn-glass:hover {
-    background: rgba(190, 228, 240, 0.2);
+  /* Hover only where there is a pointer that can hover, so nothing sticks after a tap. */
+  @media (hover: hover) and (pointer: fine) {
+    .btn-solid:hover:not(:disabled) {
+      background: color-mix(in srgb, var(--btn-bg) 86%, var(--btn-fg));
+    }
+
+    .btn-glass:hover:not(:disabled) {
+      background: color-mix(in srgb, var(--chip-bg) 60%, rgba(255, 255, 255, 0.22));
+    }
   }
 
   /* ---------- Navigation ---------- */
@@ -389,6 +667,7 @@
     height: 0;
   }
 
+  /* Smoked glass, so its labels read over every zone, the pale one included. */
   .nav {
     position: fixed;
     z-index: 50;
@@ -399,7 +678,8 @@
     padding: 6px;
     translate: -50% 0;
     border-radius: 999px;
-    background: rgba(40, 92, 112, 0.24);
+    /* Dense enough that its labels hold 4.5:1 even with a white button passing underneath. */
+    background: rgba(8, 20, 30, 0.68);
     -webkit-backdrop-filter: blur(16px) saturate(1.6);
     backdrop-filter: blur(16px) saturate(1.6);
     box-shadow:
@@ -424,13 +704,49 @@
     font-weight: 550;
     font-size: 0.6875rem;
     line-height: 1.1;
-    color: var(--color-text-muted);
+    color: #d3e0e6;
     transition: color 0.2s ease;
   }
 
   .nav-link:hover,
   .nav-link[aria-current="page"] {
-    color: var(--color-text);
+    color: #f3f8fa;
+  }
+
+  /* Over the pale zone the glass turns clear and takes dark ink. */
+  .nav,
+  .motion-toggle {
+    transition:
+      background-color 0.35s ease,
+      box-shadow 0.35s ease,
+      color 0.2s ease,
+      scale 0.14s var(--ease-out);
+  }
+
+  :is(.nav, .motion-toggle)[data-tone="light"] {
+    background: rgba(248, 252, 246, 0.72);
+    box-shadow:
+      inset 0 0 0 1px rgba(14, 42, 33, 0.14),
+      inset 1.5px 1.5px 0.5px -0.5px rgba(255, 255, 255, 0.95),
+      0 16px 34px -18px rgba(14, 42, 33, 0.5);
+  }
+
+  .nav[data-tone="light"] .nav-link {
+    color: #27443a;
+  }
+
+  .nav[data-tone="light"] .nav-link:hover,
+  .nav[data-tone="light"] .nav-link[aria-current="page"],
+  .motion-toggle[data-tone="light"] {
+    color: #0e2a21;
+  }
+
+  .nav[data-tone="light"] .nav-mark {
+    background: rgba(14, 42, 33, 0.1);
+    box-shadow:
+      inset 0 0 0 1px rgba(14, 42, 33, 0.12),
+      inset 1px 1px 0 rgba(255, 255, 255, 0.8),
+      0 8px 16px -12px rgba(14, 42, 33, 0.5);
   }
 
   .nav-mark {
@@ -447,8 +763,8 @@
       0 8px 16px -10px rgba(0, 0, 0, 0.7);
     pointer-events: none;
     transition:
-      transform 0.5s var(--ease-out),
-      width 0.5s var(--ease-out);
+      transform 0.38s var(--ease-out),
+      width 0.38s var(--ease-out);
   }
 
   @media (min-width: 760px) {
@@ -470,6 +786,44 @@
     }
   }
 
+  /* Pause for everything that moves on its own. Same smoked glass as the nav. */
+  .motion-toggle {
+    position: fixed;
+    z-index: 50;
+    top: calc(12px + env(safe-area-inset-top, 0px));
+    right: calc(12px + env(safe-area-inset-right, 0px));
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    color: #dbe7ec;
+    background: rgba(8, 20, 30, 0.68);
+    -webkit-backdrop-filter: blur(16px) saturate(1.6);
+    backdrop-filter: blur(16px) saturate(1.6);
+    box-shadow:
+      inset 0 0 0 1px rgba(214, 240, 248, 0.14),
+      inset 1.5px 1.5px 0.5px -0.5px rgba(255, 255, 255, 0.55),
+      0 12px 26px -14px rgba(0, 0, 0, 0.75);
+  }
+
+  .motion-toggle:active {
+    scale: 0.94;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .motion-toggle:not([data-tone="light"]):hover {
+      color: #fff;
+    }
+  }
+
+  @media (min-width: 760px) {
+    .motion-toggle {
+      top: 20px;
+      right: 20px;
+    }
+  }
+
   /* ---------- Hero ---------- */
 
   .hero {
@@ -487,13 +841,6 @@
     margin-top: clamp(20px, 2.6vw, 32px);
   }
 
-  /* Keep the lede clear of the badge, which hangs off the end of the name. */
-  @media (min-width: 760px) {
-    .hero .lede {
-      max-width: min(36rem, var(--display-size) * 5.5);
-    }
-  }
-
   .hero-actions {
     display: flex;
     flex-wrap: wrap;
@@ -506,6 +853,108 @@
       --hero-top: clamp(220px, 27vh, 280px);
       padding-bottom: 56px;
     }
+
+    /* Keep the lede clear of the badge, which hangs off the end of the name. */
+    .hero .lede {
+      max-width: min(36rem, var(--display-size) * 5.5);
+    }
+  }
+
+  /* A phrase that rolls over to the next one. */
+  .rotator {
+    position: relative;
+    display: inline-grid;
+    overflow: hidden;
+    vertical-align: bottom;
+    font-family: var(--font-voice);
+    font-style: italic;
+    font-weight: 500;
+    font-size: 1.14em;
+    line-height: 1.28;
+    color: var(--signal);
+  }
+
+  /* The rolling phrase gets a line to itself, so nothing after it shifts. */
+  .rotator-line {
+    display: block;
+    margin-bottom: 0.2em;
+  }
+
+  .rotator-size,
+  .rotator-item {
+    grid-area: 1 / 1;
+    white-space: nowrap;
+  }
+
+  .rotator-size {
+    visibility: hidden;
+  }
+
+  .rotator-item {
+    transition:
+      transform 0.6s var(--ease-out),
+      opacity 0.45s ease;
+  }
+
+  .rotator-item[data-state="wait"] {
+    transform: translateY(110%);
+    opacity: 0;
+    transition: none;
+  }
+
+  .rotator-item[data-state="out"] {
+    transform: translateY(-110%);
+    opacity: 0;
+  }
+
+  /* ---------- Marquee ---------- */
+
+  .marquee {
+    overflow: hidden;
+    border-radius: 0;
+    padding-block: clamp(14px, 1.8vw, 22px);
+    margin-block: clamp(28px, 4vw, 56px) clamp(40px, 6vw, 84px);
+  }
+
+  .marquee-track {
+    display: flex;
+    width: max-content;
+    will-change: transform;
+  }
+
+  .marquee-run {
+    display: flex;
+    flex: none;
+    align-items: center;
+  }
+
+  .marquee-word {
+    display: flex;
+    align-items: center;
+    gap: 0.7em;
+    padding-left: 0.7em;
+    font-stretch: 125%;
+    font-weight: 800;
+    font-size: clamp(1.75rem, 4.6vw, 3.75rem);
+    line-height: 1;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: transparent;
+    -webkit-text-stroke: 1.4px color-mix(in srgb, var(--color-text) 88%, transparent);
+  }
+
+  .marquee-word:nth-child(3n + 1) {
+    color: var(--color-text);
+    -webkit-text-stroke: 0;
+  }
+
+  .marquee-word::after {
+    content: "";
+    flex: none;
+    width: 0.24em;
+    height: 0.24em;
+    border-radius: 50%;
+    background: var(--signal);
   }
 
   /* ---------- Badge ---------- */
@@ -516,18 +965,18 @@
     z-index: 3;
     pointer-events: none;
     --anchor-x: 0.66;
-    --anchor-y: -420;
+    --anchor-y: -30;
     --drop: 96;
-    --swing: -0.3;
+    --swing: -0.75;
     --overlap-y: 5;
   }
 
   @media (min-width: 760px) {
     .badge-stage {
       --anchor-x: 0.735;
-      --anchor-y: -560;
+      --anchor-y: -40;
       --drop: 150;
-      --swing: -0.4;
+      --swing: -1;
       --overlap: 16;
       --overlap-y: none;
     }
@@ -590,23 +1039,21 @@
     opacity: 1;
   }
 
+  .badge[data-dragging] {
+    cursor: grabbing;
+  }
+
   .badge-hint {
     position: absolute;
-    width: 6.4rem;
-    font-size: 0.875rem;
-    line-height: 1.35;
+    width: 5.6rem;
     text-align: right;
-    color: var(--color-text-faint);
+    rotate: -6deg;
     opacity: 0;
     transition: opacity 0.4s ease 0.6s;
   }
 
   .badge-stage[data-ready] .badge-hint {
     opacity: 1;
-  }
-
-  .badge[data-dragging] {
-    cursor: grabbing;
   }
 
   .badge-clip {
@@ -647,28 +1094,10 @@
   .badge-role {
     margin-top: 3px;
     padding-inline: 6px;
-    font-stretch: 86%;
     font-size: 0.8125rem;
     line-height: 1.3;
     white-space: nowrap;
     color: var(--color-text-muted);
-  }
-
-  .badge-team {
-    margin-top: 0;
-  }
-
-  @media (min-width: 760px) {
-    .badge-name {
-      margin-top: 13px;
-      font-stretch: 112%;
-      font-size: 1.125rem;
-    }
-
-    .badge-role {
-      font-stretch: 100%;
-      font-size: 0.8438rem;
-    }
   }
 
   .badge-facts {
@@ -681,18 +1110,25 @@
   }
 
   @media (min-width: 760px) {
-    .badge-facts {
-      display: grid;
+    .badge-name {
+      margin-top: 13px;
+      font-stretch: 112%;
+      font-size: 1.125rem;
     }
 
-    .badge-team {
-      display: none;
+    .badge-role {
+      font-size: 0.8438rem;
+    }
+
+    .badge-facts {
+      display: grid;
     }
 
     .badge-hint {
       width: auto;
       white-space: nowrap;
       text-align: left;
+      rotate: -4deg;
     }
   }
 
@@ -719,12 +1155,8 @@
     padding: clamp(22px, 2.5vw, 32px);
   }
 
-  .tile > p:not(.fig):not(.meta) {
+  .tile > p:not(.meta):not(.note) {
     max-width: 48ch;
-  }
-
-  .tile .fig {
-    margin-bottom: clamp(10px, 1.6vw, 22px);
   }
 
   .tile .meta {
@@ -732,25 +1164,9 @@
     padding-top: 10px;
   }
 
-  .now-grid {
-    display: grid;
-    gap: 18px;
-  }
-
-  @media (min-width: 860px) {
-    .now-grid {
-      grid-template-columns: 1.25fr 1fr;
-      grid-template-rows: auto auto;
-    }
-
-    .now-grid > :first-child {
-      grid-row: span 2;
-      justify-content: flex-end;
-    }
-
-    .now-grid > :first-child .fig {
-      font-size: clamp(5rem, 11vw, 9.5rem);
-    }
+  .tile .note {
+    margin-bottom: 2px;
+    text-shadow: none;
   }
 
   .card-grid {
@@ -768,13 +1184,748 @@
     .card-grid {
       grid-template-columns: repeat(3, 1fr);
     }
+
+    .card-grid.two {
+      grid-template-columns: repeat(2, 1fr);
+    }
   }
 
   .card-grid .tile {
     min-height: 208px;
   }
 
-  /* ---------- About and lists ---------- */
+  /* Three sides of one person. The middle tile sits lower, so the row reads as steps. */
+  .facets {
+    align-items: start;
+  }
+
+  .facets .tile {
+    min-height: 250px;
+  }
+
+  @media (min-width: 1020px) {
+    .facets > :nth-child(2) {
+      margin-top: 44px;
+    }
+
+    .facets > :nth-child(3) {
+      margin-top: 88px;
+    }
+  }
+
+  /* A card that leads with a picture. */
+  .shot {
+    display: flex;
+    flex-direction: column;
+    padding: 12px 12px 24px;
+  }
+
+  .shot img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+  }
+
+  /* Pictures drift a little inside their frames as they cross the screen. */
+  .shot-frame,
+  .portrait-frame {
+    display: block;
+    overflow: hidden;
+    border-radius: 13px;
+    box-shadow: 0 0 0 1px var(--color-border);
+    background: var(--well);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    @supports ((animation-timeline: view()) and (animation-range: cover)) {
+      :is(.shot-frame, .portrait-frame) img {
+        animation: picture-drift linear both;
+        animation-timeline: view();
+        animation-range: cover;
+      }
+    }
+  }
+
+  @keyframes picture-drift {
+    from {
+      scale: 1.12;
+      translate: 0 -3.5%;
+    }
+    to {
+      scale: 1.12;
+      translate: 0 3.5%;
+    }
+  }
+
+  .shot-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 8px;
+    padding: 18px 12px 0;
+  }
+
+  .shot-body .meta {
+    margin-top: auto;
+    padding-top: 8px;
+  }
+
+  a.shot:hover .h3,
+  a.row:hover .h3,
+  a.tile:hover .h3 {
+    text-decoration: underline;
+    text-decoration-thickness: 1.5px;
+    text-underline-offset: 5px;
+    text-decoration-color: var(--signal);
+  }
+
+  .demo {
+    padding: clamp(22px, 3vw, 40px);
+  }
+
+  .demo-head {
+    display: grid;
+    gap: 6px;
+    margin-bottom: clamp(18px, 2.4vw, 28px);
+  }
+
+  .demo-head p {
+    max-width: 54ch;
+  }
+
+  /* ---------- Lab: shared controls ---------- */
+
+  .seg {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .seg-item {
+    position: relative;
+  }
+
+  .seg-item input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .seg-item span {
+    display: block;
+    padding: 9px 15px;
+    border-radius: 999px;
+    font-weight: 550;
+    font-size: 0.9375rem;
+    line-height: 1.2;
+    color: var(--color-text);
+    box-shadow: inset 0 0 0 1px var(--color-border);
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+  }
+
+  .seg-item input:checked + span {
+    background: var(--btn-bg);
+    color: var(--btn-fg);
+    box-shadow: none;
+  }
+
+  .seg-item input:focus-visible + span {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+  }
+
+  .field-row {
+    display: grid;
+    gap: 6px;
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+  }
+
+  .field-row input {
+    height: 46px;
+    padding: 0 14px;
+    border-radius: 12px;
+    background: var(--well);
+    box-shadow: inset 0 0 0 1px var(--color-border);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text);
+  }
+
+  .field-row input[aria-invalid="true"] {
+    box-shadow: inset 0 0 0 2px var(--signal);
+  }
+
+  /* ---------- Lab: the agent line ---------- */
+
+  .line {
+    display: grid;
+    gap: 18px;
+  }
+
+  .line-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .line-note {
+    min-height: 2.9em;
+    max-width: 46ch;
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    line-height: 1.45;
+    color: var(--color-text);
+  }
+
+  .line-dog {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    color: var(--color-text-faint);
+  }
+
+  .line-dog-ring {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: conic-gradient(var(--signal) calc(var(--fill, 0) * 1turn), rgba(255, 255, 255, 0.18) 0);
+    -webkit-mask: radial-gradient(circle, transparent 5px, #000 5.6px);
+    mask: radial-gradient(circle, transparent 5px, #000 5.6px);
+  }
+
+  .line-dog[data-alert] {
+    color: var(--signal);
+  }
+
+  .line-stage {
+    position: relative;
+    height: 140px;
+  }
+
+  .line-art {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  .line-rail,
+  .line-loop {
+    fill: none;
+    stroke: color-mix(in srgb, var(--color-text) 55%, transparent);
+    stroke-width: 1.5px;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .line-loop {
+    stroke-dasharray: 5 6;
+    transition: opacity 0.3s ease;
+  }
+
+  .line-loop[data-off] {
+    opacity: 0.2;
+  }
+
+  .line-stations {
+    position: absolute;
+    inset: 0;
+  }
+
+  .line-stations li {
+    position: absolute;
+    top: var(--rail, 36%);
+    display: grid;
+    justify-items: center;
+    translate: -50% -50%;
+  }
+
+  .line-node {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1.5px solid color-mix(in srgb, var(--color-text) 85%, transparent);
+    background: #0a2478;
+    transition:
+      background-color 0.16s ease,
+      box-shadow 0.16s ease,
+      opacity 0.3s ease;
+  }
+
+  .line-stations li[data-busy] .line-node {
+    background: var(--color-text);
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-text) 18%, transparent);
+  }
+
+  .line-stations li[data-off] .line-node {
+    border-style: dashed;
+    opacity: 0.45;
+  }
+
+  /* Names sit above the rail, which leaves the space under it to the retry loop. */
+  .line-label {
+    position: absolute;
+    bottom: 42px;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    white-space: nowrap;
+    color: var(--color-text-muted);
+  }
+
+  .line-tokens {
+    position: absolute;
+    top: var(--rail, 36%);
+    right: 0;
+    left: 0;
+    height: 0;
+  }
+
+  .line-token {
+    position: absolute;
+    top: -7px;
+    left: -7px;
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    background: #f3f6ff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+    opacity: 0;
+  }
+
+  .line-token[data-kind="bad"] {
+    border-radius: 50%;
+    background: #ff6272;
+  }
+
+  .line-token[data-kind="fixed"] {
+    background: var(--signal);
+  }
+
+  .line-counts {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px 18px;
+    padding-top: 16px;
+    border-top: 1px solid var(--color-border);
+  }
+
+  @media (min-width: 720px) {
+    .line-counts {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+
+  .line-counts dt {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--color-text-faint);
+  }
+
+  .line-counts dd {
+    font-stretch: 78%;
+    font-weight: 700;
+    font-size: 2.25rem;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text);
+  }
+
+  .line-counts [data-bad] dd {
+    color: #ff8a96;
+  }
+
+  .line-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  /* ---------- Lab: anatomy of a slab ---------- */
+
+  .anatomy {
+    display: grid;
+    gap: clamp(18px, 2.4vw, 30px);
+    align-items: start;
+  }
+
+  @media (min-width: 980px) {
+    .anatomy {
+      grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+    }
+  }
+
+  /* On a narrow screen the sheet keeps a readable size and scrolls sideways. */
+  .anatomy-sheet {
+    overflow-x: auto;
+    border-radius: 10px;
+  }
+
+  .anatomy svg {
+    display: block;
+    width: 100%;
+    min-width: 580px;
+    height: auto;
+  }
+
+  .an-line,
+  .an-thin,
+  .an-ray {
+    fill: none;
+    stroke: var(--color-text);
+    stroke-width: 1.25px;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .an-heavy {
+    stroke-width: 2.25px;
+  }
+
+  .an-thin {
+    stroke-width: 0.75px;
+    opacity: 0.7;
+  }
+
+  .an-dash {
+    stroke-dasharray: 5 5;
+  }
+
+  .an-tick {
+    fill: none;
+    stroke: var(--color-text);
+    stroke-width: 1.25px;
+    stroke-linecap: round;
+  }
+
+  .an-hatch {
+    stroke: var(--color-text);
+    stroke-width: 0.75px;
+    opacity: 0.4;
+  }
+
+  .an-ray {
+    stroke: var(--signal);
+    stroke-width: 1.75px;
+  }
+
+  .an-dot {
+    fill: var(--signal);
+  }
+
+  .an-title,
+  .an-view,
+  .an-dim,
+  .an-note {
+    font-family: var(--font-mono);
+    fill: var(--color-text);
+  }
+
+  .an-title {
+    font-weight: 700;
+    font-size: 15px;
+  }
+
+  .an-view {
+    font-weight: 600;
+    font-size: 12px;
+  }
+
+  .an-dim {
+    font-weight: 600;
+    font-size: 12px;
+  }
+
+  .an-note {
+    font-size: 11.5px;
+    fill: var(--color-text-muted);
+  }
+
+  .anatomy-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    line-height: 1.4;
+  }
+
+  .anatomy-table th,
+  .anatomy-table td {
+    padding: 9px 12px 9px 0;
+    border-bottom: 1px solid var(--color-border);
+    text-align: left;
+    vertical-align: baseline;
+  }
+
+  .anatomy-table tr:first-child th,
+  .anatomy-table tr:first-child td {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .anatomy-table th {
+    font-weight: 700;
+    white-space: nowrap;
+    color: var(--color-text);
+  }
+
+  .anatomy-table td:nth-child(2) {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    color: var(--signal);
+  }
+
+  .anatomy-table td:last-child {
+    padding-right: 0;
+    color: var(--color-text-muted);
+  }
+
+  /* The drawing draws itself the first time it scrolls into view. */
+  @media (prefers-reduced-motion: no-preference) {
+    @supports ((animation-timeline: view()) and (animation-range: entry)) {
+      .anatomy {
+        view-timeline: --anatomy block;
+      }
+
+      .anatomy :is(.an-line, .an-thin, .an-ray) {
+        stroke-dasharray: 1;
+        animation: an-draw linear both;
+        animation-timeline: --anatomy;
+        animation-range: entry 20% cover 36%;
+      }
+
+      .anatomy .an-dash {
+        stroke-dasharray: 5 5;
+        animation-name: an-fade;
+      }
+
+      .anatomy :is(text, .an-dot, [fill^="url"]) {
+        animation: an-fade linear both;
+        animation-timeline: --anatomy;
+        animation-range: cover 26% cover 42%;
+      }
+    }
+  }
+
+  /* The resting state is the finished drawing; the keyframes only describe the start. */
+  @keyframes an-draw {
+    from {
+      stroke-dashoffset: 1;
+    }
+  }
+
+  @keyframes an-fade {
+    from {
+      opacity: 0;
+    }
+  }
+
+  /* ---------- Lab: sensitivity ---------- */
+
+  .sens {
+    display: grid;
+    gap: 26px;
+  }
+
+  @media (min-width: 820px) {
+    .sens {
+      grid-template-columns: 1fr 1fr;
+      align-items: end;
+    }
+  }
+
+  .sens-inputs {
+    display: grid;
+    gap: 14px;
+  }
+
+  .sens-out {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 18px;
+  }
+
+  .sens-out dt {
+    font-size: 0.8125rem;
+    color: var(--color-text-faint);
+  }
+
+  .sens-out dd {
+    font-family: var(--font-pixel);
+    font-size: 2.5rem;
+    line-height: 1;
+    color: var(--color-text);
+  }
+
+  .sens-main {
+    grid-column: 1 / -1;
+  }
+
+  .sens-main dd {
+    font-size: clamp(3.25rem, 7vw, 4.75rem);
+    color: var(--color-accent-2);
+  }
+
+  /* ---------- Lab: tea ---------- */
+
+  .tea {
+    display: grid;
+    gap: 22px 36px;
+    align-items: center;
+  }
+
+  @media (min-width: 720px) {
+    .tea {
+      grid-template-columns: 210px 1fr;
+    }
+  }
+
+  @media (min-width: 1020px) {
+    .tea {
+      grid-template-columns: 210px minmax(0, 1fr) minmax(0, 0.9fr);
+    }
+  }
+
+  /* The session strip: one bar per steep, each a little taller than the last. */
+  .tea-session {
+    display: grid;
+    gap: 12px;
+    align-self: end;
+  }
+
+  @media (min-width: 720px) and (max-width: 1019.98px) {
+    .tea-session {
+      grid-column: 1 / -1;
+    }
+  }
+
+  .tea-session ol {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+    align-items: end;
+    height: 148px;
+  }
+
+  .tea-session li {
+    display: grid;
+    grid-template-rows: 1fr auto;
+    gap: 8px;
+    height: 100%;
+    justify-items: stretch;
+  }
+
+  .tea-bar {
+    align-self: end;
+    height: calc(var(--h, 1) * 100%);
+    border-radius: 7px 7px 3px 3px;
+    background: color-mix(in srgb, var(--color-text) 14%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-text) 22%, transparent);
+    transform-origin: bottom;
+    transition:
+      background-color 0.25s ease,
+      height 0.4s var(--ease-out);
+  }
+
+  .tea-session li[data-state="done"] .tea-bar {
+    background: color-mix(in srgb, var(--color-text) 62%, transparent);
+  }
+
+  .tea-session li[data-state="now"] .tea-bar {
+    background: var(--signal);
+    box-shadow: none;
+  }
+
+  .tea-bar-label {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text-faint);
+  }
+
+  .tea-session li[data-state="now"] .tea-bar-label {
+    font-weight: 700;
+    color: var(--color-text);
+  }
+
+  .tea-cup {
+    width: 100%;
+    max-width: 210px;
+    margin-inline: auto;
+    overflow: visible;
+  }
+
+  .tea-glass {
+    fill: rgba(255, 255, 255, 0.3);
+    stroke: color-mix(in srgb, var(--color-text) 60%, transparent);
+    stroke-width: 2px;
+  }
+
+  .tea-shine {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.9);
+    stroke-width: 3px;
+    stroke-linecap: round;
+  }
+
+  .tea-saucer {
+    fill: none;
+    stroke: color-mix(in srgb, var(--color-text) 45%, transparent);
+    stroke-width: 3px;
+    stroke-linecap: round;
+  }
+
+  .tea-panel {
+    display: grid;
+    gap: 14px;
+  }
+
+  .tea-clock {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 14px;
+  }
+
+  .tea-seconds {
+    font-stretch: 78%;
+    font-weight: 700;
+    font-size: clamp(3.75rem, 8vw, 5.75rem);
+    line-height: 0.9;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text);
+  }
+
+  .tea-unit {
+    font-family: var(--font-voice);
+    font-style: italic;
+    font-size: 1.5rem;
+    color: var(--color-text-muted);
+  }
+
+  .tea-meta {
+    font-size: 0.9375rem;
+  }
+
+  .tea-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  /* ---------- About ---------- */
 
   .about {
     display: grid;
@@ -783,7 +1934,7 @@
 
   @media (min-width: 960px) {
     .about {
-      grid-template-columns: 1.15fr 1fr;
+      grid-template-columns: 1.2fr 1fr;
       align-items: start;
     }
   }
@@ -800,6 +1951,47 @@
 
   .prose .h2 {
     margin-bottom: 6px;
+  }
+
+  /* Reading text in the paper zone is set in the serif. */
+  .prose.voice p {
+    font-size: 1.1875rem;
+    line-height: 1.58;
+    max-width: 52ch;
+  }
+
+  .portrait {
+    width: 100%;
+    max-width: 460px;
+    padding: 12px 12px 18px;
+  }
+
+  .portrait-frame {
+    border-radius: 17px;
+  }
+
+  .portrait img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+  }
+
+  .portrait .note {
+    padding: 14px 8px 0;
+    text-shadow: none;
+  }
+
+  .loves {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .loves .note {
+    margin-left: 6px;
+    rotate: -3deg;
   }
 
   .timeline li {
@@ -840,13 +2032,6 @@
     color: var(--color-text-faint);
   }
 
-  .timeline .note {
-    grid-column: 1 / -1;
-    max-width: 56ch;
-    margin-top: 8px;
-    font-size: 0.9688rem;
-  }
-
   /* ---------- Page chrome ---------- */
 
   .page-intro {
@@ -854,16 +2039,17 @@
     padding-bottom: clamp(30px, 5vw, 56px);
   }
 
-  .page-intro .h1,
   .page-intro .lede,
   .back-link {
     text-shadow:
-      0 0 1px rgba(3, 14, 24, 0.9),
-      0 0 12px rgba(3, 14, 24, 0.9),
-      0 0 28px rgba(3, 14, 24, 0.7);
+      0 0 1px rgb(var(--halo) / 0.9),
+      0 0 12px rgb(var(--halo) / 0.9),
+      0 0 28px rgb(var(--halo) / 0.7);
   }
 
-  .page-intro .h1 {
+  .page-intro .h1,
+  .page-intro .h-pixel,
+  .page-intro .h-zone {
     max-width: 18ch;
   }
 
@@ -879,7 +2065,7 @@
     font-size: 0.9375rem;
     color: var(--color-text-muted);
     text-decoration: underline;
-    text-decoration-color: rgba(238, 246, 248, 0.3);
+    text-decoration-color: color-mix(in srgb, var(--color-text) 30%, transparent);
     text-underline-offset: 5px;
   }
 
@@ -890,7 +2076,7 @@
   .contact {
     display: grid;
     gap: 16px;
-    padding: clamp(28px, 4.4vw, 56px);
+    padding-block: clamp(28px, 4.4vw, 56px);
   }
 
   .contact-links {
@@ -907,10 +2093,10 @@
     gap: 6px 24px;
     padding-block: 36px 118px;
     font-size: 0.875rem;
-    color: var(--color-text-faint);
+    color: var(--color-text-muted);
     text-shadow:
-      0 0 1px rgba(3, 14, 24, 0.9),
-      0 0 12px rgba(3, 14, 24, 0.9);
+      0 0 1px rgb(var(--halo) / 0.9),
+      0 0 12px rgb(var(--halo) / 0.9);
   }
 
   @media (min-width: 760px) {
@@ -919,66 +2105,9 @@
     }
   }
 
-  /* ---------- Work ---------- */
-
-  .work-grid {
-    display: grid;
-    gap: 18px;
-  }
-
-  .work-item {
-    display: grid;
-    gap: 6px 36px;
-    padding: clamp(24px, 3vw, 40px);
-  }
-
-  .work-item .fig-label {
-    margin-top: 8px;
-    font-stretch: 92%;
-    font-weight: 550;
-    font-size: 0.9375rem;
-    line-height: 1.3;
-    color: var(--color-text-muted);
-  }
-
-  .work-item .h3 {
-    margin-bottom: 8px;
-    font-size: 1.3125rem;
-  }
-
-  .work-item .body p {
-    max-width: 54ch;
-  }
-
-  @media (min-width: 860px) {
-    .work-grid {
-      grid-template-columns: repeat(6, 1fr);
-    }
-
-    .work-item {
-      grid-column: span 3;
-      align-content: start;
-    }
-
-    .work-item.wide {
-      grid-column: span 6;
-      grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.6fr);
-      align-items: end;
-    }
-
-    .work-item.wide .fig {
-      font-size: clamp(5rem, 10vw, 8.75rem);
-    }
-
-    .work-item:not(.wide) .stat {
-      margin-bottom: 22px;
-    }
-  }
-
-  @media (max-width: 859px) {
-    .work-item .stat {
-      margin-bottom: 14px;
-    }
+  /* The last zone on a page runs under the footer. */
+  .zone-last {
+    padding-bottom: 0;
   }
 
   /* ---------- Project rows ---------- */
@@ -987,16 +2116,14 @@
     padding: clamp(10px, 1.4vw, 16px) clamp(22px, 3vw, 40px);
   }
 
+  .rows li + li {
+    border-top: 1px solid var(--color-border);
+  }
+
   .row {
     display: grid;
     gap: 4px 28px;
     padding-block: 20px;
-  }
-
-  .row .h3 {
-    display: flex;
-    align-items: baseline;
-    gap: 12px;
   }
 
   .row p {
@@ -1012,14 +2139,6 @@
       grid-template-columns: minmax(0, 15rem) minmax(0, 1fr) auto;
       align-items: baseline;
     }
-  }
-
-  a.row:hover .h3,
-  a.tile:hover .h3 {
-    text-decoration: underline;
-    text-decoration-thickness: 1.5px;
-    text-underline-offset: 5px;
-    text-decoration-color: var(--signal);
   }
 
   .status {
@@ -1042,42 +2161,6 @@
 
   /* ---------- Game pages ---------- */
 
-  .game-doc {
-    padding: clamp(22px, 4vw, 56px);
-  }
-
-  .game-doc p,
-  .game-doc li {
-    max-width: 58ch;
-  }
-
-  .font-serif {
-    font-stretch: 110%;
-    font-weight: 680;
-    letter-spacing: -0.012em;
-  }
-
-  .font-mono {
-    font-stretch: 90%;
-    font-variant-numeric: tabular-nums;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .field canvas,
-  .glass::before,
-  .nav-mark,
-  .badge,
-  .lanyard {
-    transition: none;
-  }
-}
-
-@layer components {
-  .rows li + li {
-    border-top: 1px solid var(--color-border);
-  }
-
   .play-grid {
     grid-template-columns: 1fr;
   }
@@ -1086,12 +2169,6 @@
     .play-grid {
       grid-template-columns: repeat(2, 1fr);
     }
-  }
-
-  .play-tile {
-    min-height: 300px;
-    padding: clamp(26px, 3.4vw, 44px);
-    gap: 14px;
   }
 
   .contact-page {
@@ -1104,6 +2181,15 @@
   .doc-wrap {
     padding-top: clamp(112px, 15vh, 160px);
     padding-bottom: 40px;
+  }
+
+  .game-doc {
+    padding: clamp(22px, 4vw, 56px);
+  }
+
+  .game-doc p,
+  .game-doc li {
+    max-width: 58ch;
   }
 
   .doc-h {
@@ -1163,14 +2249,38 @@
     height: 26px;
     padding: 0 7px;
     border-radius: 8px;
-    background: rgba(4, 18, 30, 0.55);
+    background: var(--well);
     box-shadow:
-      inset 0 0 0 1px rgba(214, 240, 248, 0.2),
-      inset 0 -2px 0 rgba(214, 240, 248, 0.12);
-    font-family: inherit;
-    font-stretch: 92%;
+      inset 0 0 0 1px var(--color-border-glow),
+      inset 0 -2px 0 var(--color-border);
+    font-family: var(--font-mono);
     font-weight: 600;
     font-size: 0.75rem;
     color: var(--color-text);
+  }
+
+  .font-serif {
+    font-stretch: 110%;
+    font-weight: 680;
+    letter-spacing: -0.012em;
+  }
+
+  .font-mono {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Reduced motion removes movement, not fades: things still arrive, they just
+   do not travel. The field itself stops drifting in the engine. */
+@media (prefers-reduced-motion: reduce) {
+  .field-on .field canvas.field-dip,
+  .btn:active:not(:disabled),
+  .motion-toggle:active,
+  .nav-mark,
+  .badge,
+  .lanyard,
+  .rotator-item {
+    transition: none;
+    animation: none;
   }
 }

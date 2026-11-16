@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Contact, PageWrapper } from "@/components/Shared";
+import { Zone } from "@/components/Zone";
 
 export const metadata: Metadata = {
   title: "Contact",
@@ -8,10 +9,12 @@ export const metadata: Metadata = {
 
 export default function ContactPage() {
   return (
-    <PageWrapper>
-      <div className="wrap contact-page">
-        <Contact heading="h1" />
-      </div>
+    <PageWrapper ground="sunset">
+      <Zone theme="sunset" className="zone-last">
+        <div className="wrap contact-page">
+          <Contact heading="h1" />
+        </div>
+      </Zone>
     </PageWrapper>
   );
 }
