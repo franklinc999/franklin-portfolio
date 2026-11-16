@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ArrowUpRight, ArrowLeft } from "lucide-react";
+import { Glass } from "@/components/Glass";
 import { PageWrapper } from "@/components/Shared";
 
 const TUNING = [
@@ -39,25 +40,17 @@ const SECTION = "py-10";
 export default function DesignDocPage() {
   return (
     <PageWrapper>
-      <div className="h-20" />
-
-      <article className="px-6">
+      <article className="wrap doc-wrap">
+        <Glass kind="sheet" className="game-doc">
         <div className="max-w-3xl mx-auto">
           {/* Title block */}
-          <div className="mb-12 scroll-reveal">
-            <Link
-              href="/play"
-              className="inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider text-[var(--color-text-faint)] hover:text-[var(--color-accent)] transition-colors mb-8"
-            >
-              <ArrowLeft size={12} />
-              Back to game
+          <div className="mb-10">
+            <Link href="/play/signal" className="back-link inline-flex items-center gap-1.5">
+              <ArrowLeft size={14} aria-hidden="true" />
+              Back to the game
             </Link>
-            <p className="font-mono text-xs uppercase tracking-[0.3em] text-[var(--color-text-faint)] mb-3">
-              Design Doc · v1.0 · April 2026
-            </p>
-            <h1 className="font-serif text-5xl text-white leading-tight mb-4">
-              Signal <span className="italic text-[var(--color-accent)]">{"// noise"}</span>
-            </h1>
+            <p className="meta mb-3">Design doc, v1.0, April 2026</p>
+            <h1 className="h1 mb-5">{"Signal // Noise"}</h1>
             <p className="text-[var(--color-text-muted)] leading-relaxed">
               A 3-minute browser shooter where enemies are sound waves you have to tune into.
               This doc captures the loop, the tuning targets I chose, the metrics I&apos;d instrument
@@ -82,32 +75,32 @@ export default function DesignDocPage() {
 
           {/* Pillars */}
           <Section label="Design Pillars">
-            <ol className="space-y-4">
-              <Pillar n="01" title="Readability over reaction speed.">
+            <ul className="space-y-4">
+              <Pillar title="Readability over reaction speed.">
                 The challenge is reading the field, not pixel-aiming. Pulse cycles train
                 anticipation; tuning trades reflex for prioritization.
               </Pillar>
-              <Pillar n="02" title="One mechanic, deep tuning.">
+              <Pillar title="One mechanic, deep tuning.">
                 No weapon pickups, no skill tree (in v1). All variety comes from how you sequence
                 kills. Cheaper to balance, easier to demo, harder to make boring.
               </Pillar>
-              <Pillar n="03" title="Failure should be readable.">
+              <Pillar title="Failure should be readable.">
                 Every death should be re-runnable in your head: &quot;mistuned for the scrambler, ate
                 the stalker.&quot; If players blame the game, we lose the retry.
               </Pillar>
-            </ol>
+            </ul>
           </Section>
 
           {/* Core loop */}
           <Section label="Core Loop">
             <div className="liquid-glass liquid-glass-border rounded-lg p-6">
-              <ol className="space-y-3 text-sm text-[var(--color-text-muted)]">
-                <li><span className="font-mono text-[var(--color-accent)] mr-2">→</span> Move (avoid contact damage)</li>
-                <li><span className="font-mono text-[var(--color-accent)] mr-2">→</span> Watch pulse cycles to locate threats</li>
-                <li><span className="font-mono text-[var(--color-accent)] mr-2">→</span> Tune to dominant nearby band</li>
-                <li><span className="font-mono text-[var(--color-accent)] mr-2">→</span> Fire matched-band shots, build chain multiplier</li>
-                <li><span className="font-mono text-[var(--color-accent)] mr-2">→</span> Re-tune as new bands enter range</li>
-                <li><span className="font-mono text-[var(--color-accent)] mr-2">→</span> Survive 22-30s waves; difficulty escalates speed + density</li>
+              <ol className="doc-steps space-y-3 text-[var(--color-text-muted)]">
+                <li>Move (avoid contact damage)</li>
+                <li>Watch pulse cycles to locate threats</li>
+                <li>Tune to dominant nearby band</li>
+                <li>Fire matched-band shots, build chain multiplier</li>
+                <li>Re-tune as new bands enter range</li>
+                <li>Survive 22-30s waves; difficulty escalates speed + density</li>
               </ol>
             </div>
           </Section>
@@ -122,8 +115,8 @@ export default function DesignDocPage() {
               {TUNING.map((t) => (
                 <div key={t.label} className="bg-[var(--color-bg)] p-4 grid grid-cols-1 md:grid-cols-[1fr_auto_2fr] gap-3 md:gap-6 md:items-baseline">
                   <span className="text-sm text-white">{t.label}</span>
-                  <span className="font-mono text-xs text-[var(--color-accent)]">{t.value}</span>
-                  <span className="text-xs text-[var(--color-text-muted)] leading-relaxed">{t.note}</span>
+                  <span className="font-mono text-sm text-[var(--color-accent)]">{t.value}</span>
+                  <span className="text-sm text-[var(--color-text-muted)] leading-relaxed">{t.note}</span>
                 </div>
               ))}
             </div>
@@ -131,19 +124,18 @@ export default function DesignDocPage() {
 
           {/* Enemies */}
           <Section label="Enemy Roster">
-            <div className="bento-section grid grid-cols-1 md:grid-cols-3 gap-[1px] bg-[var(--color-border)]">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {ENEMIES.map((e) => (
-                <div key={e.name} className="bento-item liquid-glass liquid-glass-border rounded-none p-5">
-                  <div className="bento-border-glow" />
-                  <div className="relative z-20">
+                <div key={e.name} className="liquid-glass liquid-glass-border rounded-2xl p-5">
+                                    <div>
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="font-serif text-lg text-white">{e.name}</h3>
-                      <span className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-faint)]">
+                      <span className="meta">
                         {e.role}
                       </span>
                     </div>
-                    <p className="text-xs text-[var(--color-text-muted)] leading-relaxed mb-3">{e.behavior}</p>
-                    <p className="font-mono text-xs text-[var(--color-accent)]">{e.reward}</p>
+                    <p className="text-sm text-[var(--color-text-muted)] leading-relaxed mb-3">{e.behavior}</p>
+                    <p className="font-mono text-sm text-[var(--color-accent)]">{e.reward}</p>
                   </div>
                 </div>
               ))}
@@ -161,9 +153,9 @@ export default function DesignDocPage() {
                 <div key={m.metric} className="bg-[var(--color-bg)] p-4">
                   <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 mb-1">
                     <span className="text-sm text-white">{m.metric}</span>
-                    <span className="font-mono text-xs text-[var(--color-accent)]">{m.target}</span>
+                    <span className="font-mono text-sm text-[var(--color-accent)]">{m.target}</span>
                   </div>
-                  <p className="text-xs text-[var(--color-text-muted)] leading-relaxed" dangerouslySetInnerHTML={{ __html: m.how }} />
+                  <p className="text-sm text-[var(--color-text-muted)] leading-relaxed" dangerouslySetInnerHTML={{ __html: m.how }} />
                 </div>
               ))}
             </div>
@@ -175,7 +167,7 @@ export default function DesignDocPage() {
               {ROADMAP.map((r) => (
                 <div key={r.v} className="liquid-glass liquid-glass-border rounded-lg p-5">
                   <div className="flex items-baseline gap-3 mb-2">
-                    <span className="font-mono text-xs uppercase tracking-wider text-[var(--color-accent)]">{r.v}</span>
+                    <span className="font-mono text-sm text-[var(--color-accent)]">{r.v}</span>
                     <h3 className="font-serif text-lg text-white">{r.title}</h3>
                   </div>
                   <p className="text-sm text-[var(--color-text-muted)] leading-relaxed">{r.body}</p>
@@ -219,49 +211,40 @@ export default function DesignDocPage() {
               no bought assets, no AI-generated art. The constraint was the point.
             </p>
             <div className="mt-8 flex items-center gap-4">
-              <Link
-                href="/play"
-                className="liquid-glass liquid-glass-border rounded-full px-6 py-2.5 text-sm text-white hover:border-[var(--color-border-glow)] transition-all inline-flex items-center gap-2"
-              >
-                Play it <ArrowUpRight size={14} />
+              <Link href="/play/signal" className="btn btn-solid">
+                Play it <ArrowUpRight size={14} aria-hidden="true" />
               </Link>
               <a
                 href="https://github.com/franklinc999/franklin-portfolio"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm text-[var(--color-text-muted)] hover:text-white transition-colors inline-flex items-center gap-1.5"
+                className="btn btn-glass"
               >
-                Source on GitHub <ArrowUpRight size={12} />
+                Source on GitHub <ArrowUpRight size={14} aria-hidden="true" />
               </a>
             </div>
           </Section>
         </div>
+        </Glass>
       </article>
-
-      <div className="h-20" />
     </PageWrapper>
   );
 }
 
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <section className={`${SECTION} scroll-reveal`}>
-      <p className="font-mono text-xs uppercase tracking-[0.3em] text-[var(--color-text-faint)] mb-4">
-        {label}
-      </p>
+    <section className={SECTION}>
+      <h2 className="doc-h">{label}</h2>
       {children}
     </section>
   );
 }
 
-function Pillar({ n, title, children }: { n: string; title: string; children: React.ReactNode }) {
+function Pillar({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <li className="flex gap-4">
-      <span className="font-mono text-xs text-[var(--color-accent)] pt-1 shrink-0">{n}</span>
-      <div>
-        <p className="text-white text-sm mb-1 font-medium">{title}</p>
-        <p className="text-sm text-[var(--color-text-muted)] leading-relaxed">{children}</p>
-      </div>
+    <li>
+      <p className="text-white mb-1 font-semibold">{title}</p>
+      <p className="text-[var(--color-text-muted)] leading-relaxed">{children}</p>
     </li>
   );
 }

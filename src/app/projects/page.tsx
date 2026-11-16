@@ -1,170 +1,161 @@
-"use client";
+import type { Metadata } from "next";
+import { Glass, GlassLink } from "@/components/Glass";
+import { PageIntro, PageWrapper } from "@/components/Shared";
 
-import { ArrowUpRight } from "lucide-react";
-import { PageWrapper, Marquee } from "@/components/Shared";
+export const metadata: Metadata = {
+  title: "Projects",
+  description: "Side projects by Franklin Cheng: two browser games, an interview copilot, and a handful of small tools.",
+};
 
-const PROJECTS = [
+type Project = {
+  name: string;
+  year: string;
+  description: string;
+  link: string;
+  kind: string;
+  state: "live" | "building";
+};
+
+const FEATURED: Project[] = [
   {
     name: "Range Warmup",
     year: "2026",
     description:
-      "A browser FPS aim trainer that actually matches your real game sens. Pick Valorant, CoD, or Apex, plug in your DPI and in-game sens, and the cm/360 math scales mouse input so muscle memory carries over. Three drills: reaction, tracking, and a third-person peek mode.",
+      "A browser aim trainer that matches your real game sensitivity. Pick Valorant, Call of Duty, or Apex, enter your DPI and in-game sens, and the cm/360 math scales mouse input so muscle memory carries over. Three drills: reaction, tracking, and a third-person peek mode.",
     link: "/play/warmup",
-    tags: ["Game Design", "Canvas", "FPS Trainer"],
-    status: "Live",
+    kind: "Game, canvas",
+    state: "live",
   },
   {
     name: "Signal // Noise",
     year: "2026",
     description:
-      "A twin-stick browser shooter where enemies are sound waves you have to tune your weapon to. Built to study readability, telegraphing, and the tuning numbers behind game feel, ships with a full PM design doc.",
+      "A twin-stick shooter where enemies are sound waves you tune your weapon to. I built it to study readability, telegraphing, and the tuning numbers behind game feel. It ships with a full design doc.",
     link: "/play/signal",
-    tags: ["Game Design", "Canvas", "Web Audio"],
-    status: "Live",
-  },
-  {
-    name: "Three Good Things",
-    year: "2025",
-    description:
-      "A gratitude journaling app built during a rough patch. Log three positive moments daily with plans for a year-end Wrapped-style tracker.",
-    link: "https://steep-frost-2548.21st.app/",
-    tags: ["React", "AI", "Wellness"],
-    status: "Live",
-  },
-  {
-    name: "Did You Call Your Parents?",
-    year: "2025",
-    description:
-      "A guilt-powered reminder app born from not calling home for two months. Gentle nudges to stay connected with family.",
-    link: "https://noisy-sky-5988.21st.app/",
-    tags: ["React", "Notifications", "Personal"],
-    status: "Live",
-  },
-  {
-    name: "Rate My Resume",
-    year: "2024",
-    description:
-      "An AI resume grader for internship applicants who want a quick sense-check before hitting submit.",
-    link: "https://resume-grader-0986b991.base44.app/",
-    tags: ["AI", "NLP", "Career Tools"],
-    status: "Live",
-  },
-  {
-    name: "OptimizeAI Dashboard",
-    year: "2024",
-    description:
-      "A full analytics dashboard built for a pre-seed AI startup, visualizing model performance and user engagement metrics.",
-    link: "https://optimizeai.net/",
-    tags: ["Dashboard", "Analytics", "Startup"],
-    status: "Live",
-  },
-  {
-    name: "GPA Calculator",
-    year: "2023",
-    description:
-      "A minimal tool to calculate the exact final grade needed to hit your target GPA. Built for stressed-out undergrads.",
-    link: "https://empty-smoke-6977.21st.app/",
-    tags: ["Utility", "Education", "Tool"],
-    status: "Live",
+    kind: "Game, canvas and Web Audio",
+    state: "live",
   },
   {
     name: "Interview Copilot",
     year: "2026",
     description:
-      "A real-time meeting and interview copilot that listens in, surfaces relevant context, and suggests responses on the fly. Built for high-stakes calls where you can't afford to fumble.",
+      "A real-time copilot for meetings and interviews. It listens in, surfaces relevant context, and suggests responses on the fly, for calls where you can’t afford to fumble.",
     link: "https://interview-copilot.pplx.app",
-    tags: ["AI", "Real-Time", "Productivity"],
-    status: "Live",
+    kind: "AI, real time",
+    state: "live",
   },
+];
+
+const MORE: Project[] = [
   {
     name: "Automated Grocery Runner",
     year: "2026",
     description:
-      "An AI-powered agent that learns your preferences, auto-generates weekly grocery lists, and schedules delivery. Currently in development.",
-    link: "#",
-    tags: ["AI Agents", "Automation", "Full-Stack"],
-    status: "Building",
+      "An agent that learns your preferences, writes the weekly grocery list, and schedules delivery. In development.",
+    link: "",
+    kind: "AI agents",
+    state: "building",
+  },
+  {
+    name: "Three Good Things",
+    year: "2025",
+    description:
+      "A gratitude journal I built during a rough patch. Log three good moments a day, with a year-end recap planned.",
+    link: "https://steep-frost-2548.21st.app/",
+    kind: "React, AI",
+    state: "live",
+  },
+  {
+    name: "Did You Call Your Parents?",
+    year: "2025",
+    description: "A reminder app born from not calling home for two months. Gentle nudges to stay in touch with family.",
+    link: "https://noisy-sky-5988.21st.app/",
+    kind: "React",
+    state: "live",
+  },
+  {
+    name: "Rate My Resume",
+    year: "2024",
+    description: "A resume grader for internship applicants who want a quick sense check before they hit submit.",
+    link: "https://resume-grader-0986b991.base44.app/",
+    kind: "AI",
+    state: "live",
+  },
+  {
+    name: "OptimizeAI Dashboard",
+    year: "2024",
+    description:
+      "An analytics dashboard for a pre-seed AI startup, showing model performance and user engagement.",
+    link: "https://optimizeai.net/",
+    kind: "Analytics",
+    state: "live",
+  },
+  {
+    name: "GPA Calculator",
+    year: "2023",
+    description: "Works out the exact final grade you need to hit a target GPA. Built for stressed undergrads.",
+    link: "https://empty-smoke-6977.21st.app/",
+    kind: "Utility",
+    state: "live",
   },
 ];
+
+function Row({ project }: { project: Project }) {
+  const body = (
+    <>
+      <h3 className="h3">{project.name}</h3>
+      <p>{project.description}</p>
+      <p className="meta">
+        <span className="status" data-state={project.state}>
+          {project.state === "live" ? project.year : `Building, ${project.year}`}
+        </span>
+      </p>
+    </>
+  );
+  if (!project.link) return <li className="row">{body}</li>;
+  return (
+    <li>
+      <a className="row" href={project.link} target="_blank" rel="noopener noreferrer">
+        {body}
+      </a>
+    </li>
+  );
+}
 
 export default function ProjectsPage() {
   return (
     <PageWrapper>
-      <div className="h-20" />
+      <PageIntro title="Things I’ve built">
+        Side projects, made on nights and weekends. Most are small on purpose: the point is to learn what a product
+        needs by shipping one.
+      </PageIntro>
 
-      <section className="py-16 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="mb-12 scroll-reveal text-center">
-            <p className="font-mono text-xs uppercase tracking-[0.3em] text-[var(--color-text-faint)] mb-2">
-              App Lab
+      <section className="wrap card-grid" aria-label="Featured projects">
+        {FEATURED.map((project) => (
+          <GlassLink key={project.name} href={project.link} className="tile">
+            <h2 className="h3">{project.name}</h2>
+            <p>{project.description}</p>
+            <p className="meta">
+              {project.kind}, {project.year}
             </p>
-            <h1 className="font-serif text-4xl lg:text-5xl text-white">
-              Things I&apos;ve Built
-            </h1>
-            <p className="mt-3 text-[var(--color-text-muted)] text-sm max-w-lg mx-auto">
-              Side projects shipped between client engagements. Most are vibe-coded MVPs, building towards more complex, polished products.
-            </p>
-          </div>
-
-          <div className="bento-section grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[1px] bg-[var(--color-border)]">
-            {PROJECTS.map((project, i) => (
-              <a
-                key={i}
-                href={project.link}
-                target={project.link !== "#" && !project.link.startsWith("/") ? "_blank" : undefined}
-                rel="noopener noreferrer"
-                className={`bento-item liquid-glass liquid-glass-border rounded-none p-6 block group ${
-                  project.link === "#" ? "pointer-events-none" : "cursor-pointer"
-                }`}
-              >
-                <div className="bento-border-glow" />
-                <div className="relative z-20 flex flex-col h-full min-h-[200px]">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--color-text-faint)]">
-                      {project.year}
-                    </span>
-                    <span
-                      className={`font-mono text-[10px] uppercase tracking-wider px-2 py-0.5 rounded border ${
-                        project.status === "Live"
-                          ? "text-[var(--color-accent)] border-[rgba(91,184,212,0.2)] bg-[rgba(91,184,212,0.05)]"
-                          : "text-[var(--color-accent-2)] border-[rgba(167,139,250,0.2)] bg-[rgba(167,139,250,0.05)]"
-                      }`}
-                    >
-                      {project.status}
-                    </span>
-                  </div>
-                  <h3 className="font-serif text-lg text-white mb-2 leading-snug group-hover:text-[var(--color-accent)] transition-colors duration-200">
-                    {project.name}
-                  </h3>
-                  <p className="text-sm text-[var(--color-text-muted)] leading-relaxed mb-4 flex-1">
-                    {project.description}
-                  </p>
-                  <div className="flex items-center justify-between mt-auto">
-                    <div className="flex flex-wrap gap-1.5">
-                      {project.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-faint)] border border-[var(--color-border)] rounded"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                    {project.link !== "#" && (
-                      <ArrowUpRight
-                        size={14}
-                        className="text-[var(--color-text-faint)] group-hover:text-[var(--color-accent)] transition-colors duration-200 flex-shrink-0 ml-2"
-                      />
-                    )}
-                  </div>
-                </div>
-              </a>
-            ))}
-          </div>
-        </div>
+          </GlassLink>
+        ))}
       </section>
 
-      <Marquee />
+      <section className="section wrap" aria-labelledby="more-title">
+        <div className="section-head">
+          <h2 id="more-title" className="h2 on-map">
+            Smaller tools
+          </h2>
+        </div>
+        <Glass kind="sheet" className="rows">
+          <ul>
+            {MORE.map((project) => (
+              <Row key={project.name} project={project} />
+            ))}
+          </ul>
+        </Glass>
+      </section>
     </PageWrapper>
   );
 }

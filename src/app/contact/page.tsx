@@ -1,13 +1,16 @@
-"use client";
+import type { Metadata } from "next";
+import { Contact, PageWrapper } from "@/components/Shared";
 
-import { PageWrapper, Contact } from "@/components/Shared";
+export const metadata: Metadata = {
+  title: "Contact",
+  description: "Get in touch with Franklin Cheng by email, LinkedIn, or GitHub.",
+};
 
 export default function ContactPage() {
   return (
     <PageWrapper>
-      <div className="h-20" />
-      <div className="min-h-[70vh] flex items-center justify-center w-full">
-        <Contact />
+      <div className="wrap contact-page">
+        <Contact heading="h1" />
       </div>
     </PageWrapper>
   );

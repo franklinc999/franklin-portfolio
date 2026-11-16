@@ -1,11 +1,43 @@
-import type { Metadata } from "next";
-import { PageTransition } from "@/components/PageTransition";
+import type { Metadata, Viewport } from "next";
+import localFont from "next/font/local";
+import { Field } from "@/components/Field";
+import { Nav } from "@/components/Nav";
 import "./globals.css";
 
+// Archivo, self-hosted. One variable file carries both the weight and width axes.
+const archivo = localFont({
+  src: "./fonts/Archivo-Variable.woff2",
+  variable: "--font-archivo",
+  weight: "100 900",
+  display: "swap",
+  declarations: [{ prop: "font-stretch", value: "62% 125%" }],
+});
+
+const description =
+  "Franklin Cheng is an associate product manager on Call of Duty at Activision. He manages the in-game store's bundle schedule and builds the automation that audits it.";
+
 export const metadata: Metadata = {
-  title: "Franklin Cheng, Strategist & Product Builder",
-  description:
-    "Strategy consultant and product builder. UPenn PPE grad crafting AI-powered tools and go-to-market strategy for Fortune 500 clients.",
+  metadataBase: new URL("https://franklin.rocks"),
+  title: {
+    default: "Franklin Cheng, product manager on Call of Duty",
+    template: "%s | Franklin Cheng",
+  },
+  description,
+  openGraph: {
+    title: "Franklin Cheng, product manager on Call of Duty",
+    description,
+    url: "https://franklin.rocks",
+    siteName: "Franklin Cheng",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#05172a",
+  colorScheme: "dark",
 };
 
 export default function RootLayout({
@@ -14,24 +46,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@300;400;500;600&display=swap"
-          rel="stylesheet"
-        />
-        <link
-          href="https://api.fontshare.com/v2/css?f[]=satoshi@300,400,500,700&display=swap"
-          rel="stylesheet"
-        />
-        {/* GSAP + ScrollTrigger via CDN */}
-        <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/ScrollTrigger.min.js"></script>
-      </head>
-      <body className="antialiased">
-        <PageTransition>{children}</PageTransition>
+    <html lang="en" className={archivo.variable}>
+      <body>
+        <a className="skip-link" href="#main">
+          Skip to content
+        </a>
+        <Field />
+        <Nav />
+        <div className="app">{children}</div>
       </body>
     </html>
   );

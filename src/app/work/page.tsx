@@ -1,179 +1,138 @@
-"use client";
+import type { Metadata } from "next";
+import { Glass } from "@/components/Glass";
+import { PageIntro, PageWrapper } from "@/components/Shared";
 
-import { PageWrapper, Marquee } from "@/components/Shared";
+export const metadata: Metadata = {
+  title: "Work",
+  description:
+    "What Franklin Cheng does as an associate product manager on Call of Duty at Activision: the store schedule, the automation behind it, and launch-night reporting.",
+};
 
-const CONSULTING_PROJECTS = [
+const BEFORE = [
   {
-    client: "Fortune 50 Tech Giant",
-    title: "AI Workspace Strategy & Competitive Assessment",
-    description:
-      "Assessed the client's AI-powered productivity suite against key competitors, identifying capability gaps and growth opportunities. Delivered a strategic roadmap that informed go-to-market decisions and LLM feature prioritization.",
-    tags: ["AI Strategy", "Competitive Intelligence", "Go-to-Market"],
-    stat: { label: "Market Players Analyzed", value: "12+" },
-    span: "col-span-2",
+    org: "Sia (formerly Kaiser Associates)",
+    role: "Associate Consultant",
+    when: "Nov 2024 to Jul 2026",
+    note: "Competitive intelligence and commercial due diligence for tech, payments, and private equity clients. I designed a testing framework to benchmark four competitor LLM workspace tools for a major tech client, built a bottom-up market sizing model that validated a $9B TAM for a Fortune 500 client’s new credit vertical, and automated a data-entry bottleneck the team kept using on later engagements.",
   },
   {
-    client: "Global Technology Leader",
-    title: "APAC B2B Market Entry",
-    description:
-      "Developed market entry strategy for B2B expansion across the Asia-Pacific region, analyzing competitive dynamics, regulatory landscapes, and channel partnerships.",
-    tags: ["Market Entry", "B2B Strategy", "APAC"],
-    stat: { label: "Markets Evaluated", value: "6" },
-    span: "col-span-1",
+    org: "RSM",
+    role: "AI Consulting Intern",
+    when: "Jun to Aug 2024",
+    note: "Co-led research and execution of an internal generative AI feature, running A/B tests with engineers and feedback from 300+ beta testers, which cut report writing time by 30%. Launched four Power BI dashboards tracking feature adoption for 90+ sales and ops leaders.",
   },
   {
-    client: "Leading Financial Services Network",
-    title: "Merchant Retention & Network Risk Analysis",
-    description:
-      "Conducted primary research with merchants to evaluate network switching risk driven by interchange pricing differentials. Found strong retention signals across the portfolio, reinforcing the client's competitive moat.",
-    tags: ["Primary Research", "Payments", "Risk Analysis"],
-    stat: { label: "Merchant Interviews", value: "40+" },
-    span: "col-span-1",
-  },
-  {
-    client: "Leading Financial Services Network",
-    title: "Offers & Rewards Competitive Benchmarking",
-    description:
-      "Benchmarked the client's merchant offers program against competitor pricing models, delivering a comprehensive comparison of incentive structures, fee tiers, and ROI metrics.",
-    tags: ["Benchmarking", "Pricing Strategy", "Rewards"],
-    stat: { label: "Programs Compared", value: "5" },
-    span: "col-span-1",
-  },
-  {
-    client: "Leading Financial Services Network",
-    title: "Cross-Border Interchange Pricing Intelligence",
-    description:
-      "Analyzed interchange pricing structures across Malaysia, India, and South Korea, mapping major issuers and acquirers to identify pricing arbitrage and regulatory risk in each region.",
-    tags: ["Interchange", "Cross-Border", "Pricing"],
-    stat: { label: "Regional Markets", value: "3" },
-    span: "col-span-1",
-  },
-  {
-    client: "Specialty Insurance Carrier (PE-backed)",
-    title: "Profitability & Operations Turnaround",
-    description:
-      "Diagnosed root causes of margin erosion across the client's sales operations. Identified misaligned incentive structures, excessive churn, and product-market gaps relative to competitors, delivering a prioritized remediation plan.",
-    tags: ["Operations", "P&L Optimization", "PE Portfolio"],
-    stat: { label: "Savings Identified", value: "$2M+" },
-    span: "col-span-2",
-  },
-  {
-    client: "Private Equity Fund",
-    title: "P2P Software Acquisition Due Diligence",
-    description:
-      "Led commercial due diligence for a PE client evaluating the acquisition of a peer-to-peer software platform, assessing market positioning, growth trajectory, and competitive defensibility.",
-    tags: ["Due Diligence", "M&A", "SaaS"],
-    stat: { label: "Deal Assessment", value: "CDD" },
-    span: "col-span-1",
-  },
-  {
-    client: "Major Financial Institution",
-    title: "Commercial Cards Program Benchmarking",
-    description:
-      "Built a competitive battlecard for US Commercial Cards (P-Cards and B2B Virtual Cards) for procurement and AP use cases. Structured the analysis into a market overview plus a six-player deep dive across features, capabilities, and distribution, intentionally excluding T&E positioning to focus on the highest-margin spend categories.",
-    tags: ["Commercial Cards", "B2B Payments", "Battlecard"],
-    stat: { label: "Issuers Benchmarked", value: "6" },
-    span: "col-span-1",
-  },
-  {
-    client: "Private Equity Fund",
-    title: "Exotic Aftermarket Exhaust Supplier Diligence",
-    description:
-      "Supported commercial diligence on an aftermarket exhaust systems supplier targeting the exotic and European performance segment. Built a 200-shop database of US tuning and performance retailers, segmented by which carried competing premium brands versus white-space accounts, to validate the target's distribution moat and growth runway.",
-    tags: ["Due Diligence", "Automotive Aftermarket", "Channel Analysis"],
-    stat: { label: "Shops Mapped", value: "200" },
-    span: "col-span-1",
-  },
-  {
-    client: "Tire Manufacturer",
-    title: "Operations & Margin Optimization",
-    description:
-      "Kicking off an operations diagnostic for a tire manufacturer, identifying inefficiencies across production, distribution, and sales incentives. Will pattern-match against prior insurance and PE turnaround work to surface quick wins and structural cost takeouts.",
-    tags: ["Operations", "Manufacturing", "Upcoming"],
-    stat: { label: "Engagement Status", value: "Q3" },
-    span: "col-span-1",
+    org: "Meta News",
+    role: "Product and Strategy",
+    when: "Sep 2022 to May 2024",
+    note: "Launched an in-app LLM product at NFT.NYC 2024 as the event’s primary sponsor, covering pricing, positioning, and go-to-market, with 10,000 signups in one week. Built a real-time tracker that sorted 500+ articles a day by sentiment and topic.",
   },
 ];
 
 export default function WorkPage() {
   return (
     <PageWrapper>
-      {/* Spacer for fixed nav */}
-      <div className="h-20" />
+      <PageIntro title="Keeping a live store on schedule">
+        I&rsquo;m an associate product manager on Call of Duty at Activision, since August 2026. The job is part
+        schedule, part analysis, and a growing part automation I build myself.
+      </PageIntro>
 
-      <section className="py-16 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="mb-12 scroll-reveal text-center">
-            <p className="font-mono text-xs uppercase tracking-[0.3em] text-[var(--color-text-faint)] mb-2">
-              Consulting
-            </p>
-            <h1 className="font-serif text-4xl lg:text-5xl text-white">
-              Selected Engagements
-            </h1>
-            <p className="mt-3 text-[var(--color-text-muted)] text-sm max-w-lg mx-auto">
-              Client names anonymized per NDA. Outcomes and scope are representative.
+      <section className="wrap work-grid" aria-label="Call of Duty work">
+        <Glass as="article" className="work-item wide">
+          <div className="stat">
+            <p className="fig">140+</p>
+            <p className="fig-label">bundles on one schedule</p>
+          </div>
+          <div className="body">
+            <h2 className="h3">The store schedule</h2>
+            <p>
+              I manage the Call of Duty in-game store bundle schedule, the source cross-functional teams use for
+              go-live dates. I replaced hand-typed release dates with formula-driven logic across 583 rows and added
+              daily automated audits that flag mismatches against the live CMS.
             </p>
           </div>
+        </Glass>
 
-          <div className="bento-section grid grid-cols-1 md:grid-cols-2 gap-[1px] bg-[var(--color-border)]">
-            {CONSULTING_PROJECTS.map((project, i) => (
-              <div
-                key={i}
-                className={`bento-item liquid-glass liquid-glass-border rounded-none p-6 ${
-                  project.span === "col-span-2" ? "md:col-span-2" : ""
-                }`}
-              >
-                <div className="bento-border-glow" />
-                <div className="relative z-20">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--color-accent)] opacity-80">
-                      {project.client}
-                    </span>
-                    {project.tags.includes("Active") && (
-                      <span className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                        <span className="font-mono text-[10px] text-green-400 uppercase tracking-wider">Active</span>
-                      </span>
-                    )}
-                    {project.tags.includes("Upcoming") && (
-                      <span className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-accent-2)] animate-pulse" />
-                        <span className="font-mono text-[10px] text-[var(--color-accent-2)] uppercase tracking-wider">Upcoming</span>
-                      </span>
-                    )}
-                  </div>
-                  <h3 className="font-serif text-lg text-white mb-2 leading-snug">
-                    {project.title}
-                  </h3>
-                  <p className="text-sm text-[var(--color-text-muted)] leading-relaxed mb-4">
-                    {project.description}
-                  </p>
-                  <div className="flex items-end justify-between">
-                    <div className="flex flex-wrap gap-1.5">
-                      {project.tags.filter(t => t !== "Active" && t !== "Upcoming").map((tag) => (
-                        <span
-                          key={tag}
-                          className="px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-faint)] border border-[var(--color-border)] rounded"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                    <div className="text-right flex-shrink-0 ml-4">
-                      <p className="stat-value text-xl text-white">{project.stat.value}</p>
-                      <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-faint)]">
-                        {project.stat.label}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
+        <Glass as="article" kind="card" className="work-item">
+          <div className="stat">
+            <p className="fig">27</p>
+            <p className="fig-label">scheduled pipelines</p>
           </div>
-        </div>
+          <div className="body">
+            <h2 className="h3">Agents that do the pulling</h2>
+            <p>
+              I designed and built a multi-agent automation system in SQL, Python, and Node.js. It pulls Databricks
+              data, audits the store schedule, and generates leadership decks and reports, saving an estimated eight
+              hours a week of manual data pulls and deck building.
+            </p>
+          </div>
+        </Glass>
+
+        <Glass as="article" kind="card" className="work-item">
+          <div className="stat">
+            <p className="fig">Hourly</p>
+            <p className="fig-label">through launch night</p>
+          </div>
+          <div className="body">
+            <h2 className="h3">Launch-night reporting</h2>
+            <p>
+              For launch night I built an unattended hourly report that benchmarks the new title against prior ones
+              for a ten-person live-ops performance channel. After the first post went out, it was extended to run
+              overnight.
+            </p>
+          </div>
+        </Glass>
+
+        <Glass as="article" kind="card" className="work-item">
+          <div className="stat">
+            <p className="fig">20</p>
+            <p className="fig-label">automated tests on the pipelines</p>
+          </div>
+          <div className="body">
+            <h2 className="h3">Catching silent failures</h2>
+            <p>
+              Every pipeline has failure detection and alerting: watchdogs, data freshness checks, and automated
+              tests. Stale or broken data gets flagged before it reaches a launch readout.
+            </p>
+          </div>
+        </Glass>
+
+        <Glass as="article" kind="card" className="work-item">
+          <div className="stat">
+            <p className="fig">4</p>
+            <p className="fig-label">Call of Duty titles compared</p>
+          </div>
+          <div className="body">
+            <h2 className="h3">Bundle analysis and readouts</h2>
+            <p>
+              I analyze bundle performance in Databricks for leadership readouts, looking at day-one sales, equip
+              rates, and revenue per daily active user, and I draft bundle pricing. I also built an automated Season 2
+              bundle visualization deck covering 21 bundles, and a five-slide store post mortem for a development
+              studio review.
+            </p>
+          </div>
+        </Glass>
       </section>
 
-      <Marquee />
+      <section className="section wrap" aria-labelledby="before-title">
+        <div className="section-head">
+          <h2 id="before-title" className="h2 on-map">
+            Before games
+          </h2>
+        </div>
+        <Glass kind="sheet" className="prose">
+          <ol className="timeline">
+            {BEFORE.map((item) => (
+              <li key={item.org}>
+                <span className="org">{item.org}</span>
+                <span className="when">{item.when}</span>
+                <span className="role">{item.role}</span>
+                <p className="note">{item.note}</p>
+              </li>
+            ))}
+          </ol>
+        </Glass>
+      </section>
     </PageWrapper>
   );
 }

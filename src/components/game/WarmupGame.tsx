@@ -121,12 +121,12 @@ function SettingsScreen({ settings, setSettings, onContinue }: { settings: Setti
   return (
     <div className="w-full max-w-[960px] mx-auto liquid-glass liquid-glass-border rounded-xl p-8" style={{ minHeight: 600 }}>
       <div className="max-w-md mx-auto">
-        <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-[var(--color-text-faint)] mb-2 text-center">Step 1 of 2</p>
-        <h2 className="font-serif text-3xl text-white text-center mb-1">Match your <span className="italic text-[var(--color-accent-2)]">sens</span></h2>
+        <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[var(--color-text-faint)] mb-2 text-center">Step 1 of 2</p>
+        <h2 className="font-serif text-3xl text-white text-center mb-1">Match your <span className="text-[var(--color-accent-2)]">sens</span></h2>
         <p className="text-xs text-[var(--color-text-muted)] text-center mb-8">So muscle memory carries over to your real games.</p>
 
         <label className="block mb-6">
-          <span className="text-[10px] font-mono uppercase tracking-widest text-[var(--color-text-faint)] block mb-2">Game profile</span>
+          <span className="text-[11px] font-mono uppercase tracking-widest text-[var(--color-text-faint)] block mb-2">Game profile</span>
           <div className="grid grid-cols-3 gap-2">
             {(["valorant", "cod", "apex"] as GameName[]).map((g) => (
               <button key={g} onClick={() => setSettings({ ...settings, game: g })}
@@ -140,7 +140,7 @@ function SettingsScreen({ settings, setSettings, onContinue }: { settings: Setti
         </label>
 
         <label className="block mb-5">
-          <span className="text-[10px] font-mono uppercase tracking-widest text-[var(--color-text-faint)] block mb-2">Mouse DPI</span>
+          <span className="text-[11px] font-mono uppercase tracking-widest text-[var(--color-text-faint)] block mb-2">Mouse DPI</span>
           <input
             type="text"
             inputMode="numeric"
@@ -158,11 +158,11 @@ function SettingsScreen({ settings, setSettings, onContinue }: { settings: Setti
             onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
             className="w-full bg-black/40 border border-[var(--color-border)] rounded-lg px-4 py-2.5 text-white font-mono text-sm focus:outline-none focus:border-[var(--color-accent-2)] transition-colors"
           />
-          <span className="text-[10px] font-mono text-[var(--color-text-faint)] mt-1 block">Range 100, 20000</span>
+          <span className="text-[11px] font-mono text-[var(--color-text-faint)] mt-1 block">Range 100, 20000</span>
         </label>
 
         <label className="block mb-8">
-          <span className="text-[10px] font-mono uppercase tracking-widest text-[var(--color-text-faint)] block mb-2">In-game sensitivity</span>
+          <span className="text-[11px] font-mono uppercase tracking-widest text-[var(--color-text-faint)] block mb-2">In-game sensitivity</span>
           <input
             type="text"
             inputMode="decimal"
@@ -183,17 +183,17 @@ function SettingsScreen({ settings, setSettings, onContinue }: { settings: Setti
 
         <div className="grid grid-cols-2 gap-3 mb-8">
           <div className="liquid-glass-border rounded-lg p-4 bg-white/[0.02]">
-            <p className="text-[9px] font-mono uppercase tracking-widest text-[var(--color-text-faint)] mb-1">eDPI</p>
+            <p className="text-[11px] font-mono uppercase tracking-widest text-[var(--color-text-faint)] mb-1">eDPI</p>
             <p className="font-mono text-2xl text-white tabular-nums">{Math.round(edpi)}</p>
           </div>
           <div className="liquid-glass-border rounded-lg p-4 bg-white/[0.02]">
-            <p className="text-[9px] font-mono uppercase tracking-widest text-[var(--color-text-faint)] mb-1">cm / 360</p>
+            <p className="text-[11px] font-mono uppercase tracking-widest text-[var(--color-text-faint)] mb-1">cm / 360</p>
             <p className="font-mono text-2xl text-white tabular-nums">{cm360.toFixed(1)}<span className="text-xs text-[var(--color-text-faint)] ml-1">cm</span></p>
           </div>
         </div>
 
         <button onClick={onContinue} className="w-full liquid-glass-border rounded-full px-6 py-3 text-sm font-medium text-white hover:border-[var(--color-border-glow)] hover:bg-white/5 transition-all">Continue</button>
-        <p className="text-[10px] font-mono text-center text-[var(--color-text-faint)] mt-4 leading-relaxed">Yaw values: Valorant {YAW.valorant}, CoD {YAW.cod}, Apex/CS {YAW.apex}</p>
+        <p className="text-[11px] font-mono text-center text-[var(--color-text-faint)] mt-4 leading-relaxed">Yaw values: Valorant {YAW.valorant}, CoD {YAW.cod}, Apex/CS {YAW.apex}</p>
       </div>
     </div>
   );
@@ -212,22 +212,22 @@ function ModeSelect({ onPick, onBack, settings }: { onPick: (m: Mode) => void; o
   return (
     <div className="w-full max-w-[960px] mx-auto liquid-glass liquid-glass-border rounded-xl p-8" style={{ minHeight: 600 }}>
       <div className="flex items-center justify-between mb-8">
-        <button onClick={onBack} className="text-[10px] font-mono uppercase tracking-widest text-[var(--color-text-muted)] hover:text-white transition-colors">← Settings</button>
+        <button onClick={onBack} className="text-[11px] font-mono uppercase tracking-widest text-[var(--color-text-muted)] hover:text-white transition-colors">← Settings</button>
         <div className="text-right">
-          <p className="text-[9px] font-mono uppercase tracking-widest text-[var(--color-text-faint)]">Locked at</p>
+          <p className="text-[11px] font-mono uppercase tracking-widest text-[var(--color-text-faint)]">Locked at</p>
           <p className="font-mono text-xs text-[var(--color-text)]">{cm360.toFixed(1)} cm / 360, {settings.game.toUpperCase()}</p>
         </div>
       </div>
       <div className="text-center mb-8">
-        <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-[var(--color-text-faint)] mb-2">Step 2 of 2</p>
-        <h2 className="font-serif text-3xl text-white">Pick a <span className="italic text-[var(--color-accent-2)]">drill</span></h2>
+        <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[var(--color-text-faint)] mb-2">Step 2 of 2</p>
+        <h2 className="font-serif text-3xl text-white">Pick a <span className="text-[var(--color-accent-2)]">drill</span></h2>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {modes.map((m) => (
           <button key={m.id} onClick={() => onPick(m.id)} className="liquid-glass-border rounded-xl p-5 text-left hover:bg-white/5 hover:border-[var(--color-border-glow)] transition-all group">
             <div className="flex items-start justify-between mb-1">
-              <p className="text-[10px] font-mono uppercase tracking-widest text-[var(--color-accent-2)]">{m.sub}</p>
-              <p className="text-[9px] font-mono uppercase tracking-wider text-[var(--color-text-faint)]">{m.view}</p>
+              <p className="text-[11px] font-mono uppercase tracking-widest text-[var(--color-accent-2)]">{m.sub}</p>
+              <p className="text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-faint)]">{m.view}</p>
             </div>
             <h3 className="font-serif text-xl text-white mb-3 group-hover:text-[var(--color-accent-2)] transition-colors">{m.title}</h3>
             <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">{m.body}</p>
@@ -1381,11 +1381,11 @@ function GameCanvas({ mode, settings, onExit }: { mode: Mode; settings: Settings
   return (
     <div className="w-full max-w-[960px] mx-auto">
       <div className="flex items-center justify-between mb-3">
-        <button onClick={onExit} className="text-[10px] font-mono uppercase tracking-widest text-[var(--color-text-muted)] hover:text-white transition-colors">← Pick another drill</button>
+        <button onClick={onExit} className="text-[11px] font-mono uppercase tracking-widest text-[var(--color-text-muted)] hover:text-white transition-colors">← Pick another drill</button>
         <div className="text-right">
-          <p className="text-[9px] font-mono uppercase tracking-widest text-[var(--color-text-faint)]">{modeLabel} best</p>
+          <p className="text-[11px] font-mono uppercase tracking-widest text-[var(--color-text-faint)]">{modeLabel} best</p>
           <p className="font-mono text-xs text-[var(--color-text)]">
-            {highScores[mode] !== undefined ? highScores[mode] : "—"}
+            {highScores[mode] !== undefined ? highScores[mode] : "--"}
             <span className="text-[var(--color-text-faint)] ml-1">
               {mode === "reaction" ? "ms" : mode === "tracking" ? "%" : "pts"}
             </span>
@@ -1399,7 +1399,7 @@ function GameCanvas({ mode, settings, onExit }: { mode: Mode; settings: Settings
         {!running && !showResults && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm">
             <div className="text-center max-w-md px-6">
-              <p className="text-[10px] font-mono uppercase tracking-[0.3em] text-[var(--color-accent-2)] mb-2">
+              <p className="text-[11px] font-mono uppercase tracking-[0.14em] text-[var(--color-accent-2)] mb-2">
                 {modeLabel}, {mode === "peek" ? "Third-Person" : "First-Person"}
               </p>
               <h3 className="font-serif text-3xl text-white mb-3">30-second drill</h3>
@@ -1409,7 +1409,7 @@ function GameCanvas({ mode, settings, onExit }: { mode: Mode; settings: Settings
                 {mode === "peek" && "Hold A or D to lean from cover. Drop targets crossing the lane."}
               </p>
               <button onClick={startRound} className="liquid-glass-border rounded-full px-8 py-3 text-sm font-medium text-white hover:border-[var(--color-border-glow)] hover:bg-white/5 transition-all">Start</button>
-              <p className="mt-4 text-[10px] font-mono text-[var(--color-text-faint)]">Click to lock mouse, ESC to abandon</p>
+              <p className="mt-4 text-[11px] font-mono text-[var(--color-text-faint)]">Click to lock mouse, ESC to abandon</p>
             </div>
           </div>
         )}
@@ -1417,7 +1417,7 @@ function GameCanvas({ mode, settings, onExit }: { mode: Mode; settings: Settings
         {showResults && score && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/70 backdrop-blur-sm">
             <div className="text-center max-w-md px-6">
-              <p className="text-[10px] font-mono uppercase tracking-[0.3em] text-[var(--color-text-faint)] mb-2">{modeLabel} result</p>
+              <p className="text-[11px] font-mono uppercase tracking-[0.14em] text-[var(--color-text-faint)] mb-2">{modeLabel} result</p>
               <p className="font-mono text-6xl text-white tabular-nums leading-none mb-1">{score.value}</p>
               <p className="text-xs font-mono uppercase tracking-widest text-[var(--color-accent-2)] mb-1">{score.label}</p>
               <p className="text-xs text-[var(--color-text-muted)] mb-6">{score.subtitle}</p>
@@ -1430,7 +1430,7 @@ function GameCanvas({ mode, settings, onExit }: { mode: Mode; settings: Settings
         )}
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[10px] font-mono uppercase tracking-widest text-[var(--color-text-faint)]">
+      <div className="mt-3 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[11px] font-mono uppercase tracking-widest text-[var(--color-text-faint)]">
         <span><span className="text-[var(--color-text-muted)]">Mouse</span> aim</span>
         <span><span className="text-[var(--color-text-muted)]">L-Click</span> fire</span>
         {mode === "peek" && <span><span className="text-[var(--color-text-muted)]">A · D</span> lean</span>}
