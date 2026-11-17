@@ -1,0 +1,672 @@
+/*
+ * The Backlog. Everything here belongs to this one game: a photo of a desk, a label maker, a marker,
+ * a typewriter. None of it comes from the rest of the site.
+ */
+
+.bk {
+  --bk-paper: #fbf8ef;
+  --bk-ink: #26221c;
+  --bk-red: #d7263d;
+  --bk-note: #ffe66d;
+  --bk-marker: var(--font-bk-marker), "Marker Felt", "Comic Sans MS", cursive;
+  --bk-typed: var(--font-bk-typed), "Courier New", Courier, monospace;
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 3 / 4.2;
+  overflow: hidden;
+  /* A white border, like a print of a photograph. */
+  border: 10px solid var(--bk-paper);
+  border-radius: 4px;
+  background: #8a6646;
+  color: var(--bk-ink);
+  font-family: var(--bk-typed);
+  box-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.25),
+    0 30px 50px -24px rgba(0, 0, 0, 0.8);
+}
+
+@media (min-width: 760px) {
+  .bk {
+    aspect-ratio: 16 / 9;
+  }
+}
+
+/* On a phone the memo and the closing ticket decide how tall the photo is, so nothing is cut off. */
+@media (max-width: 759px) {
+  .bk[data-phase="menu"],
+  .bk[data-phase="won"],
+  .bk[data-phase="lost"] {
+    aspect-ratio: auto;
+  }
+
+  .bk[data-phase="menu"] .bk-memo,
+  .bk .bk-ticket {
+    max-height: none;
+    margin-block: 26px;
+  }
+}
+
+.bk-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+.bk-lens {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.bk-lens::before,
+.bk-lens::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  height: 24%;
+  -webkit-backdrop-filter: blur(3.5px);
+  backdrop-filter: blur(3.5px);
+}
+
+.bk-lens::before {
+  top: 0;
+  -webkit-mask-image: linear-gradient(#000, transparent);
+  mask-image: linear-gradient(#000, transparent);
+}
+
+.bk-lens::after {
+  bottom: 0;
+  height: 16%;
+  -webkit-mask-image: linear-gradient(transparent, #000);
+  mask-image: linear-gradient(transparent, #000);
+}
+
+.bk-hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Label-maker tape: white capitals pressed into black plastic. */
+.bk-tape {
+  display: inline-block;
+  padding: 5px 12px 4px;
+  border-radius: 2px;
+  font-family: "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  font-weight: 700;
+  font-size: 0.9375rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #f4f4f4;
+  background: linear-gradient(#2a2a2a, #111 55%, #1c1c1c);
+  text-shadow:
+    0 1px 0 #000,
+    0 -1px 0 rgba(255, 255, 255, 0.35);
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.45);
+}
+
+.bk-boss {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  rotate: -1.2deg;
+}
+
+.bk-count {
+  padding: 2px 10px 0;
+  font-family: var(--bk-marker);
+  font-size: 1.375rem;
+  line-height: 1.3;
+  color: var(--bk-ink);
+  background: var(--bk-note);
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.35);
+  rotate: 2.5deg;
+}
+
+.bk-count[data-stage="2"] {
+  background: #ffb347;
+}
+
+.bk-count[data-stage="3"] {
+  background: #ff8fab;
+}
+
+.bk-count b {
+  font-weight: 400;
+  font-size: 1.75rem;
+}
+
+/* The chart: a scrap of graph paper taped to the corner. */
+.bk-burn {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  width: clamp(120px, 20%, 210px);
+  margin: 0;
+  padding: 4px 4px 0;
+  background:
+    linear-gradient(rgba(70, 130, 180, 0.22) 1px, transparent 1px) 0 0 / 100% 11px,
+    linear-gradient(90deg, rgba(70, 130, 180, 0.22) 1px, transparent 1px) 0 0 / 11px 100%,
+    var(--bk-paper);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
+  rotate: 2deg;
+}
+
+.bk-burn svg {
+  display: block;
+  width: 100%;
+}
+
+.bk-burn-ideal {
+  fill: none;
+  stroke: #7a8794;
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+}
+
+.bk-burn-line {
+  fill: none;
+  stroke: var(--bk-red);
+  stroke-width: 3;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.bk-burn-dot {
+  fill: var(--bk-red);
+}
+
+.bk-burn figcaption {
+  padding-bottom: 2px;
+  font-family: var(--bk-marker);
+  font-size: 0.8125rem;
+  line-height: 1.2;
+  text-align: right;
+  color: #3d4a57;
+}
+
+/* What it is about to do, on a sticky note. */
+.bk-call {
+  position: absolute;
+  top: 62px;
+  left: 22px;
+  display: grid;
+  place-items: center;
+  width: 7.6em;
+  min-height: 3.2em;
+  margin: 0;
+  padding: 0.5em 0.5em 0.3em;
+  rotate: -4deg;
+  font-family: var(--bk-marker);
+  font-size: clamp(1.25rem, 2.6vw, 1.875rem);
+  line-height: 1.05;
+  text-align: center;
+  color: var(--bk-ink);
+  background: linear-gradient(175deg, #fff3a0, var(--bk-note) 30%);
+  box-shadow: 0 6px 10px -4px rgba(0, 0, 0, 0.5);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .bk-call {
+    animation: bk-slap 0.2s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+  }
+}
+
+@keyframes bk-slap {
+  from {
+    opacity: 0;
+    scale: 1.5;
+    rotate: 6deg;
+  }
+}
+
+.bk-you {
+  position: absolute;
+  left: 16px;
+  bottom: 14px;
+  display: grid;
+  gap: 7px;
+  justify-items: start;
+}
+
+/* Health is coffee. */
+.bk-cups {
+  display: flex;
+  gap: 9px;
+}
+
+.bk-cups i {
+  position: relative;
+  width: 22px;
+  height: 20px;
+  border-radius: 2px 2px 8px 8px;
+  border: 2px solid var(--bk-ink);
+  background: linear-gradient(to top, #6b4226 calc(var(--fill) * 100%), var(--bk-paper) 0);
+  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.35);
+}
+
+.bk-cups i::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  right: -8px;
+  width: 7px;
+  height: 9px;
+  border: 2px solid var(--bk-ink);
+  border-left: 0;
+  border-radius: 0 6px 6px 0;
+}
+
+/* Stamina is a pencil that gets shorter. */
+.bk-pencil {
+  display: block;
+  width: clamp(140px, 22vw, 220px);
+  height: 12px;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.4));
+}
+
+.bk-pencil i {
+  position: relative;
+  display: block;
+  height: 100%;
+  border-radius: 3px 0 0 3px;
+  background: linear-gradient(90deg, #f28ca0 0 12px, #b9bcc2 12px 18px, #f2b705 18px);
+}
+
+.bk-pencil i::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 100%;
+  width: 14px;
+  height: 100%;
+  background: linear-gradient(90deg, #e6c79a 62%, #2b2d33 0);
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+
+.bk-refills {
+  padding: 1px 8px 0;
+  font-family: var(--bk-marker);
+  font-size: 0.9375rem;
+  background: var(--bk-paper);
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.35);
+  rotate: -1.5deg;
+}
+
+.bk-pause {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  border: 0;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.bk-pause:focus-visible,
+.bk-stamp:focus-visible,
+.bk-link:focus-visible,
+.bk-check input:focus-visible {
+  outline: 3px solid #1d6fd6;
+  outline-offset: 3px;
+}
+
+/* ---------- the memo, the pause note and the closing ticket ---------- */
+
+.bk-memo,
+.bk-ticket {
+  position: relative;
+  display: grid;
+  gap: 14px;
+  width: min(100% - 28px, 470px);
+  max-height: calc(100% - 24px);
+  overflow-y: auto;
+  padding: 34px 30px 24px;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--bk-ink);
+  background: var(--bk-paper);
+  box-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.15),
+    0 22px 34px -14px rgba(0, 0, 0, 0.65);
+  rotate: -1.2deg;
+}
+
+/* A strip of tape holds the memo to the photo. */
+.bk-memo::before {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  width: 120px;
+  height: 26px;
+  translate: -50% 0;
+  rotate: 2deg;
+  background: repeating-linear-gradient(135deg, rgba(120, 190, 220, 0.75) 0 8px, rgba(160, 215, 235, 0.75) 8px 16px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.bk-memo h2,
+.bk-memo-head {
+  margin: 0;
+  padding-bottom: 8px;
+  border-bottom: 3px double var(--bk-ink);
+  font-family: var(--bk-typed);
+  font-size: 1.375rem;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.bk-memo p,
+.bk-ticket p {
+  margin: 0;
+}
+
+.bk-memo-lines,
+.bk-keys {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+}
+
+.bk-memo-lines div,
+.bk-keys div {
+  display: grid;
+  grid-template-columns: 7.5em minmax(0, 1fr);
+}
+
+.bk-memo-lines dt,
+.bk-keys dt {
+  text-transform: uppercase;
+}
+
+.bk-memo-lines dt::after {
+  content: ":";
+}
+
+.bk-memo-lines dd,
+.bk-keys dd {
+  margin: 0;
+}
+
+.bk-keys {
+  padding-block: 10px;
+  border-block: 1px dashed rgba(38, 34, 28, 0.5);
+}
+
+.bk-keys-thumb {
+  display: none;
+}
+
+.bk-memo-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px 22px;
+  padding-top: 4px;
+}
+
+/* A rubber stamp for the one thing you press. */
+.bk-stamp {
+  padding: 8px 20px 6px;
+  border: 4px double var(--bk-red);
+  border-radius: 6px;
+  font-family: Impact, "Arial Black", "Helvetica Neue", sans-serif;
+  font-size: 1.625rem;
+  line-height: 1.1;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--bk-red);
+  background: none;
+  rotate: -4deg;
+  cursor: pointer;
+  transition:
+    scale 0.12s ease,
+    background-color 0.12s ease,
+    color 0.12s ease;
+}
+
+.bk-stamp:hover {
+  color: var(--bk-paper);
+  background: var(--bk-red);
+}
+
+.bk-stamp:active {
+  scale: 0.94;
+}
+
+.bk-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.bk-check input {
+  appearance: none;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  border: 2px solid var(--bk-ink);
+  background: none;
+  cursor: pointer;
+}
+
+.bk-check input:checked::after {
+  content: "X";
+  font-family: var(--bk-marker);
+  font-size: 1.25rem;
+  line-height: 1;
+  color: var(--bk-red);
+}
+
+.bk-sticky {
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  width: 230px;
+  padding: 26px 20px 22px;
+  rotate: 3deg;
+  color: var(--bk-ink);
+  background: linear-gradient(175deg, #fff3a0, var(--bk-note) 26%);
+  box-shadow: 0 16px 22px -10px rgba(0, 0, 0, 0.6);
+}
+
+.bk-sticky h2 {
+  margin: 0;
+  font-family: var(--bk-marker);
+  font-size: 3.5rem;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.bk-link {
+  padding: 4px 6px;
+  border: 0;
+  font-family: var(--bk-marker);
+  font-size: 1.25rem;
+  color: var(--bk-ink);
+  background: none;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+/* The closing ticket: a card with a coloured edge and a stamp across it. */
+.bk-ticket {
+  rotate: 1deg;
+  padding: 24px 28px 24px 34px;
+  border-left: 12px solid var(--bk-red);
+  justify-items: start;
+}
+
+.bk-ticket[data-won] {
+  border-left-color: #2f8f5b;
+}
+
+.bk-ticket-id {
+  font-size: 0.8125rem;
+  letter-spacing: 0.1em;
+  color: #6b655c;
+}
+
+.bk-ticket h2 {
+  margin: 0;
+  font-family: var(--bk-typed);
+  font-size: 1.75rem;
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+.bk-verdict {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  padding: 4px 14px 2px;
+  border: 5px solid var(--bk-red);
+  border-radius: 6px;
+  font-family: Impact, "Arial Black", sans-serif;
+  font-size: 2rem;
+  line-height: 1.1;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--bk-red);
+  rotate: 9deg;
+  opacity: 0.85;
+}
+
+.bk-ticket[data-won] .bk-verdict {
+  border-color: #2f8f5b;
+  color: #2f8f5b;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .bk-verdict {
+    animation: bk-stamp 0.28s cubic-bezier(0.3, 1.5, 0.5, 1) 0.25s both;
+  }
+}
+
+@keyframes bk-stamp {
+  from {
+    opacity: 0;
+    scale: 2.4;
+  }
+}
+
+/* ---------- thumbs ---------- */
+
+.bk-stick,
+.bk-pad {
+  display: none;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .bk-keys-desk {
+    display: none;
+  }
+
+  .bk-keys-thumb {
+    display: block;
+  }
+
+  .bk-stick {
+    position: absolute;
+    inset: 32% 50% 0 0;
+    display: block;
+    pointer-events: auto;
+    touch-action: none;
+  }
+
+  .bk-knob {
+    position: absolute;
+    width: 84px;
+    height: 84px;
+    translate: -50% -50%;
+    border-radius: 50%;
+    border: 3px dashed rgba(251, 248, 239, 0.85);
+    pointer-events: none;
+  }
+
+  .bk-knob i {
+    position: absolute;
+    inset: 22px;
+    border-radius: 50%;
+    background: var(--bk-paper);
+    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.4);
+  }
+
+  .bk-pad {
+    position: absolute;
+    right: 10px;
+    bottom: 12px;
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    pointer-events: auto;
+    touch-action: none;
+  }
+
+  /* Round stickers. */
+  .bk-pad button {
+    width: 60px;
+    height: 60px;
+    border: 0;
+    border-radius: 50%;
+    font-family: var(--bk-marker);
+    font-size: 0.9375rem;
+    color: var(--bk-ink);
+    background: #8ecae6;
+    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.45);
+    rotate: -6deg;
+  }
+
+  .bk-pad button[data-kind="coffee"] {
+    background: var(--bk-paper);
+    rotate: 5deg;
+  }
+
+  .bk-pad button[data-kind="hit"] {
+    width: 82px;
+    height: 82px;
+    font-size: 1.375rem;
+    color: var(--bk-paper);
+    background: var(--bk-red);
+    rotate: 3deg;
+  }
+
+  .bk-pad button:disabled {
+    opacity: 0.45;
+  }
+
+  .bk-you {
+    bottom: auto;
+    top: 58px;
+  }
+
+  .bk-call {
+    top: 132px;
+    font-size: 1.125rem;
+  }
+
+  .bk-pause {
+    bottom: auto;
+    top: calc(12px + clamp(120px, 20%, 210px) * 0.5 + 16px);
+  }
+}
+
+/* The site colours its headings. Inside the game they take the game's ink, unless a rule here says otherwise. */
+:where(.bk) :where(h1, h2, h3, h4) {
+  color: inherit;
+}

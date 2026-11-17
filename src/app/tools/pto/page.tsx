@@ -2,23 +2,24 @@ import type { Metadata } from "next";
 import { Glass } from "@/components/Glass";
 import { PageIntro, PageWrapper } from "@/components/Shared";
 import { Zone } from "@/components/Zone";
-import { GpaCalc } from "@/components/tools/GpaCalc";
+import { PtoPlanner } from "@/components/tools/PtoPlanner";
 
 export const metadata: Metadata = {
-  title: "GPA Calculator",
-  description: "Work out the term GPA or the final exam grade you need to hit a target.",
+  title: "PTO Planner",
+  description: "Tell it how many days of PTO you have and which holidays your company gives. It finds the days to take for the most time off.",
 };
 
 export default function Page() {
   return (
     <PageWrapper ground="paper">
       <Zone theme="paper" as="div" className="zone-last">
-        <PageIntro title="GPA Calculator" titleClass="h-voice" back={{ href: "/projects", label: "All projects" }}>
-          The question every student asks in week twelve: what do I need to get? Put in where you stand and where you want to end up.
+        <PageIntro title="PTO Planner" titleClass="h-voice" back={{ href: "/projects", label: "All projects" }}>
+          The same fifteen days can be fifteen days off or forty, depending on which ones you take. This finds the
+          ones to take.
         </PageIntro>
         <div className="wrap stack">
           <Glass kind="card" className="demo">
-            <GpaCalc />
+            <PtoPlanner />
           </Glass>
         </div>
       </Zone>

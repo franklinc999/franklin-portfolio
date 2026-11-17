@@ -2,12 +2,13 @@ import * as THREE from "three";
 import { sound } from "@/components/play/sound";
 
 /**
- * The Backlog: one arena, one boss.
+ * The Backlog: a boss fight on a desk.
  *
- * The boss is a tower of blocks that loses a block every time you take a slice of its health, and gets
- * faster as it shrinks. Every attack is drawn on the floor before it lands, so nothing hits you that
- * you could not have read. You have a sword, a roll that makes you untouchable for a third of a
- * second, and two flasks. All combat is worked out on the ground plane.
+ * You are about three centimetres tall and standing on a cutting mat. The boss is a stack of sticky
+ * note pads that loses a pad for every slice of its health and speeds up as it shrinks. Everything it
+ * does shows on the mat before it lands, as something a desk would have on it: a stamp, a highlighter
+ * stroke, a coffee ring, the shadow of a falling note. You have a pencil, a roll that makes you
+ * untouchable for a third of a second, and two coffees. All combat is worked out on the ground plane.
  */
 
 export type BossState = {
@@ -25,7 +26,9 @@ export type BossState = {
 };
 
 type Kind = "slam" | "line" | "ring" | "drop";
-type Hazard = { kind: Kind; x: number; z: number; r: number; ang: number; t: number; dur: number; live: number; hit: boolean; mesh: THREE.Group; fill: THREE.Object3D };
+type Slot = { mesh: THREE.Group; fill: THREE.Object3D; note?: THREE.Mesh };
+type Hazard = { kind: Kind; x: number; z: number; r: number; ang: number; t: number; dur: number; live: number; hit: boolean; mesh: THREE.Group; fill: THREE.Object3D; note?: THREE.Mesh };
+type Mark = { mesh: THREE.Mesh; life: number; kind: Kind };
 type Debris = { mesh: THREE.Mesh; vx: number; vy: number; vz: number; spin: number; life: number };
 
 const ARENA = 11;
@@ -33,11 +36,11 @@ const BOSS_R = 1.25;
 const BOSS_HP = 440;
 const BLOCKS = 7;
 const SPARKS = 120;
-const CORAL = 0xff4d5e;
-const PEACH = 0xffd9a3;
-const CREAM = 0xfff1e0;
-const INK = 0x14060d;
-const NOTE = [0xffd9a3, 0xff7c88, 0xfff1e0, 0xc9b6ff, 0x8fe3c0, 0xffd9a3, 0xff4d5e];
+const STAMP = 0xd7263d;
+const MARKER = 0xf4ff3a;
+const DESK = 0x8a6646;
+/** Sticky note colours, bottom pad to top. */
+const NOTE = [0xffe66d, 0xff8fab, 0x8ecae6, 0xb5e48c, 0xffb347, 0xcdb4db, 0xffe66d];
 
 const NAMES: Record<string, string> = { slam: "Stand-up", line: "Hotfix", ring: "Scope creep", drop: "New tickets" };
 
@@ -55,17 +58,18 @@ function tex(size: number, draw: (c: CanvasRenderingContext2D, s: number) => voi
 export class BossEngine {
   private renderer: THREE.WebGLRenderer;
   private scene = new THREE.Scene();
-  private camera = new THREE.PerspectiveCamera(42, 16 / 9, 0.1, 200);
+  private camera = new THREE.PerspectiveCamera(34, 16 / 9, 0.1, 240);
   private focus = new THREE.Vector3();
-  private rig = { h: 11, d: 10 };
+  private rig = { h: 16.5, d: 14.5 };
   private hero = new THREE.Group();
   private heroArm = new THREE.Group();
-  private heroShadow: THREE.Mesh;
   private tower = new THREE.Group();
   private blocks: THREE.Mesh[] = [];
   private blockMat: THREE.MeshStandardMaterial[] = [];
+  private tops: THREE.MeshStandardMaterial[] = [];
+  private marks: Mark[] = [];
   private shots: THREE.Mesh[] = [];
-  private pools: Record<Kind, { mesh: THREE.Group; fill: THREE.Object3D }[]> = { slam: [], line: [], ring: [], drop: [] };
+  private pools: Record<Kind, Slot[]> = { slam: [], line: [], ring: [], drop: [] };
   private hazards: Hazard[] = [];
   private debris: Debris[] = [];
   private sparks: THREE.InstancedMesh;
@@ -99,21 +103,27 @@ export class BossEngine {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-    this.scene.background = new THREE.Color(INK);
-    this.scene.fog = new THREE.Fog(INK, 24, 60);
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.scene.background = new THREE.Color(DESK);
+    this.scene.fog = new THREE.Fog(DESK, 46, 110);
 
     this.buildArena();
     this.buildHero();
     this.buildTower();
-    this.heroShadow = this.flat(new THREE.CircleGeometry(0.42, 20), 0x000000, 0.45);
-    this.heroShadow.visible = true;
     this.buildTells();
 
-    this.sparks = new THREE.InstancedMesh(new THREE.BoxGeometry(0.1, 0.1, 0.1), new THREE.MeshBasicMaterial({ color: PEACH }), SPARKS);
+    // Scraps of note paper, thrown up whenever something connects.
+    const scrap = new THREE.PlaneGeometry(0.2, 0.2);
+    this.sparks = new THREE.InstancedMesh(scrap, new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }), SPARKS);
     this.sparks.frustumCulled = false;
     this.dummy.scale.setScalar(0);
     this.dummy.updateMatrix();
-    for (let i = 0; i < SPARKS; i++) this.sparks.setMatrixAt(i, this.dummy.matrix);
+    const tint = new THREE.Color();
+    for (let i = 0; i < SPARKS; i++) {
+      this.sparks.setMatrixAt(i, this.dummy.matrix);
+      this.sparks.setColorAt(i, tint.set(NOTE[i % NOTE.length]));
+    }
     this.scene.add(this.sparks);
 
     this.resize();
@@ -124,171 +134,388 @@ export class BossEngine {
 
   /* ---------- scene ---------- */
 
-  private flat(geo: THREE.BufferGeometry, color: number, opacity: number) {
+  /** A flat shape lying on the mat. */
+  private lay(geo: THREE.BufferGeometry, mat: THREE.Material, y = 0.03) {
     geo.rotateX(-Math.PI / 2);
-    const mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false }));
-    mesh.position.y = 0.02;
-    mesh.visible = false;
-    this.scene.add(mesh);
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.y = y;
     return mesh;
   }
 
-  private buildArena() {
-    const floor = tex(1024, (c, s) => {
-      const m = s / 2;
-      const g = c.createRadialGradient(m, m, 0, m, m, m);
-      g.addColorStop(0, "#3a1426");
-      g.addColorStop(0.7, "#2a0e1c");
-      g.addColorStop(1, "#1d0a15");
-      c.fillStyle = g;
-      c.fillRect(0, 0, s, s);
-      c.strokeStyle = "rgba(255,217,163,0.22)";
-      c.lineWidth = 3;
-      for (const r of [0.18, 0.4, 0.62, 0.84]) {
-        c.beginPath();
-        c.arc(m, m, m * r, 0, Math.PI * 2);
-        c.stroke();
+  /** Everything in the room throws a shadow under the desk lamp. That is most of what makes it read as small. */
+  private solid(o: THREE.Object3D) {
+    o.traverse((m) => {
+      if ((m as THREE.Mesh).isMesh) {
+        m.castShadow = true;
+        m.receiveShadow = true;
       }
-      c.strokeStyle = "rgba(255,124,136,0.2)";
-      for (let i = 0; i < 24; i++) {
-        const a = (i / 24) * Math.PI * 2;
-        c.beginPath();
-        c.moveTo(m + Math.cos(a) * m * 0.4, m + Math.sin(a) * m * 0.4);
-        c.lineTo(m + Math.cos(a) * m * 0.96, m + Math.sin(a) * m * 0.96);
-        c.stroke();
-      }
-      c.strokeStyle = "#ff6a78";
-      c.lineWidth = 10;
-      c.shadowColor = "#ff4d5e";
-      c.shadowBlur = 30;
-      c.beginPath();
-      c.arc(m, m, m * 0.955, 0, Math.PI * 2);
-      c.stroke();
     });
-    const geo = new THREE.CircleGeometry(ARENA + 0.5, 72);
-    geo.rotateX(-Math.PI / 2);
-    this.scene.add(new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: floor, emissiveMap: floor, emissive: 0xffffff, emissiveIntensity: 0.55, roughness: 0.7 })));
-    const skirt = new THREE.Mesh(new THREE.CylinderGeometry(ARENA + 0.5, ARENA - 1.5, 5, 72, 1, true), new THREE.MeshStandardMaterial({ color: 0x1d0a15, roughness: 1 }));
-    skirt.position.y = -2.5;
-    this.scene.add(skirt);
+    this.scene.add(o);
+    return o;
+  }
 
-    // The rest of the backlog, drifting in the dark around the arena.
-    for (let i = 0; i < 26; i++) {
-      const a = (i / 26) * Math.PI * 2 + Math.random() * 0.2;
-      const r = 17 + Math.random() * 12;
-      const s = 0.8 + Math.random() * 1.8;
-      const m = new THREE.Mesh(new THREE.BoxGeometry(s * 1.3, s * 0.5, s * 1.3), new THREE.MeshStandardMaterial({ color: NOTE[i % NOTE.length], roughness: 0.8, emissive: NOTE[i % NOTE.length], emissiveIntensity: 0.08 }));
-      m.position.set(Math.cos(a) * r, -7 + Math.random() * 8, Math.sin(a) * r);
-      m.rotation.set(Math.random(), Math.random() * 3, Math.random());
-      this.scene.add(m);
+  private buildArena() {
+    // The desk.
+    const wood = tex(1024, (c, s) => {
+      c.fillStyle = "#c9a178";
+      c.fillRect(0, 0, s, s);
+      for (let i = 0; i < 300; i++) {
+        const y = Math.random() * s;
+        c.strokeStyle = `rgba(${96 + Math.random() * 40},${58 + Math.random() * 30},${30 + Math.random() * 20},${0.05 + Math.random() * 0.13})`;
+        c.lineWidth = 1 + Math.random() * 3;
+        c.beginPath();
+        c.moveTo(0, y);
+        c.bezierCurveTo(s * 0.3, y + (Math.random() - 0.5) * 20, s * 0.65, y + (Math.random() - 0.5) * 20, s, y + (Math.random() - 0.5) * 8);
+        c.stroke();
+      }
+    });
+    wood.wrapS = wood.wrapT = THREE.RepeatWrapping;
+    wood.repeat.set(3, 3);
+    const desk = this.lay(new THREE.PlaneGeometry(160, 160), new THREE.MeshStandardMaterial({ map: wood, roughness: 0.78 }), -0.12);
+    desk.receiveShadow = true;
+    this.scene.add(desk);
+
+    // The cutting mat. One square of its grid is one step, and the white circle is the edge of the fight.
+    const W = 34;
+    const D = 30;
+    const print = tex(2048, (c, s) => {
+      const ux = s / W;
+      const uz = s / D;
+      c.fillStyle = "#2c6956";
+      c.fillRect(0, 0, s, s);
+      for (let i = 0; i <= W; i++) {
+        c.fillStyle = i % 5 === 2 ? "rgba(255,255,255,0.42)" : "rgba(255,255,255,0.15)";
+        c.fillRect(i * ux - 1, 0, i % 5 === 2 ? 3 : 2, s);
+      }
+      for (let i = 0; i <= D; i++) {
+        c.fillStyle = i % 5 === 0 ? "rgba(255,255,255,0.42)" : "rgba(255,255,255,0.15)";
+        c.fillRect(0, i * uz - 1, s, i % 5 === 0 ? 3 : 2);
+      }
+      c.strokeStyle = "rgba(255,255,255,0.3)";
+      c.lineWidth = 2;
+      for (const a of [30, 45, 60]) {
+        const t = Math.tan((a * Math.PI) / 180);
+        c.beginPath();
+        c.moveTo(2 * ux, s - 2 * uz);
+        c.lineTo(2 * ux + 12 * ux, s - 2 * uz - 12 * uz * t * (ux / uz) * (uz / ux));
+        c.stroke();
+      }
+      c.strokeStyle = "#f6f3ea";
+      c.lineWidth = 7;
+      c.beginPath();
+      c.ellipse(s / 2, s / 2, ARENA * ux, ARENA * uz, 0, 0, Math.PI * 2);
+      c.stroke();
+      c.lineWidth = 3;
+      for (let i = 0; i < 72; i++) {
+        const a = (i / 72) * Math.PI * 2;
+        const far = i % 6 === 0 ? 0.7 : 0.35;
+        c.beginPath();
+        c.moveTo(s / 2 + Math.cos(a) * ARENA * ux, s / 2 + Math.sin(a) * ARENA * uz);
+        c.lineTo(s / 2 + Math.cos(a) * (ARENA + far) * ux, s / 2 + Math.sin(a) * (ARENA + far) * uz);
+        c.stroke();
+      }
+      c.strokeStyle = "rgba(255,255,255,0.55)";
+      c.lineWidth = 4;
+      c.strokeRect(ux, uz, s - 2 * ux, s - 2 * uz);
+      c.fillStyle = "rgba(255,255,255,0.7)";
+      c.font = `${Math.round(uz * 0.62)}px ui-monospace, Menlo, monospace`;
+      for (let i = 2; i < W; i += 5) c.fillText(String(i - 2), i * ux + 6, s - uz * 1.25);
+      c.font = `${Math.round(uz * 0.5)}px ui-monospace, Menlo, monospace`;
+      c.fillText("SELF HEALING MAT   A2", s - 11 * ux, uz * 1.75);
+    });
+    const edge = new THREE.MeshStandardMaterial({ color: 0x24574a, roughness: 0.9 });
+    const top = new THREE.MeshStandardMaterial({ map: print, roughness: 0.92 });
+    const mat = new THREE.Mesh(new THREE.BoxGeometry(W, 0.12, D), [edge, edge, top, edge, edge, edge]);
+    mat.position.y = -0.06;
+    mat.receiveShadow = true;
+    this.scene.add(mat);
+
+    // What else is on the desk, at the size it would be if you were three centimetres tall.
+    const paint = (color: number, roughness = 0.6) => new THREE.MeshStandardMaterial({ color, roughness });
+    const mug = new THREE.Group();
+    const cup = new THREE.Mesh(new THREE.CylinderGeometry(2.7, 2.5, 4.8, 40), paint(0xf4f1ea, 0.3));
+    cup.position.y = 2.4;
+    const coffee = new THREE.Mesh(new THREE.CylinderGeometry(2.45, 2.45, 0.1, 40), paint(0x3a2315, 0.2));
+    coffee.position.y = 4.7;
+    const handle = new THREE.Mesh(new THREE.TorusGeometry(1.35, 0.36, 12, 28), paint(0xf4f1ea, 0.3));
+    handle.position.set(-2.9, 2.5, 0);
+    mug.add(cup, coffee, handle);
+    mug.position.set(-16.2, 0, -10.5);
+    mug.rotation.y = 0.5;
+    this.solid(mug);
+
+    const pencil = new THREE.Group();
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.36, 13, 6), paint(0xf2b705, 0.5));
+    const ferrule = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.9, 12), new THREE.MeshStandardMaterial({ color: 0xb9bcc2, roughness: 0.3, metalness: 0.8 }));
+    ferrule.position.y = 6.9;
+    const rubber = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.36, 0.8, 12), paint(0xf28ca0, 0.8));
+    rubber.position.y = 7.7;
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(0.36, 1.3, 6), paint(0xe6c79a, 0.8));
+    cone.position.y = -7.15;
+    cone.rotation.x = Math.PI;
+    const lead = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.42, 6), paint(0x2b2d33, 0.4));
+    lead.position.y = -7.6;
+    lead.rotation.x = Math.PI;
+    pencil.add(shaft, ferrule, rubber, cone, lead);
+    pencil.rotation.set(0, 0.16, Math.PI / 2);
+    pencil.position.set(5, 0.34, -16.4);
+    this.solid(pencil);
+
+    const pad = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.8, 3.6), paint(0xffe66d, 0.85));
+    pad.position.set(19.4, 0.4, 4);
+    pad.rotation.y = 0.22;
+    const pad2 = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.5, 3.6), paint(0xff8fab, 0.85));
+    pad2.position.set(19.1, 1.05, 3.7);
+    pad2.rotation.y = -0.12;
+    this.solid(pad);
+    this.solid(pad2);
+
+    const ruler = new THREE.Mesh(
+      new THREE.BoxGeometry(26, 0.1, 1.8),
+      new THREE.MeshStandardMaterial({
+        roughness: 0.4,
+        map: tex(1024, (c, s) => {
+          c.fillStyle = "#efe6c8";
+          c.fillRect(0, 0, s, s);
+          c.fillStyle = "#3a3329";
+          for (let i = 0; i <= 130; i++) c.fillRect((i / 130) * s, 0, 2, i % 10 === 0 ? s * 0.5 : i % 5 === 0 ? s * 0.36 : s * 0.22);
+        }),
+      }),
+    );
+    ruler.position.set(-2, 0.05, 16.4);
+    ruler.rotation.y = -0.04;
+    this.solid(ruler);
+
+    for (let row = 0; row < 2; row++) {
+      for (let i = 0; i < 15; i++) {
+        const key = new THREE.Mesh(new THREE.BoxGeometry(1.95, 0.9, 1.95), paint(row ? 0x2b2d33 : 0x34373e, 0.55));
+        key.position.set(-15.4 + i * 2.2 + row * 0.9, 0.45, -19.6 - row * 2.2);
+        this.solid(key);
+      }
     }
 
-    this.scene.add(new THREE.HemisphereLight(0xffe0d0, 0x2a0e1c, 1.5));
-    const key = new THREE.DirectionalLight(0xffe2c4, 1.9);
-    key.position.set(-6, 12, 8);
-    this.scene.add(key);
-    const rim = new THREE.PointLight(CORAL, 90, 30, 1.6);
-    rim.position.set(0, 6, -9);
-    this.scene.add(rim);
+    this.scene.add(new THREE.HemisphereLight(0xfff4e0, 0x7a5c44, 1.2));
+    const lamp = new THREE.DirectionalLight(0xffe7c2, 2.5);
+    lamp.position.set(-13, 24, 9);
+    lamp.castShadow = true;
+    lamp.shadow.mapSize.set(2048, 2048);
+    const cam = lamp.shadow.camera;
+    cam.left = cam.bottom = -24;
+    cam.right = cam.top = 24;
+    cam.near = 1;
+    cam.far = 80;
+    lamp.shadow.bias = -0.0005;
+    lamp.shadow.normalBias = 0.04;
+    this.scene.add(lamp);
   }
 
+  /** You: three centimetres tall, in a red hoodie, with a pencil. */
   private buildHero() {
-    const cloth = new THREE.MeshStandardMaterial({ color: CREAM, roughness: 0.6 });
-    const skin = new THREE.MeshStandardMaterial({ color: 0xe2ab80, roughness: 0.7 });
-    const dark = new THREE.MeshStandardMaterial({ color: 0x3a1727, roughness: 0.7 });
-    const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.24, 0.5, 6, 14), cloth);
-    body.position.y = 0.85;
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.19, 16, 12), skin);
+    const paint = (color: number, roughness = 0.7) => new THREE.MeshStandardMaterial({ color, roughness });
+    const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.25, 0.46, 6, 14), paint(0xe63946));
+    body.position.y = 0.82;
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 12), paint(0xf1c9a5));
     head.position.y = 1.5;
-    const scarf = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.07, 8, 18), new THREE.MeshStandardMaterial({ color: CORAL, roughness: 0.6 }));
-    scarf.rotation.x = Math.PI / 2;
-    scarf.position.y = 1.3;
-    const feet = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, 0.3, 12), dark);
+    // A yellow beanie, so you can find yourself on a green mat from a long way up.
+    const hair = new THREE.Group();
+    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.22, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.5), paint(0xf2b705));
+    const pom = new THREE.Mesh(new THREE.SphereGeometry(0.075, 10, 8), paint(0xfbf8ef));
+    pom.position.y = 0.23;
+    hair.add(cap, pom);
+    hair.position.set(0, 1.53, 0);
+    const hood = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.08, 8, 18), paint(0xc92f3b));
+    hood.rotation.x = Math.PI / 2;
+    hood.position.y = 1.3;
+    const feet = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.25, 0.32, 12), paint(0x2b2d42));
     feet.position.y = 0.2;
-    this.heroArm.position.set(0.3, 1.05, 0);
-    const blade = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.04, 1.15), new THREE.MeshStandardMaterial({ color: 0xfff6ea, emissive: 0xffd9a3, emissiveIntensity: 0.7, roughness: 0.3 }));
-    blade.position.z = -0.72;
-    const hilt = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.05, 0.06), dark);
-    hilt.position.z = -0.14;
-    this.heroArm.add(blade, hilt);
-    this.hero.add(body, head, scarf, feet, this.heroArm);
-    this.scene.add(this.hero);
+    this.heroArm.position.set(0.3, 1.02, 0);
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.05, 6), paint(0xf2b705, 0.5));
+    shaft.rotation.x = Math.PI / 2;
+    shaft.position.z = -0.72;
+    const rubber = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 0.14, 8), paint(0xf28ca0));
+    rubber.rotation.x = Math.PI / 2;
+    rubber.position.z = -0.14;
+    const tip = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.2, 6), paint(0x2b2d33, 0.4));
+    tip.rotation.x = -Math.PI / 2;
+    tip.position.z = -1.34;
+    this.heroArm.add(shaft, rubber, tip);
+    this.hero.add(body, head, hair, hood, feet, this.heroArm);
+    this.solid(this.hero);
   }
 
+  /** The Backlog: seven pads of sticky notes, with something scrawled on each. */
   private buildTower() {
+    const edges = tex(64, (c, s) => {
+      c.fillStyle = "#ffffff";
+      c.fillRect(0, 0, s, s);
+      c.fillStyle = "rgba(0,0,0,0.13)";
+      for (let y = 3; y < s; y += 5) c.fillRect(0, y, s, 1);
+    });
     for (let i = 0; i < BLOCKS; i++) {
-      const mat = new THREE.MeshStandardMaterial({ color: NOTE[i], roughness: 0.75, emissive: CORAL, emissiveIntensity: 0 });
+      const side = new THREE.MeshStandardMaterial({ color: NOTE[i], map: edges, roughness: 0.9, emissive: 0xff3b2f, emissiveIntensity: 0 });
+      const top = new THREE.MeshStandardMaterial({ color: NOTE[i], roughness: 0.9, emissive: 0xff3b2f, emissiveIntensity: 0 });
       const w = 2.3 - i * 0.07;
-      const block = new THREE.Mesh(new THREE.BoxGeometry(w, 0.62, w), mat);
+      const block = new THREE.Mesh(new THREE.BoxGeometry(w, 0.62, w), [side, side, top, side, side, side]);
       block.position.y = 0.33 + i * 0.66;
       block.rotation.y = (i % 2 ? 0.16 : -0.12) + i * 0.05;
       this.blocks.push(block);
-      this.blockMat.push(mat);
+      this.blockMat.push(side, top);
+      this.tops.push(top);
       this.tower.add(block);
     }
-    // Two eyes on whichever block is on top.
-    const eye = new THREE.MeshBasicMaterial({ color: INK });
+    // A face on whichever pad is on top: drawn on its front, and again on its lid where you can see it from above.
+    const ink = new THREE.MeshBasicMaterial({ color: 0x1f1b16 });
     const eyes = new THREE.Group();
     eyes.name = "eyes";
     for (const s of [-1, 1]) {
-      const e = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.16, 0.06), eye);
-      e.position.set(s * 0.42, 0, 0);
-      e.rotation.z = s * -0.25;
-      eyes.add(e);
+      const front = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.16, 0.05), ink);
+      front.position.set(s * 0.42, 0, 0);
+      front.rotation.z = s * -0.28;
+      const lid = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.03, 0.2), ink);
+      // On the lid the face is laid out for someone looking down from in front: mouth nearest the edge.
+      lid.position.set(s * 0.42, 0.33, 0.78);
+      const brow = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.03, 0.09), ink);
+      brow.position.set(s * 0.44, 0.33, 1.08);
+      brow.rotation.y = s * 0.4;
+      eyes.add(front, lid, brow);
     }
+    const mouth = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.03, 0.09), ink);
+    mouth.position.set(0, 0.33, 0.34);
+    eyes.add(mouth);
     this.tower.add(eyes);
-    this.scene.add(this.tower);
+    this.solid(this.tower);
+
+    // What it throws: a paper plane.
+    const plane = new THREE.BufferGeometry();
+    const nose = [0, 0, -1];
+    const l = [-0.62, 0.14, 0.7];
+    const r = [0.62, 0.14, 0.7];
+    const up = [0, 0.1, 0.7];
+    const keel = [0, -0.3, 0.7];
+    plane.setAttribute("position", new THREE.Float32BufferAttribute([...nose, ...up, ...l, ...nose, ...r, ...up, ...nose, ...keel, ...up], 3));
+    plane.computeVertexNormals();
     for (let i = 0; i < 3; i++) {
-      const shot = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.6, 1.4), new THREE.MeshStandardMaterial({ color: CORAL, emissive: CORAL, emissiveIntensity: 0.8 }));
+      const shot = new THREE.Mesh(plane, new THREE.MeshStandardMaterial({ color: 0xfbf8ef, roughness: 0.8, side: THREE.DoubleSide, flatShading: true }));
+      shot.scale.setScalar(1.7);
+      shot.castShadow = true;
       shot.visible = false;
       this.scene.add(shot);
       this.shots.push(shot);
     }
   }
 
-  /** The shapes drawn on the floor before an attack lands: an outline, and a fill that grows to meet it. */
-  private buildTells() {
-    const mat = (o: number) => new THREE.MeshBasicMaterial({ color: CORAL, transparent: true, opacity: o, depthWrite: false, side: THREE.DoubleSide });
-    const disc = (n: number, kind: Kind) => {
-      for (let i = 0; i < n; i++) {
-        const g = new THREE.Group();
-        const edge = new THREE.RingGeometry(0.95, 1, 48);
-        edge.rotateX(-Math.PI / 2);
-        const body = new THREE.CircleGeometry(1, 48);
-        body.rotateX(-Math.PI / 2);
-        const fill = new THREE.Mesh(body, mat(0.42));
-        g.add(new THREE.Mesh(edge, mat(0.9)), fill);
-        g.position.y = 0.03;
-        g.visible = false;
-        this.scene.add(g);
-        this.pools[kind].push({ mesh: g, fill });
-      }
+  /** Write on the pads once the marker face has loaded. */
+  ink(family: string) {
+    const words = ["v2?", "pls fix", "TODO", "blocked", "follow up", "ASAP", ""];
+    // Ask for the marker face alone. The stand-in listed after it is a system font that may not exist.
+    const face = family.split(",")[0].trim() || "cursive";
+    const write = () => {
+      this.tops.forEach((top, i) => {
+        if (!words[i]) return;
+        top.map = tex(256, (c, s) => {
+          c.fillStyle = "#ffffff";
+          c.fillRect(0, 0, s, s);
+          c.fillStyle = "#26221c";
+          c.font = `${words[i].length > 6 ? 46 : 62}px ${face}, cursive`;
+          c.textAlign = "center";
+          c.textBaseline = "middle";
+          c.translate(s / 2, s / 2);
+          c.rotate(Math.PI + (i % 2 ? 0.1 : -0.08));
+          c.fillText(words[i], 0, 0);
+        });
+        top.needsUpdate = true;
+      });
     };
-    disc(2, "slam");
-    disc(12, "drop");
-    for (let i = 0; i < 4; i++) {
+    // If the face cannot be fetched, the pads are still written on, in whatever the browser has.
+    document.fonts.load(`64px ${face}`).then(write, write);
+  }
+
+  /**
+   * What an attack looks like before it lands, all of it something that could be on a desk: a stamp
+   * about to come down, a highlighter stroke, a coffee ring, the shadow of a falling note.
+   */
+  private buildTells() {
+    const flat = (color: number, o: number) => new THREE.MeshBasicMaterial({ color, transparent: true, opacity: o, depthWrite: false, side: THREE.DoubleSide });
+    const group = (kind: Kind, parts: THREE.Object3D[], fill: THREE.Object3D, y: number, note?: THREE.Mesh) => {
       const g = new THREE.Group();
+      g.add(...parts);
+      if (note) g.add(note);
+      g.position.y = y;
+      g.visible = false;
+      this.scene.add(g);
+      this.pools[kind].push({ mesh: g, fill, note });
+    };
+    for (let i = 0; i < 2; i++) {
+      const rim = this.lay(new THREE.RingGeometry(0.93, 1, 56), flat(STAMP, 0.95), 0);
+      const rim2 = this.lay(new THREE.RingGeometry(0.86, 0.885, 56), flat(STAMP, 0.9), 0);
+      const fill = this.lay(new THREE.CircleGeometry(0.84, 56), flat(STAMP, 0.45), 0);
+      group("slam", [rim, rim2, fill], fill, 0.03);
+    }
+    for (let i = 0; i < 12; i++) {
+      const rim = this.lay(new THREE.RingGeometry(0.94, 1, 40), flat(0x14110d, 0.55), 0);
+      const fill = this.lay(new THREE.CircleGeometry(1, 40), flat(0x14110d, 0.34), 0);
+      const note = new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.05, 1.25), new THREE.MeshStandardMaterial({ color: NOTE[i % NOTE.length], roughness: 0.9 }));
+      note.castShadow = true;
+      group("drop", [rim, fill], fill, 0.03, note);
+    }
+    for (let i = 0; i < 4; i++) {
       const lane = new THREE.PlaneGeometry(1, 1);
       lane.rotateX(-Math.PI / 2);
       lane.translate(0, 0, -0.5);
-      const fill = new THREE.Mesh(lane, mat(0.42));
-      g.add(new THREE.Mesh(lane, mat(0.2)), fill);
-      g.position.y = 0.03;
-      g.visible = false;
-      this.scene.add(g);
-      this.pools.line.push({ mesh: g, fill });
+      const fill = new THREE.Mesh(lane, flat(MARKER, 0.62));
+      group("line", [new THREE.Mesh(lane, flat(MARKER, 0.22)), fill], fill, 0.03);
     }
     for (let i = 0; i < 3; i++) {
-      const g = new THREE.Group();
-      const band = new THREE.RingGeometry(0.92, 1, 72);
-      band.rotateX(-Math.PI / 2);
-      const fill = new THREE.Mesh(band, mat(0.85));
-      g.add(fill);
-      g.position.y = 0.04;
-      g.visible = false;
-      this.scene.add(g);
-      this.pools.ring.push({ mesh: g, fill });
+      const fill = this.lay(new THREE.RingGeometry(0.9, 1, 80), flat(0x5a3a26, 0.8), 0);
+      const inner = this.lay(new THREE.RingGeometry(0.975, 1, 80), flat(0x2f1c10, 0.9), 0);
+      group("ring", [fill, inner], fill, 0.04);
     }
+
+    // Marks left on the mat for a moment after something lands.
+    const urgent = tex(512, (c, s) => {
+      c.clearRect(0, 0, s, s);
+      c.translate(s / 2, s / 2);
+      c.rotate(-0.2);
+      c.strokeStyle = c.fillStyle = "#d7263d";
+      c.lineWidth = 16;
+      c.beginPath();
+      c.arc(0, 0, s * 0.45, 0, Math.PI * 2);
+      c.stroke();
+      c.lineWidth = 6;
+      c.beginPath();
+      c.arc(0, 0, s * 0.4, 0, Math.PI * 2);
+      c.stroke();
+      c.font = `900 ${s * 0.2}px Impact, "Arial Black", sans-serif`;
+      c.textAlign = "center";
+      c.textBaseline = "middle";
+      c.fillText("URGENT", 0, 6);
+      c.fillRect(-s * 0.3, -s * 0.16, s * 0.6, 8);
+      c.fillRect(-s * 0.3, s * 0.15, s * 0.6, 8);
+      // Worn rubber: knock a few holes in the ink.
+      c.globalCompositeOperation = "destination-out";
+      for (let i = 0; i < 500; i++) c.fillRect((Math.random() - 0.5) * s, (Math.random() - 0.5) * s, 2 + Math.random() * 5, 2 + Math.random() * 3);
+    });
+    for (let i = 0; i < 2; i++) {
+      const m = this.lay(new THREE.PlaneGeometry(7.2, 7.2), new THREE.MeshBasicMaterial({ map: urgent, transparent: true, opacity: 0, depthWrite: false }), 0.022);
+      m.visible = false;
+      this.scene.add(m);
+      this.marks.push({ mesh: m, life: 0, kind: "slam" });
+    }
+    for (let i = 0; i < 12; i++) {
+      const m = this.lay(new THREE.PlaneGeometry(1.7, 1.7), new THREE.MeshBasicMaterial({ color: NOTE[i % NOTE.length], transparent: true, opacity: 0, depthWrite: false }), 0.024 + i * 0.0005);
+      m.visible = false;
+      this.scene.add(m);
+      this.marks.push({ mesh: m, life: 0, kind: "drop" });
+    }
+  }
+
+  /** Leave a mark where something landed. It fades on its own. */
+  private mark(kind: Kind, x: number, z: number) {
+    const m = this.marks.filter((k) => k.kind === kind).reduce((a, b) => (a.life <= b.life ? a : b));
+    m.life = 1;
+    m.mesh.visible = true;
+    m.mesh.position.set(x, m.mesh.position.y, z);
+    m.mesh.rotation.y = kind === "drop" ? Math.random() * 1.2 - 0.6 : 0;
   }
 
   /* ---------- public ---------- */
@@ -299,8 +526,9 @@ export class BossEngine {
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
     const tall = Math.min(1, Math.max(0, (1.5 - w / h) / 0.75));
-    this.camera.fov = 42 + tall * 14;
-    this.rig = { h: 11 + tall * 7, d: 10 + tall * 3.5 };
+    // A long lens from high up, the way you would photograph something small on a desk.
+    this.camera.fov = 34 + tall * 12;
+    this.rig = { h: 16.5 + tall * 8, d: 14.5 + tall * 4 };
     this.camera.updateProjectionMatrix();
   }
 
@@ -311,6 +539,10 @@ export class BossEngine {
     this.hazards = [];
     this.later = [];
     for (const s of this.shots) s.visible = false;
+    for (const m of this.marks) {
+      m.life = 0;
+      m.mesh.visible = false;
+    }
     for (const d of this.debris) this.scene.remove(d.mesh);
     this.debris = [];
     this.blocks.forEach((blk, i) => {
@@ -417,6 +649,7 @@ export class BossEngine {
       const src = this.blocks[b.shown];
       src.visible = false;
       const mesh = new THREE.Mesh(src.geometry, src.material);
+      mesh.castShadow = true;
       mesh.position.set(b.x, src.position.y, b.z);
       this.scene.add(mesh);
       const a = Math.random() * Math.PI * 2;
@@ -447,7 +680,7 @@ export class BossEngine {
     const slot = this.pools[kind].find((s) => !s.mesh.visible);
     if (!slot) return;
     slot.mesh.visible = true;
-    this.hazards.push({ kind, x, z, r, ang, t: 0, dur, live: 0, hit: false, mesh: slot.mesh, fill: slot.fill });
+    this.hazards.push({ kind, x, z, r, ang, t: 0, dur, live: 0, hit: false, mesh: slot.mesh, fill: slot.fill, note: slot.note });
   }
 
   /** The boss picks what to do next from how far away you are, and avoids doing one thing three times. */
@@ -652,6 +885,7 @@ export class BossEngine {
           this.shake = Math.max(this.shake, h.kind === "slam" ? 0.6 : 0.2);
           this.burst(h.x, 0.2, h.z, h.kind === "slam" ? 26 : 8, h.kind === "slam" ? 7 : 4);
           if (first) sound.thud();
+          this.mark(h.kind, h.x, h.z);
           done = true;
         } else if (h.kind === "line") {
           // A block flies down the lane. It hits whatever it reaches.
@@ -669,8 +903,8 @@ export class BossEngine {
           if (first) sound.shot();
           const mesh = this.shots[shot++ % this.shots.length];
           mesh.visible = true;
-          mesh.position.set(h.x + fx * along, 0.5, h.z + fz * along);
-          mesh.rotation.y = -h.ang + h.live * 9;
+          mesh.position.set(h.x + fx * along, 0.9 + Math.sin(h.live * 14) * 0.12, h.z + fz * along);
+          mesh.rotation.set(0, -h.ang, Math.sin(h.live * 11) * 0.25);
           done = along > h.r;
         } else {
           // The ring spreads from where it started. Roll through it.
@@ -737,7 +971,6 @@ export class BossEngine {
     // The player.
     this.hero.position.set(p.x, 0, p.z);
     this.hero.rotation.set(0, -p.face, 0);
-    this.heroShadow.position.set(p.x, 0.02, p.z);
     this.heroArm.rotation.set(0, 0.5, 0);
     if (p.mode === "roll") this.hero.rotateX(-(p.t / 0.44) * Math.PI * 2);
     else if (p.mode === "attack") {
@@ -760,8 +993,8 @@ export class BossEngine {
     this.tower.position.set(b.x, b.lift, b.z);
     this.tower.rotation.y = -b.face;
     const glow = telling ? 0.25 + Math.sin(this.now * 18) * 0.15 : 0;
+    for (const m of this.blockMat) m.emissiveIntensity = glow + b.flash * 0.7;
     this.blocks.forEach((blk, i) => {
-      this.blockMat[i].emissiveIntensity = glow + b.flash * 0.9;
       blk.position.x = Math.sin(this.now * 1.7 + i * 0.9) * 0.05 * i;
       if (b.mode === "dead") blk.position.y = Math.max(0.33 + i * 0.1, blk.position.y - dt * (2 + i));
     });
@@ -781,6 +1014,11 @@ export class BossEngine {
       if (h.kind === "slam" || h.kind === "drop") {
         h.mesh.scale.setScalar(h.r);
         h.fill.scale.setScalar(Math.max(0.001, f));
+        // The note itself, on its way down.
+        if (h.note) {
+          h.note.position.y = 11 * (1 - f) * (1 - f) + 0.04;
+          h.note.rotation.set((1 - f) * 2.4, h.x * 3 + (1 - f) * 3, (1 - f) * 1.3);
+        }
       } else if (h.kind === "line") {
         h.mesh.rotation.y = -h.ang;
         h.mesh.scale.set(2, 1, h.r);
@@ -789,6 +1027,13 @@ export class BossEngine {
         // Before it goes, the ring draws in toward the boss. It leaves the moment it gets there.
         h.mesh.scale.setScalar(h.t < h.dur ? BOSS_R + 0.2 + (1 - f) * 4.5 : h.r);
       }
+    }
+
+    for (const m of this.marks) {
+      if (m.life <= 0) continue;
+      m.life -= dt * (m.kind === "slam" ? 0.45 : 0.7);
+      (m.mesh.material as THREE.MeshBasicMaterial).opacity = Math.min(1, Math.max(0, m.life) * 2.2) * (m.kind === "slam" ? 0.8 : 0.95);
+      if (m.life <= 0) m.mesh.visible = false;
     }
 
     for (let i = this.debris.length - 1; i >= 0; i--) {

@@ -2,7 +2,8 @@ import * as THREE from "three";
 import { sound } from "@/components/play/sound";
 
 /**
- * Dink: singles pickleball against the computer, on a real-size court.
+ * Dink: singles pickleball against the computer, on a real-size court, drawn like a 1970s rec league
+ * poster: flat colour, hard shading, and vegetables for players.
  *
  * Both players run to the ball on their own. What you choose is when to swing and where to put it:
  * click or tap a spot on the far side as the ball comes up off its bounce. Clean timing lands on the
@@ -51,9 +52,14 @@ const REACH = 1.45;
 const THEIR_REACH = 1.25;
 const TRAIL = 10;
 
-const CREAM = 0xfff1e0;
-const CORAL = 0xff4d5e;
-const BALL = 0xe9ff5c;
+const NAVY = 0x1d2a44;
+const CREAM = 0xfff3d6;
+const MUSTARD = 0xf4b83a;
+const TOMATO = 0xe4572e;
+const TEAL = 0x1a9a8f;
+const DEEP = 0x12756d;
+const CLAY = 0xd9603b;
+const BALL = 0xf2ff5a;
 
 /** How quick, how alert and how accurate the opponent is at each level. */
 const LEVELS = [
@@ -85,10 +91,13 @@ export class PickleEngine {
   private reticle: THREE.Mesh;
   private spot: THREE.Mesh;
   private closing: THREE.Mesh;
-  private ring: THREE.Mesh;
-  private ringLife = 0;
+  private pop: THREE.Sprite;
+  private popLife = 0;
+  private steps: THREE.DataTexture;
+  private rim = new THREE.MeshBasicMaterial({ color: NAVY, side: THREE.BackSide, fog: false });
   private you: Player;
   private them: Player;
+  private rivals: Player[] = [];
   private dummy = new THREE.Object3D();
   private caster = new THREE.Raycaster();
   private ground = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
@@ -124,44 +133,70 @@ export class PickleEngine {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-    // Dusk over the court: plum overhead, coral at the horizon.
-    this.scene.background = canvasTexture(8, 256, (c) => {
-      const g = c.createLinearGradient(0, 0, 0, 256);
-      g.addColorStop(0, "#2a1038");
-      g.addColorStop(0.3, "#6a2350");
-      g.addColorStop(0.52, "#ff7c6b");
-      g.addColorStop(0.62, "#ffc58f");
-      g.addColorStop(1, "#ffc58f");
-      c.fillStyle = g;
-      c.fillRect(0, 0, 8, 256);
-    });
-    this.scene.fog = new THREE.Fog(0xe07a66, 60, 190);
+    const shade = new THREE.DataTexture(new Uint8Array([110, 190, 255]), 3, 1, THREE.RedFormat);
+    shade.minFilter = shade.magFilter = THREE.NearestFilter;
+    shade.needsUpdate = true;
+    this.steps = shade;
+
+    this.scene.background = new THREE.Color(0xfff1cf);
     this.scene.add(this.camera);
 
     this.buildCourt();
-    this.you = this.buildPlayer(CREAM, 1);
-    this.them = this.buildPlayer(CORAL, -1);
+    this.you = this.buildVeg("pickle", 1);
+    this.rivals = [this.buildVeg("onion", -1), this.buildVeg("carrot", -1), this.buildVeg("chili", -1)];
+    this.them = this.rivals[1];
+    this.cast();
 
-    this.ball = new THREE.Mesh(new THREE.SphereGeometry(0.1, 20, 14), new THREE.MeshStandardMaterial({ color: BALL, emissive: 0x8a9a10, emissiveIntensity: 0.6, roughness: 0.5 }));
+    this.ball = this.edge(new THREE.Mesh(new THREE.SphereGeometry(0.1, 20, 14), this.toon(BALL)), 1.16);
     this.scene.add(this.ball);
-    this.ballShadow = this.disc(0.13, 0x05070a, 0.5);
-    this.trail = new THREE.InstancedMesh(new THREE.SphereGeometry(0.075, 8, 6), new THREE.MeshBasicMaterial({ color: BALL, transparent: true, opacity: 0.35, depthWrite: false }), TRAIL);
+    this.ballShadow = this.disc(0.14, NAVY, 0.45);
+    this.trail = new THREE.InstancedMesh(new THREE.SphereGeometry(0.05, 8, 6), this.ink(0xffffff), TRAIL);
     this.trail.frustumCulled = false;
     this.scene.add(this.trail);
     for (let i = 0; i < TRAIL; i++) this.trailPos.push(this.pos.clone());
 
-    const ringGeo = new THREE.RingGeometry(0.34, 0.42, 40);
-    ringGeo.rotateX(-Math.PI / 2);
-    const flat = (color: number, opacity: number) => new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false });
-    this.reticle = new THREE.Mesh(ringGeo, flat(0xffffff, 0.9));
-    this.spot = new THREE.Mesh(ringGeo, flat(0xffffff, 0.55));
-    this.closing = new THREE.Mesh(ringGeo, flat(BALL, 0.9));
-    this.ring = new THREE.Mesh(ringGeo, flat(0xffffff, 0));
-    for (const m of [this.reticle, this.spot, this.closing, this.ring]) {
+    const ring = (inner: number, outer: number, color: number, opacity: number) => {
+      const geo = new THREE.RingGeometry(inner, outer, 44);
+      geo.rotateX(-Math.PI / 2);
+      const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false, fog: false }));
       m.position.y = 0.02;
       m.visible = false;
       this.scene.add(m);
-    }
+      return m;
+    };
+    // Where you are aiming: a white ring with a dark edge, so it shows on teal and on mustard.
+    this.reticle = ring(0.3, 0.42, 0xffffff, 1);
+    const rimRing = new THREE.RingGeometry(0.42, 0.47, 44);
+    rimRing.rotateX(-Math.PI / 2);
+    this.reticle.add(new THREE.Mesh(rimRing, this.ink(NAVY)));
+    this.spot = ring(0.34, 0.42, CREAM, 0.95);
+    this.closing = ring(0.36, 0.44, NAVY, 1);
+
+    // The pop when a paddle meets the ball: a white burst, straight out of a comic.
+    this.pop = new THREE.Sprite(
+      new THREE.SpriteMaterial({
+        transparent: true,
+        opacity: 0,
+        depthWrite: false,
+        fog: false,
+        map: canvasTexture(128, 128, (c) => {
+          c.translate(64, 64);
+          c.beginPath();
+          for (let i = 0; i < 24; i++) {
+            const r = i % 2 ? 30 : 58;
+            const a = (i / 24) * Math.PI * 2;
+            c.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+          }
+          c.closePath();
+          c.fillStyle = "#ffffff";
+          c.fill();
+          c.lineWidth = 7;
+          c.strokeStyle = "#1d2a44";
+          c.stroke();
+        }),
+      }),
+    );
+    this.scene.add(this.pop);
 
     this.place();
     this.resize();
@@ -170,6 +205,24 @@ export class PickleEngine {
   }
 
   /* ---------- scene ---------- */
+
+  /** Flat, unlit colour: the court and everything around it is drawn like a printed poster. */
+  private ink(color: number, opts: THREE.MeshBasicMaterialParameters = {}) {
+    return new THREE.MeshBasicMaterial({ color, fog: false, ...opts });
+  }
+
+  /** Three hard steps of shade, for anything with a body. */
+  private toon(color: number) {
+    return new THREE.MeshToonMaterial({ color, gradientMap: this.steps });
+  }
+
+  /** A dark edge around a shape: the same shape, a little bigger, drawn inside out. */
+  private edge<T extends THREE.Mesh>(mesh: T, grow = 1.08) {
+    const rim = new THREE.Mesh(mesh.geometry, this.rim);
+    rim.scale.setScalar(grow);
+    mesh.add(rim);
+    return mesh;
+  }
 
   private disc(radius: number, color: number, opacity: number) {
     const geo = new THREE.CircleGeometry(radius, 24);
@@ -184,17 +237,17 @@ export class PickleEngine {
     const slab = (w: number, d: number, color: number, y: number, x = 0, z = 0) => {
       const geo = new THREE.PlaneGeometry(w, d);
       geo.rotateX(-Math.PI / 2);
-      const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color, roughness: 0.9 }));
+      const mesh = new THREE.Mesh(geo, this.ink(color));
       mesh.position.set(x, y, z);
       this.scene.add(mesh);
       return mesh;
     };
-    slab(600, 600, 0x35203c, 0); // the ground out to the horizon
-    slab(HALF_W * 2 + 7, HALF_L * 2 + 9, 0x1c2540, 0.002); // the pad around the court
-    slab(HALF_W * 2, HALF_L * 2, 0x1f7a8c, 0.004); // the court
-    slab(HALF_W * 2, KITCHEN * 2, 0xe2685a, 0.006); // the kitchen, both sides of the net
+    slab(900, 900, CLAY, 0); // clay out to the horizon
+    slab(HALF_W * 2 + 7, HALF_L * 2 + 8.4, DEEP, 0.002); // the pad
+    slab(HALF_W * 2, HALF_L * 2, TEAL, 0.004); // the court
+    slab(HALF_W * 2, KITCHEN * 2, MUSTARD, 0.006); // the kitchen, both sides of the net
 
-    const line = new THREE.MeshBasicMaterial({ color: 0xfff6ea });
+    const line = this.ink(CREAM);
     const stripe = (w: number, d: number, x: number, z: number) => {
       const geo = new THREE.PlaneGeometry(w, d);
       geo.rotateX(-Math.PI / 2);
@@ -202,20 +255,20 @@ export class PickleEngine {
       mesh.position.set(x, 0.009, z);
       this.scene.add(mesh);
     };
-    const T = 0.05;
+    const T = 0.07;
     for (const s of [-1, 1]) {
-      stripe(HALF_W * 2 + T, T, 0, s * HALF_L); // baseline
-      stripe(T, HALF_L * 2, s * HALF_W, 0); // sideline
-      stripe(HALF_W * 2, T, 0, s * KITCHEN); // kitchen line
-      stripe(T, HALF_L - KITCHEN, 0, s * (KITCHEN + (HALF_L - KITCHEN) / 2)); // centre line
+      stripe(HALF_W * 2 + T, T, 0, s * HALF_L);
+      stripe(T, HALF_L * 2, s * HALF_W, 0);
+      stripe(HALF_W * 2, T, 0, s * KITCHEN);
+      stripe(T, HALF_L - KITCHEN, 0, s * (KITCHEN + (HALF_L - KITCHEN) / 2));
     }
 
     const mesh = canvasTexture(256, 64, (c) => {
       c.clearRect(0, 0, 256, 64);
-      c.fillStyle = "rgba(20,10,24,0.38)";
+      c.fillStyle = "rgba(29,42,68,0.2)";
       c.fillRect(0, 0, 256, 64);
-      c.strokeStyle = "rgba(255,246,234,0.5)";
-      c.lineWidth = 1;
+      c.strokeStyle = "rgba(29,42,68,0.85)";
+      c.lineWidth = 1.5;
       for (let x = 0; x <= 256; x += 8) {
         c.beginPath();
         c.moveTo(x, 0);
@@ -229,120 +282,175 @@ export class PickleEngine {
         c.stroke();
       }
     });
-    const net = new THREE.Mesh(new THREE.PlaneGeometry(HALF_W * 2 + 0.6, NET), new THREE.MeshBasicMaterial({ map: mesh, transparent: true, side: THREE.DoubleSide, depthWrite: false }));
+    const net = new THREE.Mesh(new THREE.PlaneGeometry(HALF_W * 2 + 0.6, NET), new THREE.MeshBasicMaterial({ map: mesh, transparent: true, side: THREE.DoubleSide, depthWrite: false, fog: false }));
     net.position.set(0, NET / 2, 0);
     this.scene.add(net);
-    const tape = new THREE.Mesh(new THREE.BoxGeometry(HALF_W * 2 + 0.6, 0.05, 0.03), line);
+    const tape = new THREE.Mesh(new THREE.BoxGeometry(HALF_W * 2 + 0.6, 0.08, 0.04), line);
     tape.position.set(0, NET, 0);
     this.scene.add(tape);
-    const postMat = new THREE.MeshStandardMaterial({ color: 0x2a1a30, roughness: 0.6 });
     for (const s of [-1, 1]) {
-      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, NET + 0.06, 10), postMat);
-      post.position.set(s * (HALF_W + 0.3), (NET + 0.06) / 2, 0);
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, NET + 0.1, 10), this.ink(NAVY));
+      post.position.set(s * (HALF_W + 0.3), (NET + 0.1) / 2, 0);
       this.scene.add(post);
     }
 
-    // A low fence and a row of palms behind the far baseline, as silhouettes against the sky.
-    const dark = new THREE.MeshBasicMaterial({ color: 0x24122c, fog: false });
-    const fence = new THREE.Mesh(new THREE.BoxGeometry(60, 1.6, 0.2), dark);
-    fence.position.set(0, 0.8, -15);
-    this.scene.add(fence);
-    for (const [x, h, lean] of [
-      [-13, 8.5, 0.06],
-      [-7.5, 10.5, -0.04],
-      [-2, 7.8, 0.03],
-      [5.5, 9.8, -0.05],
-      [11, 8.2, 0.07],
-      [17, 10.8, -0.02],
-    ]) {
-      const palm = new THREE.Group();
-      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.17, h, 6), dark);
-      trunk.position.y = h / 2;
-      palm.add(trunk);
-      for (let i = 0; i < 9; i++) {
-        const frond = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.06, 0.42), dark);
-        const hold = new THREE.Group();
-        frond.position.x = 1.25;
-        hold.add(frond);
-        hold.position.y = h;
-        hold.rotation.set(0, (i / 9) * Math.PI * 2, -0.35 - (i % 3) * 0.22);
-        palm.add(hold);
-      }
-      palm.position.set(x, 0, -19 - Math.abs(x) * 0.25);
-      palm.rotation.z = lean;
-      this.scene.add(palm);
-    }
-    const sun = new THREE.Sprite(
-      new THREE.SpriteMaterial({
-        map: canvasTexture(128, 128, (c) => {
-          const g = c.createRadialGradient(64, 64, 0, 64, 64, 64);
-          g.addColorStop(0, "rgba(255,244,214,1)");
-          g.addColorStop(0.25, "rgba(255,214,150,0.85)");
-          g.addColorStop(1, "rgba(255,160,110,0)");
-          c.fillStyle = g;
-          c.fillRect(0, 0, 128, 128);
-        }),
-        fog: false,
-        depthWrite: false,
-        transparent: true,
-      }),
-    );
-    sun.position.set(-9, 5.5, -120);
-    sun.scale.setScalar(46);
-    this.scene.add(sun);
+    // Behind the far baseline: a low wall, a string of pennants, hills, and a very large sun.
+    const wall = new THREE.Mesh(new THREE.BoxGeometry(40, 1.1, 0.2), this.ink(CREAM));
+    wall.position.set(0, 0.55, -10.6);
+    const band = new THREE.Mesh(new THREE.BoxGeometry(40, 0.26, 0.22), this.ink(TOMATO));
+    band.position.set(0, 0.82, -10.6);
+    this.scene.add(wall, band);
 
-    this.scene.add(new THREE.HemisphereLight(0xffd9c4, 0x3a2a48, 1.9));
-    const low = new THREE.DirectionalLight(0xffc089, 1.8);
-    low.position.set(-6, 5, -12);
-    this.scene.add(low);
+    const flag = new THREE.BufferGeometry();
+    flag.setAttribute("position", new THREE.Float32BufferAttribute([-0.34, 0, 0, 0.34, 0, 0, 0, -0.78, 0], 3));
+    const colours = [TOMATO, CREAM, MUSTARD, TEAL];
+    for (let i = 0; i < 25; i++) {
+      const u = i / 24;
+      const pennant = new THREE.Mesh(flag, this.ink(colours[i % colours.length], { side: THREE.DoubleSide }));
+      // The string sags in the middle.
+      pennant.position.set(-10 + u * 20, 4.5 - Math.sin(u * Math.PI) * 0.9, -10.4);
+      pennant.rotation.z = (u - 0.5) * -0.35;
+      this.scene.add(pennant);
+    }
+    for (const s of [-1, 1]) {
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 4.7, 8), this.ink(NAVY));
+      pole.position.set(s * 10.2, 2.35, -10.4);
+      this.scene.add(pole);
+    }
+
+    const round = (r: number, color: number, x: number, y: number, z: number, squash = 1) => {
+      const m = new THREE.Mesh(new THREE.CircleGeometry(r, 64), this.ink(color));
+      m.position.set(x, y, z);
+      m.scale.y = squash;
+      this.scene.add(m);
+    };
+    round(46, 0xf9d98a, -14, 8, -260);
+    round(36, MUSTARD, -14, 8, -255);
+    round(70, 0x12756d, 62, -18, -200, 0.55);
+    round(86, TEAL, -78, -24, -185, 0.5);
+    round(60, 0x5a9e3f, 8, -26, -170, 0.5);
+
+    // Courtside: a bench and a drinks cooler.
+    const seat = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.08, 2.4), this.ink(CREAM));
+    seat.position.set(-5.5, 0.48, 1.2);
+    this.scene.add(seat);
+    for (const z of [0.2, 2.2]) {
+      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.46, 0.08), this.ink(NAVY));
+      leg.position.set(-5.5, 0.23, z);
+      this.scene.add(leg);
+    }
+    const cooler = this.edge(new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.7, 16), this.toon(TOMATO)), 1.06);
+    cooler.position.set(-5.5, 0.35, -0.9);
+    const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.31, 0.31, 0.1, 16), this.toon(CREAM));
+    lid.position.y = 0.4;
+    cooler.add(lid);
+    this.scene.add(cooler);
+
+    this.scene.add(new THREE.HemisphereLight(0xffffff, 0x9a8468, 1.7));
+    const sun = new THREE.DirectionalLight(0xfff0cf, 1.9);
+    sun.position.set(-6, 9, 6);
+    this.scene.add(sun);
   }
 
-  /** A figure made of simple solids: body, head, and a paddle on an arm that swings. */
-  private buildPlayer(color: number, facing: 1 | -1): Player {
+  /**
+   * The players are vegetables. You are a pickle; across the net is an onion, a carrot or a chili,
+   * depending on who you asked to play.
+   */
+  private buildVeg(kind: "pickle" | "onion" | "carrot" | "chili", facing: 1 | -1): Player {
     const group = new THREE.Group();
-    const shirt = new THREE.MeshStandardMaterial({ color, roughness: 0.6 });
-    const skin = new THREE.MeshStandardMaterial({ color: 0xe2ab80, roughness: 0.7 });
-    const dark = new THREE.MeshStandardMaterial({ color: 0x2a1a30, roughness: 0.7 });
-    const other = new THREE.MeshStandardMaterial({ color: facing === 1 ? CORAL : CREAM, roughness: 0.45 });
-    const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.2, 0.42, 6, 14), shirt);
-    body.position.y = 1.06;
-    const hips = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.19, 0.2, 14), dark);
-    hips.position.y = 0.72;
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 12), skin);
-    head.position.y = 1.64;
-    // A visor, so you can tell which way a figure is facing from across the court.
-    const visor = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.04, 16, 1, false, -Math.PI / 2, Math.PI), other);
-    visor.position.set(0, 1.7, -0.02);
-    visor.rotation.y = Math.PI / 2;
-    const brim = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.02, 0.14), other);
-    brim.position.set(0, 1.69, -0.2);
-    group.add(body, hips, head, visor, brim);
+    const add = (geo: THREE.BufferGeometry, color: number, x: number, y: number, z: number, rim = true) => {
+      const m = new THREE.Mesh(geo, this.toon(color));
+      m.position.set(x, y, z);
+      if (rim) this.edge(m);
+      group.add(m);
+      return m;
+    };
+    let eyesAt = 1.3;
+    let girth = 0.26;
+    if (kind === "pickle") {
+      add(new THREE.CapsuleGeometry(0.27, 0.62, 8, 18), 0x6aa84f, 0, 1.0, 0);
+      for (let i = 0; i < 9; i++) {
+        const a = i * 2.4;
+        add(new THREE.SphereGeometry(0.045, 8, 6), 0x4f8a3a, Math.cos(a) * 0.26, 0.62 + (i % 5) * 0.17, Math.sin(a) * 0.26, false);
+      }
+      add(new THREE.TorusGeometry(0.26, 0.055, 8, 22), TOMATO, 0, 1.42, 0, false).rotation.x = Math.PI / 2;
+    } else if (kind === "onion") {
+      const bulb = add(new THREE.SphereGeometry(0.44, 20, 16), 0xc58bd6, 0, 0.92, 0, false);
+      bulb.scale.set(1, 0.9, 1);
+      this.edge(bulb, 1.06);
+      for (const s of [-0.5, 0, 0.5]) {
+        const leaf = add(new THREE.ConeGeometry(0.07, 0.42, 8), 0x5a9e3f, s * 0.14, 1.5, 0, false);
+        leaf.rotation.z = -s * 0.7;
+      }
+      add(new THREE.TorusGeometry(0.4, 0.05, 8, 22), CREAM, 0, 1.12, 0, false).rotation.x = Math.PI / 2;
+      eyesAt = 0.98;
+      girth = 0.42;
+    } else if (kind === "carrot") {
+      const root = add(new THREE.ConeGeometry(0.34, 1.2, 18), 0xf2832b, 0, 1.02, 0);
+      root.rotation.x = Math.PI;
+      for (const s of [-1, 0, 1]) {
+        const leaf = add(new THREE.ConeGeometry(0.09, 0.5, 8), 0x5a9e3f, s * 0.12, 1.82, 0, false);
+        leaf.rotation.z = -s * 0.6;
+      }
+      eyesAt = 1.36;
+      girth = 0.3;
+    } else {
+      const pod = add(new THREE.CapsuleGeometry(0.21, 0.72, 8, 18), 0xd7263d, 0, 1.02, 0);
+      pod.rotation.x = facing * 0.16;
+      add(new THREE.CylinderGeometry(0.15, 0.22, 0.14, 12), 0x3f7d3a, 0, 1.6, 0, false);
+      add(new THREE.CylinderGeometry(0.035, 0.05, 0.26, 8), 0x3f7d3a, 0.03, 1.78, 0, false).rotation.z = -0.4;
+      eyesAt = 1.28;
+      girth = 0.2;
+    }
+    // A face on the front. You only ever see your own from behind.
     for (const s of [-1, 1]) {
-      const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.07, 0.44, 4, 8), skin);
-      leg.geometry.translate(0, -0.26, 0);
-      leg.position.set(s * 0.1, 0.62, 0);
+      const white = new THREE.Mesh(new THREE.SphereGeometry(0.075, 10, 8), this.ink(0xffffff));
+      white.position.set(s * 0.1, eyesAt, -girth * 0.96);
+      const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.036, 8, 6), this.ink(NAVY));
+      pupil.position.set(s * 0.1, eyesAt, -girth * 0.96 - 0.055);
+      group.add(white, pupil);
+    }
+    for (const s of [-1, 1]) {
+      const geo = new THREE.CylinderGeometry(0.035, 0.035, 0.42, 8);
+      geo.translate(0, -0.21, 0);
+      const leg = new THREE.Mesh(geo, this.ink(NAVY));
+      leg.position.set(s * 0.11, 0.46, 0);
       leg.name = s < 0 ? "legL" : "legR";
+      const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.08, 0.22), this.ink(0xffffff));
+      shoe.position.set(0, -0.42, -0.04);
+      leg.add(shoe);
       group.add(leg);
     }
     const arm = new THREE.Group();
-    arm.position.set(0.24, 1.24, 0);
-    const fore = new THREE.Mesh(new THREE.CapsuleGeometry(0.045, 0.34, 4, 8), skin);
+    arm.position.set(girth, 1.02, 0);
+    const fore = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.44, 8), this.ink(NAVY));
     fore.rotation.x = Math.PI / 2;
     fore.position.z = -0.24;
-    const paddle = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.02, 0.28), other);
+    const face = new THREE.CylinderGeometry(0.17, 0.17, 0.03, 22);
+    face.rotateZ(Math.PI / 2);
+    const paddle = this.edge(new THREE.Mesh(face, this.toon(facing === 1 ? TOMATO : CREAM)), 1.1);
     paddle.position.z = -0.6;
-    paddle.rotation.z = Math.PI / 2;
     arm.add(fore, paddle);
     group.add(arm);
     group.rotation.y = facing === 1 ? 0 : Math.PI;
     this.scene.add(group);
-    return { group, arm, shadow: this.disc(0.34, 0x05070a, 0.38), x: 0, z: facing * 5, swing: 0, step: 0 };
+    return { group, arm, shadow: this.disc(0.36, NAVY, 0.35), x: 0, z: facing * 5, swing: 0, step: 0 };
   }
 
   /* ---------- public ---------- */
 
   setOptions(o: PickleOptions) {
     this.options = o;
+    const next = this.rivals[o.level];
+    next.x = this.them.x;
+    next.z = this.them.z;
+    this.them = next;
+    this.cast();
+  }
+
+  /** Only the opponent you picked is on court. */
+  private cast() {
+    for (const r of this.rivals) r.group.visible = r.shadow.visible = r === this.them;
   }
 
   resize() {
@@ -503,10 +611,8 @@ export class PickleEngine {
       this.planYou = plan;
       this.planThem = null;
     }
-    this.ringLife = 1;
-    this.ring.position.set(from.x, 0.02, from.z);
-    this.ring.scale.setScalar(0.5);
-    this.ring.visible = true;
+    this.popLife = 1;
+    this.pop.position.copy(from);
     sound.pop();
     this.push();
   }
@@ -741,7 +847,7 @@ export class PickleEngine {
     this.ballShadow.position.set(this.pos.x, 0.012, this.pos.z);
     const lift = Math.min(1, this.pos.y / 3);
     this.ballShadow.scale.setScalar(1 + lift * 1.4);
-    (this.ballShadow.material as THREE.MeshBasicMaterial).opacity = 0.5 - lift * 0.3;
+    (this.ballShadow.material as THREE.MeshBasicMaterial).opacity = 0.45 - lift * 0.25;
 
     this.trailPos.pop();
     this.trailPos.unshift(this.pos.clone());
@@ -781,14 +887,14 @@ export class PickleEngine {
       this.spot.position.set(plan.ideal.x, 0.02, plan.ideal.z);
       this.closing.position.copy(this.spot.position);
       this.closing.scale.setScalar(1 + Math.max(0, until) * 2.4);
-      (this.closing.material as THREE.MeshBasicMaterial).color.set(Math.abs(until) < 0.12 ? 0x8fe3c0 : BALL);
+      (this.closing.material as THREE.MeshBasicMaterial).color.set(Math.abs(until) < 0.12 ? MUSTARD : NAVY);
     }
 
-    if (this.ringLife > 0) {
-      this.ringLife -= dt * 3.2;
-      this.ring.scale.multiplyScalar(1 + dt * 5);
-      (this.ring.material as THREE.MeshBasicMaterial).opacity = Math.max(0, this.ringLife) * 0.8;
-      if (this.ringLife <= 0) this.ring.visible = false;
+    if (this.popLife > 0) {
+      this.popLife = Math.max(0, this.popLife - dt * 4.5);
+      this.pop.scale.setScalar(0.5 + (1 - this.popLife) * 1.1);
+      this.pop.material.opacity = Math.min(1, this.popLife * 2.4);
+      this.pop.material.rotation = (1 - this.popLife) * 0.5;
     }
 
     // The camera leans a little with you.

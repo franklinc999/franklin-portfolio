@@ -3,9 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { sound } from "@/components/play/sound";
 import { useMotionOff } from "@/lib/useReducedMotion";
+import { Harbor } from "./Harbor";
+import "./harbor.css";
 import { CARDS, EVENTS, applyDelta, capacity, cardEffect, newSeason, review, shipWeek, type Card, type Kind, type Meters, type State, type Step } from "./model";
 
-const KIND: Record<Kind, string> = { content: "New content", store: "Store", health: "Upkeep", community: "Community" };
+const KIND: Record<Kind, string> = { content: "Something new", store: "For sale", health: "Upkeep", community: "For the town" };
 const BEST = "ops-best";
 
 const kindOf = (id: string) => CARDS.find((c) => c.id === id)?.kind ?? "none";
@@ -13,19 +15,19 @@ const nameOf = (id: string) => CARDS.find((c) => c.id === id)?.name ?? "";
 const sign = (v: number) => (v > 0 ? "+" : "−");
 const players = (v: number) => (v >= 100_000 ? `${Math.round(v / 1000)}k` : `${(v / 1000).toFixed(1)}k`);
 
-/** The changes a card or a week makes, as short labelled chips. */
-function Chips({ delta }: { delta: Partial<Meters> }) {
+/** What a card or a week changes, as a short run of plus and minus figures. */
+function Changes({ delta }: { delta: Partial<Meters> }) {
   const out: { text: string; good: boolean }[] = [];
   if (delta.players) out.push({ text: `Players ${sign(delta.players)}${(Math.abs(delta.players) / 1000).toFixed(1)}k`, good: delta.players > 0 });
   if (delta.mood) out.push({ text: `Mood ${sign(delta.mood)}${Math.abs(delta.mood)}`, good: delta.mood > 0 });
   if (delta.stability) out.push({ text: `Stability ${sign(delta.stability)}${Math.abs(delta.stability)}`, good: delta.stability > 0 });
-  if (delta.energy) out.push({ text: `Team ${sign(delta.energy)}${Math.abs(delta.energy)}`, good: delta.energy > 0 });
-  if (delta.revenue) out.push({ text: `Revenue ${sign(delta.revenue)}$${Math.abs(delta.revenue)}k`, good: delta.revenue > 0 });
+  if (delta.energy) out.push({ text: `Crew ${sign(delta.energy)}${Math.abs(delta.energy)}`, good: delta.energy > 0 });
+  if (delta.revenue) out.push({ text: `Takings ${sign(delta.revenue)}$${Math.abs(delta.revenue)}k`, good: delta.revenue > 0 });
   if (!out.length) return null;
   return (
-    <span className="ops-chips">
+    <span className="hb-changes">
       {out.map((c) => (
-        <span key={c.text} className="ops-chip" data-tone={c.good ? "good" : "bad"}>
+        <span key={c.text} data-tone={c.good ? "good" : "bad"}>
           {c.text}
         </span>
       ))}
@@ -33,41 +35,25 @@ function Chips({ delta }: { delta: Partial<Meters> }) {
   );
 }
 
-function Meter({ label, value, bar, delta, change, wide, children }: { label: string; value: string; bar?: number; delta?: number; change?: string; wide?: boolean; children?: React.ReactNode }) {
+function Entry({ label, value, bar, delta, change }: { label: string; value: string; bar?: number; delta?: number; change?: string }) {
   return (
-    <div className="ops-meter" data-wide={wide ? "" : undefined} data-low={bar !== undefined && bar < 35 ? "" : undefined}>
+    <div className="hb-entry" data-low={bar !== undefined && bar < 35 ? "" : undefined}>
       <dt>{label}</dt>
       <dd>
         {value}
         {delta ? (
-          <span className="ops-flash" data-tone={delta > 0 ? "good" : "bad"}>
+          <span className="hb-flash" data-tone={delta > 0 ? "good" : "bad"}>
             {sign(delta)}
             {change ?? Math.abs(delta)}
           </span>
         ) : null}
       </dd>
       {bar !== undefined && (
-        <span className="ops-bar" aria-hidden="true">
+        <span className="hb-rule" aria-hidden="true">
           <span style={{ width: `${bar}%` }} />
         </span>
       )}
-      {children}
     </div>
-  );
-}
-
-/** Players over the season so far, as a small line. */
-function Spark({ points, total }: { points: number[]; total: number }) {
-  const lo = Math.min(...points) * 0.92;
-  const hi = Math.max(...points) * 1.05;
-  const x = (i: number) => (i / total) * 100;
-  const y = (v: number) => 28 - ((v - lo) / (hi - lo || 1)) * 24;
-  const d = points.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(" ");
-  return (
-    <svg className="ops-spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true">
-      <path d={`${d} L${x(points.length - 1).toFixed(1)} 30 L0 30 Z`} className="ops-spark-fill" />
-      <path d={d} className="ops-spark-line" vectorEffect="non-scaling-stroke" />
-    </svg>
   );
 }
 
@@ -187,17 +173,18 @@ export default function OpsGame() {
 
   if (phase === "intro" || !season || !meters) {
     return (
-      <div className="ops ops-intro">
-        <p className="meta">Pocket Harbor, the Season of Kites</p>
-        <h2 className="h-pixel ops-title">You run the season</h2>
-        <p className="ops-lede">
-          Pocket Harbor is a cozy co-op game that does not exist. For eight weeks you decide what ships: new things to
-          play, things to sell, fixes, and the occasional early Friday. The team can only do so much, the community
-          remembers everything, and every week something happens that you did not plan.
-        </p>
-        <div className="game-actions">
-          <button type="button" className="btn btn-solid" onClick={begin}>
-            Start the season
+      <div className="hb hb-cover">
+        <Harbor meters={{ players: 120000, mood: 70, stability: 68, energy: 78, revenue: 120 }} />
+        <div className="hb-cover-text">
+          <p className="hb-kicker">The harbor master&rsquo;s ledger</p>
+          <h2 className="hb-name">Pocket Harbor</h2>
+          <p className="hb-lede">
+            Pocket Harbor is a cozy co-op game that does not exist. For eight weeks you decide what ships: new things
+            to play, things to sell, fixes, and the occasional early Friday. The crew can only do so much, the town
+            remembers everything, and every week something happens that you did not plan.
+          </p>
+          <button type="button" className="hb-go" onClick={begin}>
+            Open the ledger
           </button>
         </div>
       </div>
@@ -207,84 +194,86 @@ export default function OpsGame() {
   const cap = capacity(season);
   const used = cards.reduce((a, c) => a + c.cost, 0);
   const last = phase === "report" && shown > 0 ? steps[shown - 1].delta : {};
-  const trail = [...season.history.map((h) => h.players), ...(phase === "report" ? [meters.players] : [])];
   const result = phase === "done" ? review(season) : null;
 
   return (
-    <div className="ops" data-phase={phase}>
-      <header className="ops-head">
+    <div className="hb" data-phase={phase}>
+      <header className="hb-head">
         <div>
-          <p className="meta">Pocket Harbor, the Season of Kites</p>
-          <h2 className="h-pixel ops-week">{phase === "done" ? "Season over" : `Week ${season.week} of ${season.weeks}`}</h2>
+          <p className="hb-kicker">Pocket Harbor, the Season of Kites</p>
+          <h2 className="hb-week">{phase === "done" ? "The season is over" : `Week ${season.week} of ${season.weeks}`}</h2>
         </div>
-        <ol className="ops-track" aria-label={`Week ${season.week} of ${season.weeks}`}>
+        <ol className="hb-buoys" aria-label={`Week ${season.week} of ${season.weeks}`}>
           {Array.from({ length: season.weeks }, (_, i) => (
-            <li key={i} data-state={phase === "done" || i + 1 < season.week ? "past" : i + 1 === season.week ? "now" : "ahead"} />
+            <li key={i} data-state={phase === "done" || i + 1 < season.week ? "past" : i + 1 === season.week ? "now" : "ahead"}>
+              {i + 1}
+            </li>
           ))}
         </ol>
-        <button type="button" className="btn btn-glass ops-mute" aria-pressed={muted} onClick={mute}>
-          {muted ? "Sound off" : "Sound on"}
+        <button type="button" className="hb-quiet" aria-pressed={!muted} onClick={mute}>
+          Sound {muted ? "off" : "on"}
         </button>
       </header>
 
-      <dl className="ops-meters">
-        <Meter label="Players" value={players(meters.players)} delta={last.players} change={last.players ? `${(Math.abs(last.players) / 1000).toFixed(1)}k` : undefined} wide>
-          <Spark points={trail} total={season.weeks} />
-        </Meter>
-        <Meter label="Mood" value={String(meters.mood)} bar={meters.mood} delta={last.mood} />
-        <Meter label="Stability" value={String(meters.stability)} bar={meters.stability} delta={last.stability} />
-        <Meter label="Team" value={String(meters.energy)} bar={meters.energy} delta={last.energy} />
-        <Meter label="Revenue" value={`$${meters.revenue}k`} delta={last.revenue} change={last.revenue ? `$${Math.abs(last.revenue)}k` : undefined} />
+      <Harbor meters={meters} />
+
+      <dl className="hb-entries">
+        <Entry label="Players" value={players(meters.players)} delta={last.players} change={last.players ? `${(Math.abs(last.players) / 1000).toFixed(1)}k` : undefined} />
+        <Entry label="Mood" value={String(meters.mood)} bar={meters.mood} delta={last.mood} />
+        <Entry label="Stability" value={String(meters.stability)} bar={meters.stability} delta={last.stability} />
+        <Entry label="Crew" value={String(meters.energy)} bar={meters.energy} delta={last.energy} />
+        <Entry label="Takings" value={`$${meters.revenue}k`} delta={last.revenue} change={last.revenue ? `$${Math.abs(last.revenue)}k` : undefined} />
       </dl>
 
       {phase === "plan" && (
         <>
-          <p className="ops-omen" data-known={peeked ? "" : undefined}>
+          <p className="hb-bottle" data-known={peeked ? "" : undefined}>
             {peeked ? (
               <>
-                <b>Coming this week:</b> {EVENTS[season.event].name}. {EVENTS[season.event].hint}
+                <b>Word from the forums:</b> {EVENTS[season.event].name}. {EVENTS[season.event].hint}
               </>
             ) : (
               "Something happens every week. You find out what after you ship, unless you read the forums first."
             )}
           </p>
 
-          <ul className="ops-hand">
+          <ul className="hb-hand">
             {season.hand.map((card) => {
               const picked = picks.includes(card.id);
               const blocked = !picked && used + card.cost > cap;
               return (
                 <li key={card.id}>
-                  <button type="button" className="ops-card" data-kind={card.kind} aria-pressed={picked} aria-disabled={blocked || undefined} onClick={() => toggle(card)}>
-                    <span className="ops-card-top">
-                      <span className="ops-kind">{KIND[card.kind]}</span>
-                      <span className="ops-cost" aria-label={`Takes ${card.cost} of the team's ${cap} points`}>
+                  <button type="button" className="hb-tag" data-kind={card.kind} aria-pressed={picked} aria-disabled={blocked || undefined} onClick={() => toggle(card)}>
+                    <span className="hb-tag-top">
+                      <span className="hb-flag" aria-hidden="true" />
+                      <span className="hb-kind">{KIND[card.kind]}</span>
+                      <span className="hb-hands" aria-label={`Takes ${card.cost} of the crew's ${cap} hands`}>
                         {Array.from({ length: card.cost }, (_, i) => (
                           <i key={i} />
                         ))}
                       </span>
                     </span>
-                    <span className="ops-name">{card.name}</span>
-                    <span className="ops-line">{card.line}</span>
-                    <Chips delta={cardEffect(card, picked ? cards : [...cards, card], season.meters)} />
+                    <span className="hb-tag-name">{card.name}</span>
+                    <span className="hb-tag-line">{card.line}</span>
+                    <Changes delta={cardEffect(card, picked ? cards : [...cards, card], season.meters)} />
                   </button>
                 </li>
               );
             })}
           </ul>
 
-          <div className="ops-plan">
-            <p className="ops-cap">
-              <span className="ops-cost ops-cost-big" aria-hidden="true">
+          <div className="hb-plan">
+            <p className="hb-crew">
+              <span className="hb-hands hb-hands-big" aria-hidden="true">
                 {Array.from({ length: cap }, (_, i) => (
                   <i key={i} data-used={i < used ? "" : undefined} />
                 ))}
               </span>
-              {used} of {cap} points of work planned
-              {cap === 4 ? ". The team is rested." : cap === 2 ? ". The team is worn out." : "."}
+              {used} of {cap} hands busy
+              {cap === 4 ? ". The crew is rested." : cap === 2 ? ". The crew is worn out." : "."}
             </p>
-            <p className="ops-forecast">{cards.length ? <Chips delta={forecast} /> : "Pick what ships this week. Shipping nothing is allowed."}</p>
-            <button type="button" className="btn btn-solid" onClick={ship}>
+            <p className="hb-forecast">{cards.length ? <Changes delta={forecast} /> : "Pick what ships this week. Shipping nothing is allowed."}</p>
+            <button type="button" className="hb-go" onClick={ship}>
               Ship week {season.week}
             </button>
           </div>
@@ -292,72 +281,69 @@ export default function OpsGame() {
       )}
 
       {phase === "report" && (
-        <div className="ops-report">
-          <ol className="ops-steps" aria-live="polite">
+        <div className="hb-log">
+          <h3 className="hb-log-title">The week, as it happened</h3>
+          <ol aria-live="polite">
             {steps.slice(0, shown).map((step, i) => (
-              <li key={i} className="ops-step" data-tone={step.tone}>
-                <span className="ops-step-text">
-                  <b>{step.label}</b>
+              <li key={i} data-tone={step.tone}>
+                <span>
+                  <b>{step.label}.</b>
                   {step.detail ? ` ${step.detail}` : ""}
                 </span>
-                <Chips delta={step.delta} />
+                <Changes delta={step.delta} />
               </li>
             ))}
           </ol>
-          <div className="game-actions">
-            {shown < steps.length ? (
-              <button type="button" className="btn btn-glass" onClick={() => setShown(steps.length)}>
-                Skip to the end of the week
-              </button>
-            ) : (
-              <button type="button" className="btn btn-solid" onClick={advance}>
-                {pending?.done ? "See the season review" : `On to week ${season.week + 1}`}
-              </button>
-            )}
-          </div>
+          {shown < steps.length ? (
+            <button type="button" className="hb-quiet" onClick={() => setShown(steps.length)}>
+              Skip to the end of the week
+            </button>
+          ) : (
+            <button type="button" className="hb-go" onClick={advance}>
+              {pending?.done ? "Read the season report" : `On to week ${season.week + 1}`}
+            </button>
+          )}
         </div>
       )}
 
       {result && (
-        <div className="ops-review" role="status">
-          <p className="h-pixel ops-grade" data-grade={result.grade}>
+        <div className="hb-report" role="status">
+          <p className="hb-seal" data-grade={result.grade}>
             {result.grade}
           </p>
-          <div className="ops-review-body">
-            <h3 className="h3">{result.headline}</h3>
-            <p className="meta">
+          <div className="hb-report-body">
+            <h3 className="hb-report-title">{result.headline}</h3>
+            <p className="hb-kicker">
               Score {result.score}
               {result.score >= best ? ", your best so far" : `, your best is ${best}`}
             </p>
-            <ul className="ops-notes">
+            <ul className="hb-notes">
               {result.notes.map((n) => (
                 <li key={n}>{n}</li>
               ))}
             </ul>
-            <ol className="ops-season" aria-label="What shipped, week by week">
+            <ol className="hb-season" aria-label="What shipped, week by week">
               {season.shipped.map((ids, i) => (
                 <li key={i}>
-                  <span className="ops-season-week">Week {i + 1}</span>
-                  <span className="ops-season-pips">
-                    {ids.length ? ids.map((id) => <i key={id} data-kind={kindOf(id)} title={nameOf(id)} />) : <i data-kind="none" title="Nothing shipped" />}
+                  <span>Week {i + 1}</span>
+                  <span className="hb-season-flags">
+                    {ids.length ? ids.map((id) => <i key={id} className="hb-flag" data-kind={kindOf(id)} title={nameOf(id)} />) : <i className="hb-flag" data-kind="none" title="Nothing shipped" />}
                   </span>
-                  <span className="ops-season-players">{players(season.history[i + 1].players)}</span>
+                  <b>{players(season.history[i + 1].players)}</b>
                 </li>
               ))}
             </ol>
-            <p className="ops-key">
+            <p className="hb-key">
               {(Object.keys(KIND) as Kind[]).map((k) => (
                 <span key={k}>
-                  <i data-kind={k} />
+                  <i className="hb-flag" data-kind={k} />
                   {KIND[k]}
                 </span>
               ))}
             </p>
-            <div className="game-actions">
-              <button type="button" className="btn btn-solid" onClick={begin}>
-                Run another season
-              </button>
-            </div>
+            <button type="button" className="hb-go" onClick={begin}>
+              Run another season
+            </button>
           </div>
         </div>
       )}

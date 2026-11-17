@@ -1412,171 +1412,28 @@
 
   /* ---------- Games ---------- */
 
+  /* Each game brings its own stylesheet. All the site provides is the card that leads to it,
+     the box shown while it loads, and the notes underneath. */
   .card-grid.one {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  @media (min-width: 900px) {
-    /* A single game gets the picture beside the words instead of a lonely column. */
-    .card-grid.one .shot {
-      display: grid;
-      grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
-      align-items: center;
-      padding: 12px;
-    }
-
-    .card-grid.one .shot-body {
-      padding: 12px 20px 12px 28px;
-    }
-  }
-
-  /* The frame a game is played in. Each game draws to the canvas and lays its own panels over it. */
-  .game-stage {
-    position: relative;
+  .game-loading {
     display: grid;
     place-items: center;
     width: 100%;
     aspect-ratio: 3 / 4;
-    overflow: hidden;
-    border-radius: 22px;
-    background: #14060d;
-    color: #fff3ef;
-    box-shadow:
-      0 0 0 1px rgba(255, 214, 220, 0.22),
-      0 30px 60px -30px rgba(0, 0, 0, 0.8);
-    --color-text: #fff3ef;
-    --color-text-muted: #f1ccd1;
-    --color-text-faint: #efc6cd;
-    --signal: #ff4d5e;
-  }
-
-  @media (min-width: 760px) {
-    .game-stage {
-      aspect-ratio: 16 / 9;
-    }
-  }
-
-  .game-loading {
+    border-radius: 16px;
     font-family: var(--font-mono);
     font-size: 0.875rem;
     color: #efc6cd;
+    background: rgba(20, 6, 13, 0.6);
   }
 
-  .game-canvas {
-    position: absolute;
-    inset: 0;
-    display: block;
-    width: 100%;
-    height: 100%;
-    touch-action: none;
-  }
-
-  .game-stage[data-phase="playing"] .game-canvas {
-    cursor: crosshair;
-  }
-
-  .game-stage[data-locked] .game-canvas {
-    cursor: none;
-  }
-
-  /* Menus, pause and results sit over the scene on smoked glass. */
-  .game-panel {
-    position: relative;
-    display: grid;
-    gap: 16px;
-    width: min(100% - 28px, 880px);
-    max-height: calc(100% - 28px);
-    overflow-y: auto;
-    padding: clamp(18px, 2.6vw, 30px);
-    border-radius: 20px;
-    background: rgba(20, 6, 13, 0.78);
-    -webkit-backdrop-filter: blur(14px) saturate(1.3);
-    backdrop-filter: blur(14px) saturate(1.3);
-    box-shadow: inset 0 0 0 1px rgba(255, 214, 220, 0.2);
-  }
-
-  .game-panel-small {
-    width: min(100% - 28px, 430px);
-    justify-items: center;
-    text-align: center;
-  }
-
-  .game-title {
-    font-size: clamp(3rem, 7vw, 5.25rem);
-    line-height: 0.9;
-  }
-
-  .game-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-
-  .game-panel-small .game-actions {
-    justify-content: center;
-  }
-
-  .game-result {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px 24px;
-    width: 100%;
-    padding-block: 14px;
-    border-block: 1px solid rgba(255, 214, 220, 0.2);
-    text-align: left;
-  }
-
-  .game-result dt,
-  .game-hud-side dt {
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    color: #efc6cd;
-  }
-
-  .game-result dd {
-    font-family: var(--font-pixel);
-    font-size: 1.75rem;
-    line-height: 1.1;
-  }
-
-  .game-hud {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.7);
-  }
-
-  .game-hud-main {
-    position: absolute;
-    top: 14px;
-    left: 20px;
-    font-family: var(--font-pixel);
-    font-size: clamp(2.5rem, 5vw, 4rem);
-    line-height: 1;
-  }
-
-  .game-hud-side {
-    position: absolute;
-    top: 16px;
-    right: 20px;
-    display: flex;
-    gap: 22px;
-    text-align: right;
-  }
-
-  .game-hud-side dd {
-    font-family: var(--font-pixel);
-    font-size: 1.625rem;
-    line-height: 1.05;
-  }
-
-  .game-hud-foot {
-    position: absolute;
-    bottom: 14px;
-    left: 20px;
-    font-family: var(--font-mono);
-    font-size: 0.8125rem;
-    color: #f1ccd1;
+  @media (min-width: 760px) {
+    .game-loading {
+      aspect-ratio: 16 / 9;
+    }
   }
 
   .game-notes ul {
@@ -1588,1046 +1445,13 @@
     max-width: 62ch;
   }
 
-  /* ---------- Game: the range ---------- */
-
-  .range-cross {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 22px;
-    height: 22px;
-    translate: -50% -50%;
-    background:
-      linear-gradient(#fff, #fff) center / 2px 100% no-repeat,
-      linear-gradient(#fff, #fff) center / 100% 2px no-repeat;
-    -webkit-mask: radial-gradient(circle, transparent 3.5px, #000 4px);
-    mask: radial-gradient(circle, transparent 3.5px, #000 4px);
-    filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.9));
-  }
-
-  .range-cross::after {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 2px;
-    height: 2px;
-    translate: -50% -50%;
-    background: #fff;
-  }
-
-  .range-menu {
-    align-items: start;
-  }
-
-  @media (min-width: 860px) {
-    .range-menu {
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
-      gap: 28px;
-    }
-  }
-
-  .range-drills {
-    display: grid;
-    gap: 8px;
-  }
-
-  .range-drills legend {
-    margin-bottom: 8px;
-  }
-
-  .range-drill {
-    position: relative;
-    display: block;
-    cursor: pointer;
-  }
-
-  .range-drill input {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    cursor: pointer;
-  }
-
-  .range-drill span {
-    display: block;
-    padding: 10px 14px;
-    border-radius: 12px;
-    font-size: 0.875rem;
-    line-height: 1.35;
-    color: #f1ccd1;
-    box-shadow: inset 0 0 0 1px rgba(255, 214, 220, 0.2);
-    transition:
-      background-color 0.16s ease,
-      box-shadow 0.16s ease;
-  }
-
-  .range-drill b {
-    display: block;
-    font-family: var(--font-pixel);
-    font-weight: 400;
-    font-size: 1.5rem;
-    line-height: 1;
-    color: #fff3ef;
-  }
-
-  .range-drill input:checked + span {
-    background: rgba(255, 77, 94, 0.2);
-    box-shadow: inset 0 0 0 2px #ff4d5e;
-  }
-
-  .range-drill input:focus-visible + span {
-    outline: 2px solid var(--color-accent);
-    outline-offset: 3px;
-  }
-
-  .range-settings {
-    display: grid;
-    gap: 14px;
-  }
-
-  .range-fields {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-  }
-
-  /* On a phone the menu sets the height of the stage, so nothing has to scroll inside it. */
-  @media (max-width: 759px) {
-    .game-stage[data-phase="menu"] {
-      aspect-ratio: auto;
-    }
-
-    .game-stage[data-phase="menu"] .game-panel {
-      max-height: none;
-      margin-block: 14px;
-    }
-  }
-
-  .range-touch-only {
-    display: none;
-  }
-
-  /* Sensitivity matching means nothing without a mouse. */
-  @media (hover: none) and (pointer: coarse) {
-    .range-settings .range-mouse-only {
-      display: none;
-    }
-
-    .range-touch-only {
-      display: block;
-    }
-  }
-
-  .range-fields .field-row {
-    min-width: 0;
-  }
-
-  .range-fields input {
-    width: 100%;
-    min-width: 0;
-    background: rgba(0, 0, 0, 0.35);
-  }
-
-  .range-note {
-    font-size: 0.875rem;
-    line-height: 1.4;
-    color: #f1ccd1;
-  }
-
-  /* ---------- Game: dink ---------- */
-
-  .pickle[data-phase="playing"] .game-canvas {
-    cursor: crosshair;
-  }
-
-  .pickle-score {
-    position: absolute;
-    top: 14px;
-    left: 50%;
-    display: flex;
-    gap: 6px;
-    translate: -50% 0;
-  }
-
-  .pickle-score span {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 6px 14px;
-    border-radius: 12px;
-    background: rgba(20, 6, 13, 0.72);
-    box-shadow: inset 0 0 0 1px rgba(255, 214, 220, 0.2);
-  }
-
-  @media (max-width: 600px) {
-    .pickle-score {
-      left: 14px;
-      translate: 0 0;
-    }
-  }
-
-  /* The server's side of the scoreboard is lit. */
-  .pickle-score span[data-serving] {
-    box-shadow: inset 0 0 0 2px #e9ff5c;
-  }
-
-  .pickle-score b {
-    min-width: 1.1ch;
-    font-family: var(--font-pixel);
-    font-weight: 400;
-    font-size: 2.25rem;
-    line-height: 1;
-    text-align: center;
-  }
-
-  .pickle-score small {
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    color: #f1ccd1;
-  }
-
-  .pickle-call,
-  .pickle-timing {
-    position: absolute;
-    left: 50%;
-    translate: -50% 0;
-    padding: 4px 16px;
-    border-radius: 12px;
-    font-family: var(--font-pixel);
-    line-height: 1.1;
-    white-space: nowrap;
-    background: rgba(20, 6, 13, 0.72);
-  }
-
-  .pickle-call {
-    top: 34%;
-    font-size: clamp(2rem, 5vw, 3.25rem);
-    color: #ff97a1;
-  }
-
-  .pickle-call[data-won] {
-    color: #8fe3c0;
-  }
-
-  .pickle-timing {
-    bottom: 16%;
-    font-size: 1.5rem;
-    color: #ffd9a3;
-  }
-
-  .pickle-timing[data-timing="Clean"] {
-    color: #8fe3c0;
-  }
-
-  .pickle-timing[data-timing="Whiff"] {
-    color: #ff97a1;
-  }
-
-  @media (prefers-reduced-motion: no-preference) {
-    .pickle-call,
-    .pickle-timing {
-      animation: pickle-pop 0.22s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-    }
-  }
-
-  @keyframes pickle-pop {
-    from {
-      opacity: 0;
-      scale: 0.8;
-    }
-  }
-
-  .pickle-pause {
-    position: absolute;
-    top: 14px;
-    right: 14px;
-    min-height: 40px;
-    padding-inline: 14px;
-    font-size: 0.8125rem;
-    pointer-events: auto;
-  }
-
-  .pickle-menu {
-    align-items: start;
-  }
-
-  @media (min-width: 860px) {
-    .pickle-menu {
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
-      gap: 28px;
-    }
-  }
-
-  /* ---------- Game: the backlog ---------- */
-
-  .boss-top {
-    position: absolute;
-    top: 16px;
-    left: 50%;
-    display: grid;
-    gap: 6px;
-    width: min(60%, 560px);
-    translate: -50% 0;
-  }
-
-  .boss-name {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 12px;
-    font-family: var(--font-pixel);
-    font-size: 1.5rem;
-    line-height: 1;
-  }
-
-  .boss-name b {
-    font-weight: 400;
-  }
-
-  .boss-name span {
-    color: #ff97a1;
-  }
-
-  .boss-bar,
-  .boss-hp,
-  .boss-stamina {
-    position: relative;
-    display: block;
-    border-radius: 4px;
-    background: rgba(20, 6, 13, 0.7);
-    box-shadow: inset 0 0 0 1px rgba(255, 214, 220, 0.3);
-    overflow: hidden;
-  }
-
-  .boss-bar {
-    height: 14px;
-  }
-
-  .boss-bar > span,
-  .boss-hp > span,
-  .boss-stamina > span {
-    display: block;
-    height: 100%;
-    background: #ff4d5e;
-    transition: width 0.18s ease;
-  }
-
-  /* Notches where the fight changes. */
-  .boss-bar i {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 2px;
-    background: rgba(255, 243, 239, 0.7);
-  }
-
-  .boss-you {
-    position: absolute;
-    left: 18px;
-    bottom: 16px;
-    display: grid;
-    gap: 5px;
-    width: min(42%, 260px);
-  }
-
-  .boss-hp {
-    height: 12px;
-  }
-
-  .boss-hp > span {
-    background: #8fe3c0;
-  }
-
-  .boss-stamina {
-    height: 7px;
-  }
-
-  .boss-stamina > span {
-    background: #ffd9a3;
-    transition: none;
-  }
-
-  .boss-flasks {
-    display: flex;
-    gap: 6px;
-  }
-
-  .boss-flasks i {
-    width: 12px;
-    height: 16px;
-    border-radius: 3px 3px 6px 6px;
-    box-shadow: inset 0 0 0 2px #8fe3c0;
-  }
-
-  .boss-flasks i[data-full] {
-    background: #8fe3c0;
-  }
-
-  .boss-menu {
-    width: min(100% - 28px, 520px);
-  }
-
-  .boss-keys {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px 20px;
-    padding-block: 14px;
-    border-block: 1px solid rgba(255, 214, 220, 0.2);
-  }
-
-  .boss-keys dt {
-    font-family: var(--font-pixel);
-    font-size: 1.375rem;
-    line-height: 1.1;
-  }
-
-  .boss-keys dd {
-    font-size: 0.8125rem;
-    color: #f1ccd1;
-  }
-
-  /* Thumb controls, for screens with no keyboard. */
-  .boss-stick,
-  .boss-pad {
-    display: none;
-  }
-
-  @media (hover: none) and (pointer: coarse) {
-    .boss-keys {
-      display: none;
-    }
-
-    .boss-stick {
-      position: absolute;
-      inset: 30% 50% 0 0;
-      display: block;
-      pointer-events: auto;
-      touch-action: none;
-    }
-
-    .boss-knob {
-      position: absolute;
-      width: 84px;
-      height: 84px;
-      translate: -50% -50%;
-      border-radius: 50%;
-      background: rgba(20, 6, 13, 0.4);
-      box-shadow: inset 0 0 0 2px rgba(255, 243, 239, 0.5);
-      pointer-events: none;
-    }
-
-    .boss-knob i {
-      position: absolute;
-      inset: 24px;
-      border-radius: 50%;
-      background: rgba(255, 243, 239, 0.85);
-    }
-
-    .boss-pad {
-      position: absolute;
-      right: 12px;
-      bottom: 14px;
-      display: flex;
-      align-items: flex-end;
-      gap: 8px;
-      pointer-events: auto;
-      touch-action: none;
-    }
-
-    .boss-pad button {
-      width: 58px;
-      height: 58px;
-      border-radius: 50%;
-      font-size: 0.8125rem;
-      font-weight: 640;
-      color: #fff3ef;
-      background: rgba(20, 6, 13, 0.6);
-      box-shadow: inset 0 0 0 2px rgba(255, 243, 239, 0.5);
-      text-shadow: none;
-    }
-
-    .boss-pad button:disabled {
-      opacity: 0.4;
-    }
-
-    .boss-pad .boss-pad-main {
-      width: 78px;
-      height: 78px;
-      font-size: 1rem;
-      background: rgba(255, 77, 94, 0.75);
-    }
-
-    .boss-you {
-      bottom: auto;
-      top: 80px;
-    }
-
-    /* Keep the boss's bar clear of the pause button. */
-    .boss-top {
-      left: 14px;
-      width: calc(100% - 112px);
-      translate: 0 0;
-    }
-  }
-
-  /* ---------- Game: live ops ---------- */
-
-  .ops {
-    display: grid;
-    gap: 18px;
-    padding: clamp(18px, 2.6vw, 30px);
-    border-radius: 22px;
-    background: rgba(20, 6, 13, 0.82);
-    color: #fff3ef;
-    box-shadow:
-      inset 0 0 0 1px rgba(255, 214, 220, 0.2),
-      0 30px 60px -30px rgba(0, 0, 0, 0.8);
-    --color-text: #fff3ef;
-    --color-text-muted: #f1ccd1;
-    --color-text-faint: #efc6cd;
-    --ops-content: #ff7c88;
-    --ops-store: #ffd9a3;
-    --ops-health: #8fe3c0;
-    --ops-community: #c9b6ff;
-  }
-
-  .ops-intro {
-    justify-items: start;
-    padding-block: clamp(28px, 5vw, 56px);
-  }
-
-  .ops-title {
-    font-size: clamp(3rem, 8vw, 6rem);
-    line-height: 0.9;
-  }
-
-  .ops-lede {
-    max-width: 62ch;
-    color: #f1ccd1;
-  }
-
-  .ops-head {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 12px 24px;
-  }
-
-  .ops-week {
-    font-size: clamp(2.25rem, 5vw, 3.5rem);
-    line-height: 0.95;
-  }
-
-  .ops-track {
-    display: flex;
-    gap: 6px;
-    margin-left: auto;
-  }
-
-  .ops-track li {
-    width: 22px;
-    height: 10px;
-    border-radius: 3px;
-    background: rgba(255, 214, 220, 0.16);
-  }
-
-  .ops-track li[data-state="past"] {
-    background: #ff7c88;
-  }
-
-  .ops-track li[data-state="now"] {
-    background: #fff3ef;
-  }
-
-  .ops-mute {
-    min-height: 40px;
-    padding-inline: 14px;
-    font-size: 0.8125rem;
-  }
-
-  .ops-meters {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-  }
-
-  @media (min-width: 860px) {
-    .ops-meters {
-      grid-template-columns: 1.5fr repeat(4, minmax(0, 1fr));
-    }
-  }
-
-  .ops-meter {
-    position: relative;
-    display: grid;
-    align-content: start;
-    gap: 4px;
-    padding: 12px 14px;
-    border-radius: 14px;
-    background: rgba(0, 0, 0, 0.32);
-    box-shadow: inset 0 0 0 1px rgba(255, 214, 220, 0.14);
-    overflow: hidden;
-  }
-
-  .ops-meter[data-wide] {
-    grid-column: 1 / -1;
-  }
-
-  @media (min-width: 860px) {
-    .ops-meter[data-wide] {
-      grid-column: auto;
-    }
-  }
-
-  .ops-meter dt {
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    color: #efc6cd;
-  }
-
-  .ops-meter dd {
-    position: relative;
-    z-index: 1;
-    display: flex;
-    align-items: baseline;
-    gap: 6px;
-    font-family: var(--font-pixel);
-    font-size: 2rem;
-    line-height: 1;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .ops-flash {
-    font-size: 1.25rem;
-  }
-
-  .ops-flash[data-tone="good"],
-  .ops-chip[data-tone="good"] {
-    color: #8fe3c0;
-  }
-
-  .ops-flash[data-tone="bad"],
-  .ops-chip[data-tone="bad"] {
-    color: #ff97a1;
-  }
-
-  .ops-bar {
-    display: block;
-    height: 6px;
-    border-radius: 3px;
-    background: rgba(255, 214, 220, 0.16);
-    overflow: hidden;
-  }
-
-  .ops-bar span {
-    display: block;
-    height: 100%;
-    border-radius: 3px;
-    background: #ffd9a3;
-    transition: width 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
-  }
-
-  .ops-meter[data-low] .ops-bar span {
-    background: #ff4d5e;
-  }
-
-  .ops-spark {
-    position: absolute;
-    inset: auto 0 0 0;
-    width: 100%;
-    height: 44px;
-  }
-
-  .ops-spark-fill {
-    fill: rgba(255, 124, 136, 0.16);
-  }
-
-  .ops-spark-line {
-    fill: none;
-    stroke: #ff7c88;
-    stroke-width: 2;
-  }
-
-  .ops-omen {
-    padding: 10px 14px;
-    border-radius: 12px;
-    font-size: 0.875rem;
-    line-height: 1.4;
-    color: #f1ccd1;
-    background: rgba(0, 0, 0, 0.24);
-  }
-
-  .ops-omen[data-known] {
-    color: #fff3ef;
-    box-shadow: inset 0 0 0 1px var(--ops-community);
-  }
-
-  .ops-hand {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 10px;
-  }
-
-  @media (min-width: 620px) {
-    .ops-hand {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-
-  @media (min-width: 980px) {
-    .ops-hand {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-  }
-
-  .ops-hand li {
-    display: grid;
-  }
-
-  .ops-card {
-    --kind: var(--ops-content);
-    position: relative;
-    display: grid;
-    align-content: start;
-    gap: 6px;
-    padding: 14px 14px 14px 18px;
-    border-radius: 14px;
-    text-align: left;
-    background: rgba(255, 243, 239, 0.05);
-    box-shadow: inset 0 0 0 1px rgba(255, 214, 220, 0.16);
-    cursor: pointer;
-    transition:
-      translate 0.16s ease,
-      background-color 0.16s ease,
-      box-shadow 0.16s ease,
-      opacity 0.16s ease;
-  }
-
-  .ops-card[data-kind="store"] {
-    --kind: var(--ops-store);
-  }
-
-  .ops-card[data-kind="health"] {
-    --kind: var(--ops-health);
-  }
-
-  .ops-card[data-kind="community"] {
-    --kind: var(--ops-community);
-  }
-
-  /* The coloured spine says what kind of week this card makes. */
-  .ops-card::before {
-    content: "";
-    position: absolute;
-    inset: 10px auto 10px 7px;
-    width: 4px;
-    border-radius: 2px;
-    background: var(--kind);
-  }
-
-  .ops-card[aria-pressed="true"] {
-    translate: 0 -3px;
-    background: color-mix(in srgb, var(--kind) 16%, transparent);
-    box-shadow:
-      inset 0 0 0 2px var(--kind),
-      0 14px 24px -16px rgba(0, 0, 0, 0.9);
-  }
-
-  .ops-card[aria-disabled="true"] {
-    opacity: 0.45;
-    cursor: not-allowed;
-  }
-
-  .ops-card:focus-visible {
-    outline: 2px solid var(--color-accent);
-    outline-offset: 3px;
-  }
-
-  .ops-card-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-  }
-
-  .ops-kind {
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    color: var(--kind);
-  }
-
-  .ops-cost {
-    display: inline-flex;
-    gap: 4px;
-  }
-
-  .ops-cost i {
-    width: 9px;
-    height: 9px;
-    border-radius: 2px;
-    background: #fff3ef;
-  }
-
-  .ops-cost-big {
-    margin-right: 10px;
-    vertical-align: -1px;
-  }
-
-  .ops-cost-big i {
-    width: 12px;
-    height: 12px;
-    background: rgba(255, 214, 220, 0.22);
-  }
-
-  .ops-cost-big i[data-used] {
-    background: #fff3ef;
-  }
-
-  .ops-name {
-    font-weight: 640;
-    line-height: 1.2;
-  }
-
-  .ops-line {
-    font-size: 0.8125rem;
-    line-height: 1.35;
-    color: #f1ccd1;
-  }
-
-  .ops-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 2px 12px;
-  }
-
-  .ops-chip {
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    white-space: nowrap;
-  }
-
-  .ops-plan {
-    display: grid;
-    align-items: center;
-    gap: 10px 20px;
-    padding-top: 16px;
-    border-top: 1px solid rgba(255, 214, 220, 0.18);
-  }
-
-  @media (min-width: 860px) {
-    .ops-plan {
-      grid-template-columns: auto minmax(0, 1fr) auto;
-    }
-  }
-
-  .ops-cap,
-  .ops-forecast {
-    font-size: 0.875rem;
-    color: #f1ccd1;
-  }
-
-  .ops-report {
-    display: grid;
-    gap: 16px;
-  }
-
-  .ops-steps {
-    display: grid;
-    gap: 6px;
-    min-height: 220px;
-    align-content: start;
-  }
-
-  .ops-step {
-    --tone: rgba(255, 214, 220, 0.4);
-    display: grid;
-    gap: 2px 20px;
-    padding: 9px 14px 9px 18px;
-    border-radius: 10px;
-    font-size: 0.875rem;
-    line-height: 1.4;
-    color: #f1ccd1;
-    background: rgba(0, 0, 0, 0.26);
-    box-shadow: inset 4px 0 0 var(--tone);
-  }
-
-  @media (min-width: 860px) {
-    .ops-step {
-      grid-template-columns: minmax(0, 1fr) auto;
-      align-items: baseline;
-    }
-  }
-
-  .ops-step[data-tone="good"] {
-    --tone: #8fe3c0;
-  }
-
-  .ops-step[data-tone="bad"] {
-    --tone: #ff4d5e;
-  }
-
-  .ops-step b {
-    font-weight: 640;
-    color: #fff3ef;
-  }
-
-  @media (prefers-reduced-motion: no-preference) {
-    .ops-step {
-      animation: ops-in 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-    }
-
-    .ops-flash {
-      animation: ops-flash 0.6s ease both;
-    }
-  }
-
-  @keyframes ops-in {
-    from {
-      opacity: 0;
-      translate: 0 8px;
-    }
-  }
-
-  @keyframes ops-flash {
-    from {
-      opacity: 0;
-      scale: 1.8;
-    }
-  }
-
-  .ops-review {
-    display: grid;
-    gap: 16px 32px;
-    align-items: start;
-    padding-top: 18px;
-    border-top: 1px solid rgba(255, 214, 220, 0.18);
-  }
-
-  @media (min-width: 760px) {
-    .ops-review {
-      grid-template-columns: auto minmax(0, 1fr);
-    }
-  }
-
-  .ops-grade {
-    display: grid;
-    place-items: center;
-    width: 2.1ch;
-    aspect-ratio: 1;
-    border-radius: 20px;
-    font-size: clamp(5rem, 12vw, 8rem);
-    line-height: 1;
-    color: #14060d;
-    background: #ffd9a3;
-  }
-
-  .ops-grade[data-grade="S"] {
-    background: #8fe3c0;
-  }
-
-  .ops-grade[data-grade="C"],
-  .ops-grade[data-grade="D"] {
-    background: #ff7c88;
-  }
-
-  .ops-review-body {
-    display: grid;
-    gap: 10px;
-  }
-
-  .ops-notes {
-    display: grid;
-    gap: 6px;
-    max-width: 62ch;
-    padding-left: 1.1em;
-    list-style: disc;
-    color: #f1ccd1;
-  }
-
-  /* The season at a glance: what went out each week, and where the audience stood after it. */
-  .ops-season {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 8px;
-    margin-top: 6px;
-  }
-
-  @media (min-width: 760px) {
-    .ops-season {
-      grid-template-columns: repeat(8, minmax(0, 1fr));
-    }
-  }
-
-  .ops-season li {
-    display: grid;
-    gap: 6px;
-    padding: 8px 10px;
-    border-radius: 10px;
-    background: rgba(0, 0, 0, 0.3);
-  }
-
-  .ops-season-week,
-  .ops-key {
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    color: #efc6cd;
-  }
-
-  .ops-season-pips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    min-height: 12px;
-  }
-
-  .ops-season-pips i,
-  .ops-key i {
-    width: 12px;
-    height: 12px;
-    border-radius: 3px;
-    background: var(--ops-content);
-  }
-
-  .ops i[data-kind="store"] {
-    background: var(--ops-store);
-  }
-
-  .ops i[data-kind="health"] {
-    background: var(--ops-health);
-  }
-
-  .ops i[data-kind="community"] {
-    background: var(--ops-community);
-  }
-
-  .ops i[data-kind="none"] {
-    background: rgba(255, 214, 220, 0.18);
-  }
-
-  .ops-season-players {
-    font-family: var(--font-pixel);
-    font-size: 1.25rem;
-    line-height: 1;
-  }
-
-  .ops-key {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px 16px;
-  }
-
-  .ops-key span {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-  }
-
   /* ---------- Tools ---------- */
 
   .tool {
     display: grid;
     gap: 22px;
+    /* These sit on pale paper, so form controls should draw themselves light. */
+    color-scheme: light;
   }
 
   .tool-head {
@@ -2909,48 +1733,252 @@
     cursor: pointer;
   }
 
-  /* GPA: the numbers on one side, the answer on the other. */
-  .gpa-grid {
+  /* PTO planner: the settings and the plan side by side, the year underneath. */
+  .pto-top {
     display: grid;
-    gap: 22px;
+    gap: 26px;
   }
 
-  @media (min-width: 860px) {
-    .gpa-grid {
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-      gap: 40px;
+  @media (min-width: 900px) {
+    .pto-top {
+      grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+      gap: 44px;
       align-items: start;
     }
   }
 
-  .gpa-fields {
+  .pto-form {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px;
+    gap: 20px;
   }
 
-  .gpa-answer {
+  .pto-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 14px 20px;
+  }
+
+  .pto-row .field-row {
+    flex: 1 1 150px;
+    max-width: 220px;
+  }
+
+  .pto-styles,
+  .pto-holidays {
+    display: grid;
+    gap: 6px;
+  }
+
+  .pto-styles legend,
+  .pto-holidays legend {
+    margin-bottom: 8px;
+  }
+
+  .pto-styles label {
+    position: relative;
+    display: block;
+    cursor: pointer;
+  }
+
+  .pto-styles input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .pto-styles span {
+    display: block;
+    padding: 9px 14px;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    line-height: 1.35;
+    color: var(--color-text-muted);
+    box-shadow: inset 0 0 0 1px var(--color-border);
+  }
+
+  .pto-styles b {
+    display: block;
+    font-size: 1rem;
+    font-weight: 640;
+    color: var(--color-text);
+  }
+
+  .pto-styles input:checked + span {
+    background: var(--well);
+    box-shadow: inset 0 0 0 2px var(--color-accent);
+  }
+
+  .pto-styles input:focus-visible + span {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+  }
+
+  .pto-holidays {
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 4px 16px;
+  }
+
+  .pto-holidays legend {
+    grid-column: 1 / -1;
+  }
+
+  .pto-holidays label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 28px;
+    font-size: 0.875rem;
+    cursor: pointer;
+  }
+
+  .pto-holidays input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--color-accent);
+  }
+
+  .pto-plan {
     display: grid;
     gap: 6px;
     padding-left: 20px;
     border-left: 3px solid var(--color-accent);
   }
 
-  .gpa-answer[data-tone="hard"] {
-    border-left-color: #9a5b00;
+  .pto-sum {
+    font-size: 1.125rem;
   }
 
-  .gpa-answer[data-tone="no"] {
-    border-left-color: #b3261e;
-  }
-
-  .gpa-big {
+  .pto-sum b {
+    margin-right: 0.12em;
     font-family: var(--font-voice);
     font-size: clamp(3.5rem, 9vw, 5.5rem);
     font-weight: 580;
     line-height: 1;
-    font-variant-numeric: tabular-nums;
     letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .pto-sub {
+    color: var(--color-text-muted);
+  }
+
+  .pto-breaks {
+    display: grid;
+    column-gap: 26px;
+    margin-block: 8px;
+  }
+
+  @media (min-width: 620px) {
+    .pto-breaks {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .pto-breaks li {
+    display: grid;
+    gap: 1px;
+    padding-block: 9px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .pto-breaks b {
+    font-weight: 640;
+  }
+
+  .pto-breaks span {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+  }
+
+  .pto-year {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 20px 26px;
+    padding-top: 22px;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .pto-month h3 {
+    margin-bottom: 6px;
+    font-family: var(--font-voice);
+    font-size: 1.0625rem;
+    font-weight: 580;
+  }
+
+  .pto-month ol {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 2px;
+  }
+
+  /* The first day sits under its weekday. */
+  .pto-month li:first-child {
+    grid-column-start: calc(var(--lead) + 1);
+  }
+
+  .pto-month li,
+  .pto-key span::before {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 1;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text-muted);
+  }
+
+  .pto-month li[data-kind="weekend"] {
+    color: var(--color-text-faint);
+    background: rgba(14, 42, 33, 0.07);
+  }
+
+  .pto-month li[data-away],
+  .pto-key span[data-away]::before {
+    background: color-mix(in srgb, var(--color-accent) 20%, transparent);
+    color: var(--color-text);
+  }
+
+  .pto-month li[data-kind="holiday"],
+  .pto-key span[data-kind="holiday"]::before {
+    box-shadow: inset 0 0 0 2px var(--color-accent);
+    font-weight: 700;
+    color: var(--color-accent);
+  }
+
+  .pto-month li[data-kind="take"],
+  .pto-key span[data-kind="take"]::before {
+    font-weight: 700;
+    color: #fff;
+    background: var(--color-accent);
+  }
+
+  .pto-month li[data-past] {
+    opacity: 0.4;
+  }
+
+  .pto-key {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    font-size: 0.8125rem;
+    color: var(--color-text-muted);
+  }
+
+  .pto-key span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .pto-key span::before {
+    content: "";
+    width: 16px;
+  }
+
+  .pto-key span[data-kind="weekend"]::before {
+    background: rgba(14, 42, 33, 0.07);
   }
 
   /* ---------- Lab: shared controls ---------- */

@@ -15,35 +15,35 @@ export const GAMES: GameCard[] = [
     name: "The Range",
     kind: "3D aim trainer",
     blurb:
-      "Four drills in a real 3D range, with your Valorant, Call of Duty or Apex sensitivity carried over so the muscle memory is the same.",
+      "Four stages on a desert range, breaking clays, with your Valorant, Call of Duty or Apex sensitivity carried over. Your shots come back plotted on a paper target.",
     needs: "Best with a mouse",
-    alt: "The Range: three glowing coral targets on a far wall, seen over the sights of a rifle in a dark plum hall",
+    alt: "The Range: orange clay targets on rods in front of a dirt backstop under a blue sky, seen over a rifle, with a stencilled timer",
   },
   {
     slug: "ops",
     name: "Live Ops",
     kind: "Strategy, about ten minutes",
     blurb:
-      "Run eight weeks of a live game that does not exist. Ship new things, sell a little, fix what is broken, and try to have a team left at the end.",
+      "Run eight weeks of a cozy game that does not exist, from the harbor master's ledger. The harbor fills with boats when it is going well and rains when it is not.",
     needs: "Works on a phone",
-    alt: "Live Ops: a board of cards to ship this week, above meters for players, mood, stability, team and revenue",
+    alt: "Live Ops: a cream ledger page with a drawing of a harbor full of sailing boats, a lighthouse and kites, above figures and cargo tags",
   },
   {
     slug: "dink",
     name: "Dink",
     kind: "3D pickleball",
     blurb:
-      "Singles against the computer on a real-size court at dusk. Pick your spot, time the swing, and work the other player out of position.",
+      "A Sunday rec league, drawn like a 1970s poster. You are a pickle. Across the net is an onion, a carrot or a chili, and each one plays differently.",
     needs: "Mouse, finger or keyboard",
-    alt: "Dink: a pickleball court at dusk seen from behind the near baseline, with palms against a coral sky",
+    alt: "Dink: a flat-colour pickleball court with bunting and a big sun, a pickle in a headband facing a chili pepper across the net",
   },
   {
     slug: "backlog",
     name: "The Backlog",
     kind: "3D boss fight",
     blurb:
-      "One arena and one boss: a tower of blocks that gets faster as you cut it down. Every attack is drawn on the floor before it lands.",
+      "You are three centimetres tall, on a desk, with a pencil. The boss is a stack of sticky notes, and its attacks are a rubber stamp, a highlighter and a coffee ring.",
     needs: "Keyboard and mouse, or thumbs",
-    alt: "The Backlog: a small figure with a sword facing a tower of coloured blocks on a round arena, with a red circle filling in on the floor",
+    alt: "The Backlog: a tiny figure in a yellow beanie on a green cutting mat, facing a tower of sticky note pads inside a red URGENT stamp",
   },
 ];

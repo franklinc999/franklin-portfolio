@@ -26,7 +26,8 @@ export type RangeOptions = {
 
 type Target = {
   mesh: THREE.Mesh;
-  halo: THREE.Sprite;
+  /** The rod it sits on. */
+  stand: THREE.Mesh;
   radius: number;
   born: number;
   alive: boolean;
@@ -47,9 +48,9 @@ const PILLAR_HALF = 0.62;
 const PARTICLES = 200;
 /** Where the rifle rests in the view, in camera space. */
 const GUN = { x: 0.2, y: -0.2, z: -0.2, turn: 0.055 };
-const INK = 0x14060d;
-const CORAL = 0xff4d5e;
-const PEACH = 0xffd9a3;
+/** Clay-pigeon orange, and the pale dust a miss kicks up. */
+const CLAY = 0xf26b21;
+const DUST = 0xe6d5b0;
 
 const DRILLS: Record<Drill, { distance: number; radius: number; count: number }> = {
   pop: { distance: 14, radius: 0.56, count: 3 },
@@ -80,7 +81,9 @@ export class RangeEngine {
   private camera = new THREE.PerspectiveCamera(70, 16 / 9, 0.05, 120);
   private gun = new THREE.Group();
   private flash: THREE.Sprite;
-  private flashLight = new THREE.PointLight(PEACH, 0, 9);
+  private flashLight = new THREE.PointLight(0xffd9a3, 0, 9);
+  private tint = new THREE.Color();
+  private shots: { x: number; y: number }[] = [];
   private targets: Target[] = [];
   private pillars: THREE.Mesh[] = [];
   private sparks: THREE.InstancedMesh;
@@ -117,53 +120,100 @@ export class RangeEngine {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.15;
+    this.renderer.toneMappingExposure = 1;
 
-    this.scene.background = new THREE.Color(INK);
-    this.scene.fog = new THREE.Fog(0x1d0a15, 24, 70);
+    // A clear desert noon: blue overhead, haze at the horizon.
+    const sky = document.createElement("canvas");
+    sky.width = 4;
+    sky.height = 256;
+    const sc = sky.getContext("2d");
+    if (sc) {
+      const g = sc.createLinearGradient(0, 0, 0, 256);
+      g.addColorStop(0, "#7fb4de");
+      g.addColorStop(0.42, "#bcd9ec");
+      g.addColorStop(0.56, "#efe3c8");
+      g.addColorStop(1, "#efe3c8");
+      sc.fillStyle = g;
+      sc.fillRect(0, 0, 4, 256);
+    }
+    const skyTex = new THREE.CanvasTexture(sky);
+    skyTex.colorSpace = THREE.SRGBColorSpace;
+    this.scene.background = skyTex;
+    this.scene.fog = new THREE.Fog(0xe9dcc0, 60, 300);
     this.camera.position.set(0, 1.62, 0);
     this.camera.rotation.order = "YXZ";
     this.scene.add(this.camera);
 
-    this.buildRoom();
+    this.buildRange();
     this.buildGun();
 
     const glow = canvasTexture(128, (c, s) => {
       const g = c.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
-      g.addColorStop(0, "rgba(255,150,150,0.9)");
-      g.addColorStop(0.35, "rgba(255,77,94,0.35)");
-      g.addColorStop(1, "rgba(255,77,94,0)");
+      g.addColorStop(0, "rgba(255,244,214,0.95)");
+      g.addColorStop(0.35, "rgba(255,190,110,0.4)");
+      g.addColorStop(1, "rgba(255,190,110,0)");
       c.fillStyle = g;
       c.fillRect(0, 0, s, s);
     });
-    const ball = new THREE.SphereGeometry(1, 32, 20);
-    const skin = new THREE.MeshStandardMaterial({ color: CORAL, emissive: 0xff1f3d, emissiveIntensity: 0.55, roughness: 0.32, metalness: 0.05 });
+    // The targets are clays: orange discs, face on, that break when you hit them.
+    const face = canvasTexture(256, (c, s) => {
+      const m = s / 2;
+      c.fillStyle = "#f26b21";
+      c.fillRect(0, 0, s, s);
+      c.strokeStyle = "#fff4e2";
+      c.lineWidth = 14;
+      c.beginPath();
+      c.arc(m, m, m - 9, 0, Math.PI * 2);
+      c.stroke();
+      c.strokeStyle = "#c9500f";
+      c.lineWidth = 7;
+      for (const r of [0.66, 0.42]) {
+        c.beginPath();
+        c.arc(m, m, m * r, 0, Math.PI * 2);
+        c.stroke();
+      }
+      c.fillStyle = "#1c1a17";
+      c.beginPath();
+      c.arc(m, m, m * 0.12, 0, Math.PI * 2);
+      c.fill();
+    });
+    const disc = new THREE.CylinderGeometry(1, 1, 0.14, 40);
+    disc.rotateX(Math.PI / 2);
+    const rimMat = new THREE.MeshStandardMaterial({ color: 0xc9500f, roughness: 0.6 });
+    const faceMat = new THREE.MeshStandardMaterial({ map: face, roughness: 0.55, emissive: 0xf26b21, emissiveIntensity: 0.18 });
+    const rod = new THREE.CylinderGeometry(0.03, 0.03, 1, 8);
+    rod.translate(0, 0.5, 0);
+    const rodMat = new THREE.MeshStandardMaterial({ color: 0x3a3a3e, roughness: 0.6, metalness: 0.5 });
     for (let i = 0; i < 3; i++) {
-      const mesh = new THREE.Mesh(ball, skin);
-      const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glow, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
+      const mesh = new THREE.Mesh(disc, [rimMat, faceMat, faceMat]);
+      const stand = new THREE.Mesh(rod, rodMat);
       mesh.visible = false;
-      halo.visible = false;
-      this.scene.add(mesh, halo);
-      this.targets.push({ mesh, halo, radius: 0.5, born: 0, alive: false, vx: 0, turnAt: 0, pillar: 0, side: 1, until: 0 });
+      stand.visible = false;
+      this.scene.add(mesh, stand);
+      this.targets.push({ mesh, stand, radius: 0.5, born: 0, alive: false, vx: 0, turnAt: 0, pillar: 0, side: 1, until: 0 });
     }
 
-    this.flash = new THREE.Sprite(new THREE.SpriteMaterial({ map: glow, color: PEACH, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false, transparent: true, opacity: 0 }));
+    this.flash = new THREE.Sprite(new THREE.SpriteMaterial({ map: glow, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false, transparent: true, opacity: 0 }));
     this.flash.scale.setScalar(0.42);
     this.flash.position.set(0, 0.012, -0.88);
     this.gun.add(this.flash);
     this.flashLight.position.set(0.25, -0.1, -1);
     this.camera.add(this.flashLight);
 
-    this.sparks = new THREE.InstancedMesh(new THREE.BoxGeometry(0.07, 0.07, 0.07), new THREE.MeshBasicMaterial({ color: PEACH }), PARTICLES);
+    // Shards of clay and puffs of dust share one pool; each piece carries its own colour.
+    this.sparks = new THREE.InstancedMesh(new THREE.BoxGeometry(0.1, 0.1, 0.035), new THREE.MeshBasicMaterial(), PARTICLES);
     this.sparks.frustumCulled = false;
     this.dummy.scale.setScalar(0);
     this.dummy.updateMatrix();
-    for (let i = 0; i < PARTICLES; i++) this.sparks.setMatrixAt(i, this.dummy.matrix);
+    for (let i = 0; i < PARTICLES; i++) {
+      this.sparks.setMatrixAt(i, this.dummy.matrix);
+      this.sparks.setColorAt(i, this.tint.set(CLAY));
+    }
     this.scene.add(this.sparks);
 
     const ringGeo = new THREE.RingGeometry(0.82, 1, 40);
     for (let i = 0; i < 4; i++) {
-      const mesh = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: PEACH, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false }));
+      const mesh = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: 0xfff4e2, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false }));
       mesh.visible = false;
       this.scene.add(mesh);
       this.rings.push({ mesh, life: 0 });
@@ -171,7 +221,7 @@ export class RangeEngine {
     const beam = new THREE.CylinderGeometry(0.012, 0.012, 1, 6, 1, true);
     beam.rotateX(Math.PI / 2);
     for (let i = 0; i < 6; i++) {
-      const mesh = new THREE.Mesh(beam, new THREE.MeshBasicMaterial({ color: PEACH, transparent: true, opacity: 0, depthWrite: false }));
+      const mesh = new THREE.Mesh(beam, new THREE.MeshBasicMaterial({ color: 0xfff4e2, transparent: true, opacity: 0, depthWrite: false }));
       mesh.visible = false;
       this.scene.add(mesh);
       this.tracers.push({ mesh, life: 0 });
@@ -185,169 +235,158 @@ export class RangeEngine {
 
   /* ---------- scene ---------- */
 
-  private buildRoom() {
-    const depth = ROOM.front - ROOM.back;
-    const midZ = (ROOM.front + ROOM.back) / 2;
-
-    const floorTex = canvasTexture(512, (c, s) => {
-      c.fillStyle = "#2a101d";
+  private buildRange() {
+    // Sand, out to the hills.
+    const sand = canvasTexture(512, (c, s) => {
+      c.fillStyle = "#d8c398";
       c.fillRect(0, 0, s, s);
-      c.strokeStyle = "rgba(255,150,165,0.3)";
-      c.lineWidth = 2;
-      for (let i = 0; i <= 4; i++) {
-        const p = (i * s) / 4;
-        c.beginPath();
-        c.moveTo(p, 0);
-        c.lineTo(p, s);
-        c.moveTo(0, p);
-        c.lineTo(s, p);
-        c.stroke();
+      for (let i = 0; i < 5200; i++) {
+        c.fillStyle = Math.random() < 0.5 ? "rgba(120,96,60,0.16)" : "rgba(255,244,214,0.2)";
+        c.fillRect(Math.random() * s, Math.random() * s, 1 + Math.random() * 2.4, 1 + Math.random() * 1.6);
       }
-      c.fillStyle = "rgba(255,140,160,0.1)";
-      for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) if ((x + y) % 2 === 0) c.fillRect((x * s) / 4, (y * s) / 4, s / 4, s / 4);
     });
-    floorTex.wrapS = floorTex.wrapT = THREE.RepeatWrapping;
-    floorTex.repeat.set(ROOM.width / 4, depth / 4);
-    floorTex.anisotropy = 8;
-    const floor = new THREE.Mesh(
-      new THREE.PlaneGeometry(ROOM.width, depth),
-      new THREE.MeshStandardMaterial({ map: floorTex, emissiveMap: floorTex, emissive: 0xffffff, emissiveIntensity: 0.35, roughness: 0.5, metalness: 0.15 }),
-    );
-    floor.rotation.x = -Math.PI / 2;
-    floor.position.set(0, 0, midZ);
-    this.scene.add(floor);
+    sand.wrapS = sand.wrapT = THREE.RepeatWrapping;
+    sand.repeat.set(70, 70);
+    sand.anisotropy = 8;
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(700, 700), new THREE.MeshStandardMaterial({ map: sand, roughness: 1 }));
+    ground.rotation.x = -Math.PI / 2;
+    this.scene.add(ground);
 
-    const wallTex = canvasTexture(512, (c, s) => {
-      const g = c.createLinearGradient(0, 0, 0, s);
-      g.addColorStop(0, "#4a1a30");
-      g.addColorStop(1, "#2a0e1c");
-      c.fillStyle = g;
-      c.fillRect(0, 0, s, s);
-      c.strokeStyle = "rgba(255,217,163,0.2)";
-      c.lineWidth = 3;
-      for (let i = 0; i <= 8; i++) {
+    // The backstop: a wall of bulldozed dirt, with a ragged top.
+    const dirt = (seed: number) =>
+      canvasTexture(1024, (c, s) => {
+        c.clearRect(0, 0, s, s);
         c.beginPath();
-        c.moveTo((i * s) / 8, 0);
-        c.lineTo((i * s) / 8, s);
-        c.stroke();
-      }
-      c.shadowColor = "#ff4d5e";
-      c.shadowBlur = 18;
-      c.strokeStyle = "rgba(255,110,125,0.9)";
-      c.lineWidth = 6;
-      c.strokeRect(s * 0.06, s * 0.1, s * 0.88, s * 0.62);
-    });
-    // The textures carry their own light, so the hall reads on any GPU and under any tone curve.
-    const lit = (map: THREE.Texture, glow: number, roughness: number) =>
-      new THREE.MeshStandardMaterial({ map, emissiveMap: map, emissive: 0xffffff, emissiveIntensity: glow, roughness });
-    const back = new THREE.Mesh(new THREE.PlaneGeometry(ROOM.width, ROOM.height), lit(wallTex, 0.5, 0.85));
-    back.position.set(0, ROOM.height / 2, ROOM.back);
-    this.scene.add(back);
-
-    const sideTex = canvasTexture(512, (c, s) => {
-      const g = c.createLinearGradient(0, 0, 0, s);
-      g.addColorStop(0, "#3b152a");
-      g.addColorStop(0.7, "#2a0e1d");
-      g.addColorStop(1, "#1d0a15");
-      c.fillStyle = g;
-      c.fillRect(0, 0, s, s);
-      c.fillStyle = "rgba(255,217,163,0.1)";
-      c.fillRect(0, 0, 4, s);
-      c.fillRect(s / 2, 0, 3, s);
-      c.fillStyle = "rgba(0,0,0,0.25)";
-      c.fillRect(0, s * 0.86, s, s * 0.14);
-      // One coral line at chest height and a pale one near the ceiling run the length of the hall.
-      c.shadowColor = "#ff4d5e";
-      c.shadowBlur = 16;
-      c.fillStyle = "#ff6a78";
-      c.fillRect(0, s * 0.8, s, 7);
-      c.shadowColor = "#ffd9a3";
-      c.shadowBlur = 10;
-      c.fillStyle = "rgba(255,217,163,0.75)";
-      c.fillRect(0, s * 0.1, s, 3);
-    });
-    sideTex.wrapS = THREE.RepeatWrapping;
-    sideTex.repeat.set(depth / 5, 1);
-    sideTex.anisotropy = 8;
-    const wallMat = lit(sideTex, 0.55, 0.9);
+        c.moveTo(0, s);
+        for (let x = 0; x <= s; x += 16) c.lineTo(x, s * 0.2 + Math.sin(x * 0.011 + seed) * 26 + Math.sin(x * 0.043 + seed * 3) * 12 + Math.sin(x * 0.13) * 5);
+        c.lineTo(s, s);
+        c.closePath();
+        const g = c.createLinearGradient(0, s * 0.15, 0, s);
+        g.addColorStop(0, "#947553");
+        g.addColorStop(0.5, "#7d6245");
+        g.addColorStop(1, "#6c543b");
+        c.fillStyle = g;
+        c.fill();
+        c.globalCompositeOperation = "source-atop";
+        for (let i = 0; i < 1400; i++) {
+          c.fillStyle = Math.random() < 0.6 ? "rgba(60,44,28,0.22)" : "rgba(214,186,140,0.2)";
+          c.fillRect(Math.random() * s, s * 0.15 + Math.random() * s * 0.85, 2 + Math.random() * 9, 1 + Math.random() * 3);
+        }
+        // Scars from rain running down the face.
+        c.strokeStyle = "rgba(60,44,28,0.2)";
+        c.lineWidth = 3;
+        for (let i = 0; i < 26; i++) {
+          const x = Math.random() * s;
+          c.beginPath();
+          c.moveTo(x, s * 0.24);
+          c.quadraticCurveTo(x + (Math.random() - 0.5) * 30, s * 0.6, x + (Math.random() - 0.5) * 50, s);
+          c.stroke();
+        }
+      });
+    const bank = (w: number, h: number, seed: number) => new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({ map: dirt(seed), roughness: 1, transparent: true, alphaTest: 0.5 }));
+    const berm = bank(86, 14, 1);
+    berm.position.set(0, 6.4, ROOM.back - 0.6);
+    this.scene.add(berm);
     for (const side of [-1, 1]) {
-      const wall = new THREE.Mesh(new THREE.PlaneGeometry(depth, ROOM.height), wallMat);
-      wall.rotation.y = (-side * Math.PI) / 2;
-      wall.position.set((side * ROOM.width) / 2, ROOM.height / 2, midZ);
-      this.scene.add(wall);
+      const wing = bank(44, 7.5, 2 + side);
+      wing.rotation.y = (-side * Math.PI) / 2;
+      wing.position.set(side * 15, 3.3, -12);
+      this.scene.add(wing);
     }
 
-    const ceilTex = canvasTexture(256, (c, s) => {
-      c.fillStyle = "#24101b";
-      c.fillRect(0, 0, s, s);
-      c.strokeStyle = "rgba(255,217,163,0.12)";
-      c.lineWidth = 3;
-      c.strokeRect(0, 0, s, s);
-      c.fillStyle = "rgba(0,0,0,0.22)";
-      c.fillRect(s * 0.12, s * 0.12, s * 0.76, s * 0.76);
-    });
-    ceilTex.wrapS = ceilTex.wrapT = THREE.RepeatWrapping;
-    ceilTex.repeat.set(ROOM.width / 3.25, depth / 3.5);
-    ceilTex.anisotropy = 8;
-    const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(ROOM.width, depth), lit(ceilTex, 0.5, 1));
-    ceiling.rotation.x = Math.PI / 2;
-    ceiling.position.set(0, ROOM.height, midZ);
-    this.scene.add(ceiling);
+    // Far off: dry hills, then mountains gone blue with distance.
+    const ridge = (color: string, rough: number, seed: number) =>
+      canvasTexture(1024, (c, s) => {
+        c.clearRect(0, 0, s, s);
+        c.beginPath();
+        c.moveTo(0, s);
+        for (let x = 0; x <= s; x += 8) c.lineTo(x, s * 0.5 + Math.sin(x * 0.006 + seed) * s * 0.16 + Math.sin(x * 0.021 + seed * 2) * s * 0.08 * rough + Math.sin(x * 0.07 + seed) * s * 0.02 * rough);
+        c.lineTo(s, s);
+        c.closePath();
+        c.fillStyle = color;
+        c.fill();
+      });
+    const far = (tex: THREE.Texture, w: number, h: number, y: number, z: number) => {
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex, transparent: true, alphaTest: 0.5, fog: false }));
+      m.position.set(0, y, z);
+      this.scene.add(m);
+    };
+    far(ridge("#9fb2c6", 1.4, 0.7), 900, 150, 34, -420);
+    far(ridge("#c3ab8c", 0.8, 2.6), 700, 70, 10, -260);
 
-    // Light strips overhead and lane markers on the floor, so depth reads at a glance.
-    const strip = new THREE.MeshBasicMaterial({ color: PEACH });
-    const lane = new THREE.MeshBasicMaterial({ color: CORAL, transparent: true, opacity: 0.5 });
-    for (let z = -2; z > ROOM.back; z -= 5.5) {
-      for (const x of [-7, 7]) {
-        const bar = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.08, 0.24), strip);
-        bar.position.set(x, ROOM.height - 0.06, z);
-        this.scene.add(bar);
+    // Chalk lines every five metres, and posts down both sides.
+    const chalk = new THREE.MeshBasicMaterial({ color: 0xfbf6ea, transparent: true, opacity: 0.6 });
+    const post = new THREE.MeshStandardMaterial({ color: 0x9a7a52, roughness: 0.9 });
+    const cap = new THREE.MeshStandardMaterial({ color: CLAY, roughness: 0.6 });
+    for (let d = 5; d <= 25; d += 5) {
+      const line = new THREE.Mesh(new THREE.PlaneGeometry(22, 0.09), chalk);
+      line.rotation.x = -Math.PI / 2;
+      line.position.set(0, 0.012, -d);
+      this.scene.add(line);
+      for (const side of [-1, 1]) {
+        const p = new THREE.Mesh(new THREE.BoxGeometry(0.14, 1.1, 0.14), post);
+        p.position.set(side * 11.4, 0.55, -d);
+        const top = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.16, 0.16), cap);
+        top.position.y = 0.6;
+        p.add(top);
+        this.scene.add(p);
       }
-      const mark = new THREE.Mesh(new THREE.PlaneGeometry(ROOM.width - 6, 0.07), lane);
-      mark.rotation.x = -Math.PI / 2;
-      mark.position.set(0, 0.012, z - 2);
-      this.scene.add(mark);
     }
 
-    // The shooting bench.
-    const bench = new THREE.Mesh(new THREE.BoxGeometry(9, 0.12, 0.7), new THREE.MeshStandardMaterial({ color: 0x3a1727, roughness: 0.5, metalness: 0.3 }));
+    // The firing line: a plank table.
+    const wood = new THREE.MeshStandardMaterial({ color: 0xb48a58, roughness: 0.85 });
+    const bench = new THREE.Mesh(new THREE.BoxGeometry(9, 0.1, 0.75), wood);
     bench.position.set(0, 0.98, -1.25);
     this.scene.add(bench);
     for (const x of [-4.2, 4.2]) {
-      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.98, 0.6), bench.material);
+      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.98, 0.6), wood);
       leg.position.set(x, 0.49, -1.25);
       this.scene.add(leg);
     }
 
-    const pillarMat = new THREE.MeshStandardMaterial({ color: 0x4a1b2f, roughness: 0.6, metalness: 0.2 });
+    // Cover for the peek drill: sheets of plywood, braced.
+    const ply = canvasTexture(256, (c, s) => {
+      c.fillStyle = "#c9a36a";
+      c.fillRect(0, 0, s, s);
+      c.strokeStyle = "rgba(120,84,40,0.25)";
+      for (let i = 0; i < 40; i++) {
+        c.lineWidth = 1 + Math.random() * 2;
+        c.beginPath();
+        c.moveTo(Math.random() * s, 0);
+        c.lineTo(Math.random() * s, s);
+        c.stroke();
+      }
+      c.strokeStyle = "#8b6a3e";
+      c.lineWidth = 14;
+      c.strokeRect(7, 7, s - 14, s - 14);
+      c.beginPath();
+      c.moveTo(0, 0);
+      c.lineTo(s, s);
+      c.moveTo(s, 0);
+      c.lineTo(0, s);
+      c.stroke();
+    });
+    const plyMat = new THREE.MeshStandardMaterial({ map: ply, roughness: 0.9 });
     for (const x of PILLARS) {
-      const p = new THREE.Mesh(new THREE.BoxGeometry(PILLAR_HALF * 2, 4.6, 1.1), pillarMat);
+      const p = new THREE.Mesh(new THREE.BoxGeometry(PILLAR_HALF * 2, 4.6, 0.14), plyMat);
       p.position.set(x, 2.3, -15.8);
       p.visible = false;
       this.scene.add(p);
       this.pillars.push(p);
     }
 
-    this.scene.add(new THREE.HemisphereLight(0xffe0d0, 0x2a0e1c, 1.5));
-    const key = new THREE.DirectionalLight(0xffe2c4, 1.6);
-    key.position.set(-4, 9, 6);
-    this.scene.add(key);
-    const wash = new THREE.PointLight(CORAL, 70, 34, 1.6);
-    wash.position.set(0, 5, -22);
-    this.scene.add(wash);
-    // Two pools of warm light under the strips, so the floor is not one flat sheet.
-    for (const z of [-5, -15]) {
-      const pool = new THREE.PointLight(PEACH, 26, 16, 1.7);
-      pool.position.set(0, ROOM.height - 1.2, z);
-      this.scene.add(pool);
-    }
+    this.scene.add(new THREE.HemisphereLight(0xd6e9ff, 0xcdb48a, 1.25));
+    const sun = new THREE.DirectionalLight(0xfff2d6, 2.6);
+    sun.position.set(9, 15, 7);
+    this.scene.add(sun);
   }
 
   private buildGun() {
-    const steel = new THREE.MeshStandardMaterial({ color: 0x4a3640, roughness: 0.38, metalness: 0.7, emissive: 0x1c0f15 });
-    const body = new THREE.MeshStandardMaterial({ color: 0x8a6272, roughness: 0.5, metalness: 0.3, emissive: 0x2c1721 });
-    const rubber = new THREE.MeshStandardMaterial({ color: 0x2a161f, roughness: 0.85, metalness: 0.05, emissive: 0x10070b });
-    const accent = new THREE.MeshBasicMaterial({ color: CORAL });
+    // No shiny metal: with nothing to reflect it would just read as a black cut-out.
+    const steel = new THREE.MeshStandardMaterial({ color: 0x4b4d54, roughness: 0.6, metalness: 0.1 });
+    const body = new THREE.MeshStandardMaterial({ color: 0xc2a878, roughness: 0.75 });
+    const rubber = new THREE.MeshStandardMaterial({ color: 0x2a2b2f, roughness: 0.9 });
+    const accent = new THREE.MeshBasicMaterial({ color: CLAY });
     const box = (w: number, h: number, d: number, x: number, y: number, z: number, m: THREE.Material, tilt = 0) => {
       const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
       mesh.position.set(x, y, z);
@@ -362,11 +401,10 @@ export class RangeEngine {
       mesh.position.set(0, y, z);
       this.gun.add(mesh);
     };
-    box(0.058, 0.08, 0.34, 0, 0, -0.22, body); // receiver
+    box(0.058, 0.08, 0.34, 0, 0, -0.22, steel); // receiver
     box(0.048, 0.026, 0.34, 0, 0.05, -0.22, steel); // top cover
-    box(0.05, 0.058, 0.27, 0, 0.008, -0.52, steel); // handguard
-    for (const side of [-1, 1]) box(0.003, 0.007, 0.2, side * 0.0262, 0.014, -0.52, accent); // a thin line down each side
-    tube(0.012, 0.18, 0.012, -0.73, rubber); // barrel
+    box(0.052, 0.06, 0.27, 0, 0.008, -0.52, body); // handguard
+    tube(0.012, 0.18, 0.012, -0.73, steel); // barrel
     tube(0.019, 0.07, 0.012, -0.83, steel); // muzzle
     box(0.024, 0.01, 0.52, 0, 0.068, -0.37, rubber); // rail
     box(0.03, 0.026, 0.014, 0, 0.084, -0.11, rubber); // rear sight
@@ -380,14 +418,14 @@ export class RangeEngine {
     dot.position.set(0, 0.108, -0.3);
     this.gun.add(dot);
     box(0.038, 0.15, 0.066, 0, -0.105, -0.31, rubber, 0.16); // magazine
-    box(0.04, 0.12, 0.052, 0, -0.09, -0.1, rubber, -0.32); // grip
+    box(0.04, 0.12, 0.052, 0, -0.09, -0.1, body, -0.32); // grip
     box(0.044, 0.07, 0.22, 0, -0.012, 0.05, body); // stock
     this.gun.position.set(GUN.x, GUN.y, GUN.z);
     this.camera.add(this.gun);
-    // A small light that travels with the rifle keeps it readable against the dark hall.
-    const fill = new THREE.PointLight(0xffe6d6, 0.5, 1.6, 1.4);
-    fill.position.set(0.05, 0.12, 0.1);
-    this.camera.add(fill);
+    // Light bounced up off the sand, so the underside of the rifle is not lost.
+    const bounce = new THREE.PointLight(0xffe9c4, 0.9, 2.2, 1.2);
+    bounce.position.set(-0.2, -0.25, -0.3);
+    this.camera.add(bounce);
   }
 
   /* ---------- public ---------- */
@@ -412,6 +450,7 @@ export class RangeEngine {
   start() {
     this.stats = { score: 0, shots: 0, hits: 0, streak: 0, bestStreak: 0, left: this.options.duration, pace: 0 };
     this.gaps = [];
+    this.shots = [];
     this.lastHitAt = 0;
     this.yaw = 0;
     this.pitch = 0;
@@ -437,6 +476,14 @@ export class RangeEngine {
   dispose() {
     cancelAnimationFrame(this.raf);
     this.renderer.dispose();
+  }
+
+  /**
+   * Where each hit landed on its target, as a fraction of the target's radius: x to the right, y up.
+   * The results screen plots these on one paper target, which shows which way you tend to miss.
+   */
+  holes() {
+    return this.shots.slice();
   }
 
   /** Mouse movement, in counts. */
@@ -495,7 +542,7 @@ export class RangeEngine {
   private hide(t: Target) {
     t.alive = false;
     t.mesh.visible = false;
-    t.halo.visible = false;
+    t.stand.visible = false;
   }
 
   private spawn(t: Target, pillar = -1) {
@@ -504,7 +551,7 @@ export class RangeEngine {
     t.born = this.clock;
     t.alive = true;
     t.mesh.visible = true;
-    t.halo.visible = true;
+    t.stand.visible = true;
     if (this.options.drill === "peek") {
       t.pillar = pillar;
       t.side = Math.random() < 0.5 ? -1 : 1;
@@ -541,6 +588,14 @@ export class RangeEngine {
   }
 
   /** Nearest live target the ray passes through, with the distance to it. */
+  private note(target: Target, origin: THREE.Vector3, dir: THREE.Vector3) {
+    if (this.shots.length >= 260) return;
+    const off = origin.clone().addScaledVector(dir, target.mesh.position.clone().sub(origin).dot(dir)).sub(target.mesh.position);
+    const right = new THREE.Vector3(1, 0, 0).applyQuaternion(this.camera.quaternion);
+    const up = new THREE.Vector3(0, 1, 0).applyQuaternion(this.camera.quaternion);
+    this.shots.push({ x: off.dot(right) / target.radius, y: off.dot(up) / target.radius });
+  }
+
   private trace(origin: THREE.Vector3, dir: THREE.Vector3) {
     let best: Target | null = null;
     let bestT = Infinity;
@@ -583,10 +638,11 @@ export class RangeEngine {
 
     if (!target) {
       this.stats.streak = 0;
-      this.burst(end, 4, 1.6);
+      this.burst(end, 7, 1.9, DUST);
       this.push();
       return;
     }
+    this.note(target, origin, dir);
 
     const now = this.clock;
     if (this.lastHitAt) this.gaps.push(now - this.lastHitAt);
@@ -599,7 +655,7 @@ export class RangeEngine {
     this.stats.score += points;
     this.stats.pace = this.gaps.length ? Math.round((this.gaps.reduce((a, b) => a + b, 0) / this.gaps.length) * 1000) : 0;
 
-    this.burst(target.mesh.position, 16, 4.4);
+    this.burst(target.mesh.position, 20, 4.8, CLAY);
     this.ring(target.mesh.position, target.radius);
     sound.pop();
 
@@ -626,7 +682,8 @@ export class RangeEngine {
       this.stats.streak++;
       this.stats.bestStreak = Math.max(this.stats.bestStreak, this.stats.streak);
       this.stats.score += 10;
-      this.burst(end, 2, 1.8);
+      this.note(target, origin, dir);
+      this.burst(end, 2, 1.8, CLAY);
       sound.hit();
     } else {
       this.stats.streak = 0;
@@ -636,9 +693,12 @@ export class RangeEngine {
 
   /* ---------- effects ---------- */
 
-  private burst(at: THREE.Vector3, count: number, speed: number) {
+  private burst(at: THREE.Vector3, count: number, speed: number, color: number) {
+    this.tint.set(color);
     for (let i = 0; i < count; i++) {
-      const o = (this.sparkNext++ % PARTICLES) * 7;
+      const slot = this.sparkNext++ % PARTICLES;
+      this.sparks.setColorAt(slot, this.tint);
+      const o = slot * 7;
       const a = Math.random() * Math.PI * 2;
       const up = Math.random() * 2 - 0.6;
       this.sparkData[o] = at.x;
@@ -649,6 +709,7 @@ export class RangeEngine {
       this.sparkData[o + 5] = (Math.random() * 0.8 + 0.2) * speed;
       this.sparkData[o + 6] = 0.5 + Math.random() * 0.25;
     }
+    if (this.sparks.instanceColor) this.sparks.instanceColor.needsUpdate = true;
   }
 
   private ring(at: THREE.Vector3, radius: number) {
@@ -748,8 +809,8 @@ export class RangeEngine {
       const grow = Math.min(1, (this.clock - t.born) / 0.12);
       const s = t.radius * (0.4 + 0.6 * grow * (2 - grow));
       t.mesh.scale.setScalar(s);
-      t.halo.position.copy(t.mesh.position);
-      t.halo.scale.setScalar(s * 4.2);
+      t.stand.position.set(t.mesh.position.x, 0, t.mesh.position.z - 0.09);
+      t.stand.scale.y = Math.max(0.1, t.mesh.position.y - s * 0.2);
     }
 
     // Sparks fall and fade.

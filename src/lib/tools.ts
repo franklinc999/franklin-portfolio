@@ -15,9 +15,9 @@ export const TOOLS: Tool[] = [
     note: "Kept in your browser",
   },
   {
-    slug: "gpa",
-    name: "GPA Calculator",
-    blurb: "Works out the term GPA you need to hit a target, and the grade you need on the final to get there.",
+    slug: "pto",
+    name: "PTO Planner",
+    blurb: "Tell it how many days you have and which holidays your company gives. It finds the days to take that add up to the most time off.",
     note: "Nothing is saved",
   },
 ];

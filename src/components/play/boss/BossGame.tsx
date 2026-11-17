@@ -3,11 +3,34 @@
 import { useEffect, useRef, useState } from "react";
 import { sound } from "@/components/play/sound";
 import { BossEngine, type BossState } from "./BossEngine";
+import "./backlog.css";
 
 type Phase = "menu" | "playing" | "paused";
 const BEST = "backlog-best";
+const TICKETS = 440;
+/** A brisk clear, in seconds. The dashed line on the chart runs to here. */
+const PAR = 100;
 
 const clock = (t: number) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, "0")}`;
+
+/** The boss's health as a burndown chart: tickets open against time, with the line you were supposed to follow. */
+function Burndown({ trail, now }: { trail: { t: number; v: number }[]; now: number }) {
+  const span = Math.max(PAR, now * 1.08);
+  const x = (t: number) => 8 + (t / span) * 184;
+  const y = (v: number) => 8 + (1 - v) * 72;
+  const line = trail.map((p, i) => `${i ? "L" : "M"}${x(p.t).toFixed(1)} ${y(p.v).toFixed(1)}`).join(" ");
+  const last = trail[trail.length - 1];
+  return (
+    <figure className="bk-burn" aria-hidden="true">
+      <svg viewBox="0 0 200 88">
+        <path d={`M${x(0)} ${y(1)} L${x(PAR)} ${y(0)}`} className="bk-burn-ideal" />
+        {line && <path d={line} className="bk-burn-line" />}
+        {last && <circle cx={x(last.t)} cy={y(last.v)} r="3.5" className="bk-burn-dot" />}
+      </svg>
+      <figcaption>burndown</figcaption>
+    </figure>
+  );
+}
 
 export default function BossGame() {
   const stageRef = useRef<HTMLDivElement>(null);
@@ -18,6 +41,7 @@ export default function BossGame() {
 
   const [phase, setPhase] = useState<Phase>("menu");
   const [game, setGame] = useState<BossState | null>(null);
+  const [trail, setTrail] = useState<{ t: number; v: number }[]>([]);
   const [muted, setMuted] = useState(false);
   const [best, setBest] = useState(0);
   const [knob, setKnob] = useState<{ x: number; y: number; dx: number; dy: number } | null>(null);
@@ -36,6 +60,8 @@ export default function BossGame() {
     try {
       engine = new BossEngine(canvas, (s) => {
         setGame(s);
+        // One point on the chart for every second or so of the fight.
+        setTrail((tr) => (tr.length && s.time - tr[tr.length - 1].t < 1 && s.phase === "fight" ? tr : [...tr, { t: s.time, v: s.boss }]));
         if (s.phase === "won") {
           setBest((b) => {
             const next = b === 0 || s.time < b ? s.time : b;
@@ -53,6 +79,7 @@ export default function BossGame() {
       return () => window.clearTimeout(id);
     }
     engineRef.current = engine;
+    engine.ink(getComputedStyle(stage).getPropertyValue("--font-bk-marker") || "cursive");
     const ro = new ResizeObserver(() => engine.resize());
     ro.observe(stage);
     if (new URLSearchParams(window.location.search).has("debug")) {
@@ -118,6 +145,7 @@ export default function BossGame() {
       // No best yet.
     }
     setBest(stored);
+    setTrail([]);
     sound.setMuted(muted);
     engineRef.current?.setPaused(false);
     engineRef.current?.start();
@@ -152,14 +180,15 @@ export default function BossGame() {
   };
 
   const over = phase === "playing" && game && (game.phase === "won" || game.phase === "lost") ? game.phase : null;
-  const rank = game ? (game.hits === 0 ? "Untouched" : game.hits <= 2 ? "Clean" : game.hits <= 5 ? "Scrappy" : "Barely") : "";
+  const open = game ? Math.ceil(game.boss * TICKETS) : TICKETS;
+  const rank = game ? (game.hits === 0 ? "Not a scratch." : game.hits <= 2 ? "Barely touched." : game.hits <= 5 ? "A few bruises." : "By a thread.") : "";
 
   return (
-    <div ref={stageRef} className="game-stage boss" data-phase={over ?? phase}>
+    <div ref={stageRef} className="bk" data-phase={over ?? phase}>
       <canvas
         ref={canvasRef}
-        className="game-canvas"
-        aria-label="The arena"
+        className="bk-canvas"
+        aria-label="A desk, seen from above, with a cutting mat on it"
         onContextMenu={(e) => e.preventDefault()}
         onPointerDown={(e) => {
           if (phaseRef.current !== "playing" || e.pointerType !== "mouse") return;
@@ -167,52 +196,56 @@ export default function BossGame() {
           else if (e.button === 0) engineRef.current?.attack();
         }}
       />
+      {/* Soft focus at the near and far edges, like a photo of something small. */}
+      <div className="bk-lens" aria-hidden="true" />
 
       {phase === "playing" && game && !over && (
-        <div className="game-hud">
-          <div className="boss-top">
-            <p className="boss-name">
-              <b>The Backlog</b>
-              {game.call ? <span key={game.call}>{game.call}</span> : null}
+        <div className="bk-hud">
+          <p className="bk-boss" aria-label={`The Backlog has ${open} tickets open`}>
+            <span className="bk-tape">The Backlog</span>
+            <span className="bk-count" data-stage={game.stage}>
+              <b>{open}</b> open
+            </span>
+          </p>
+          <Burndown trail={trail} now={game.time} />
+          {game.call ? (
+            <p className="bk-call" key={game.call}>
+              {game.call}!
             </p>
-            <span className="boss-bar" role="img" aria-label={`The Backlog has ${Math.round(game.boss * 100)}% left`}>
-              <span style={{ width: `${game.boss * 100}%` }} />
-              <i style={{ left: "60%" }} />
-              <i style={{ left: "28%" }} />
-            </span>
-          </div>
-          <div className="boss-you" aria-label={`You have ${game.hp} health, ${game.stamina} stamina and ${game.flasks} flasks`}>
-            <span className="boss-hp">
-              <span style={{ width: `${game.hp}%` }} />
-            </span>
-            <span className="boss-stamina">
-              <span style={{ width: `${game.stamina}%` }} />
-            </span>
-            <span className="boss-flasks" aria-hidden="true">
-              {[0, 1].map((i) => (
-                <i key={i} data-full={i < game.flasks ? "" : undefined} />
+          ) : null}
+
+          <div className="bk-you" aria-label={`You have ${game.hp} health, ${game.stamina} stamina and ${game.flasks} coffees left`}>
+            <span className="bk-cups" aria-hidden="true">
+              {[0, 1, 2, 3, 4].map((i) => (
+                <i key={i} style={{ "--fill": Math.max(0, Math.min(1, (game.hp - i * 20) / 20)) } as React.CSSProperties} />
               ))}
             </span>
+            <span className="bk-pencil" aria-hidden="true">
+              <i style={{ width: `${Math.max(6, game.stamina)}%` }} />
+            </span>
+            <span className="bk-refills" aria-hidden="true">
+              {game.flasks === 2 ? "two refills" : game.flasks === 1 ? "one refill" : "no refills"}
+            </span>
           </div>
-          <button type="button" className="btn btn-glass pickle-pause" onClick={() => { engineRef.current?.setPaused(true); go("paused"); }}>
+          <button type="button" className="bk-tape bk-pause" onClick={() => { engineRef.current?.setPaused(true); go("paused"); }}>
             Pause
           </button>
 
-          <div className="boss-stick" onPointerDown={stickDown} onPointerMove={stickMove} onPointerUp={stickUp} onPointerCancel={stickUp}>
+          <div className="bk-stick" onPointerDown={stickDown} onPointerMove={stickMove} onPointerUp={stickUp} onPointerCancel={stickUp}>
             {knob && (
-              <span className="boss-knob" style={{ left: knob.x, top: knob.y }}>
+              <span className="bk-knob" style={{ left: knob.x, top: knob.y }}>
                 <i style={{ translate: `${knob.dx * 26}px ${knob.dy * 26}px` }} />
               </span>
             )}
           </div>
-          <div className="boss-pad">
-            <button type="button" onPointerDown={() => engineRef.current?.heal()} disabled={game.flasks === 0}>
-              Flask
+          <div className="bk-pad">
+            <button type="button" data-kind="coffee" onPointerDown={() => engineRef.current?.heal()} disabled={game.flasks === 0}>
+              Coffee
             </button>
-            <button type="button" onPointerDown={() => engineRef.current?.roll()}>
+            <button type="button" data-kind="roll" onPointerDown={() => engineRef.current?.roll()}>
               Roll
             </button>
-            <button type="button" className="boss-pad-main" onPointerDown={() => engineRef.current?.attack()}>
+            <button type="button" data-kind="hit" onPointerDown={() => engineRef.current?.attack()}>
               Hit
             </button>
           </div>
@@ -220,71 +253,87 @@ export default function BossGame() {
       )}
 
       {failed && (
-        <div className="game-panel">
-          <h2 className="h-pixel game-title">No 3D here</h2>
-          <p>This browser would not start WebGL, so the arena cannot draw. It works in current Chrome, Edge, Safari and Firefox.</p>
+        <div className="bk-memo">
+          <h2>No 3D here</h2>
+          <p>This browser would not start WebGL, so the desk cannot be drawn. It works in current Chrome, Edge, Safari and Firefox.</p>
         </div>
       )}
 
       {phase === "menu" && !failed && (
-        <div className="game-panel boss-menu">
-          <h2 className="h-pixel game-title">The Backlog</h2>
-          <p className="range-note">
-            It is seven blocks tall and it never gets shorter on its own. Every attack is drawn on the floor before it
-            lands. Get in, hit it while it recovers, and roll through what you cannot outrun.
+        <div className="bk-memo">
+          <p className="bk-memo-head">Interoffice memo</p>
+          <dl className="bk-memo-lines">
+            <div>
+              <dt>To</dt>
+              <dd>You</dd>
+            </div>
+            <div>
+              <dt>From</dt>
+              <dd>The Backlog</dd>
+            </div>
+            <div>
+              <dt>Re</dt>
+              <dd>Everything</dd>
+            </div>
+          </dl>
+          <p>
+            It is seven pads tall and it never gets shorter on its own. Whatever it is about to do shows up on the mat
+            first. Get in while it recovers, and roll through what you cannot outrun.
           </p>
-          <dl className="boss-keys">
+          <dl className="bk-keys bk-keys-desk">
             <div>
               <dt>Move</dt>
-              <dd>W A S D or the arrows</dd>
+              <dd>W A S D</dd>
             </div>
             <div>
               <dt>Hit</dt>
-              <dd>Click or J</dd>
+              <dd>Click, or J</dd>
             </div>
             <div>
               <dt>Roll</dt>
-              <dd>Space or right click</dd>
+              <dd>Space</dd>
             </div>
             <div>
-              <dt>Flask</dt>
-              <dd>E, two per fight</dd>
+              <dt>Coffee</dt>
+              <dd>E, two refills</dd>
             </div>
           </dl>
-          <div className="game-actions">
-            <button type="button" className="btn btn-solid" onClick={start}>
-              Walk in
+          <p className="bk-keys-thumb">Left thumb walks. The stickers on the right hit, roll and drink.</p>
+          <div className="bk-memo-foot">
+            <button type="button" className="bk-stamp" onClick={start}>
+              Clock in
             </button>
-            <button type="button" className="btn btn-glass" aria-pressed={muted} onClick={() => setMuted(!muted)}>
-              {muted ? "Sound off" : "Sound on"}
-            </button>
+            <label className="bk-check">
+              <input type="checkbox" checked={!muted} onChange={() => setMuted(!muted)} />
+              <span>Sound</span>
+            </label>
           </div>
         </div>
       )}
 
       {phase === "paused" && (
-        <div className="game-panel game-panel-small">
-          <h2 className="h-pixel game-title">Paused</h2>
-          <div className="game-actions">
-            <button type="button" className="btn btn-solid" onClick={resume}>
-              Back in
-            </button>
-            <button type="button" className="btn btn-glass" onClick={start}>
-              Start over
-            </button>
-          </div>
+        <div className="bk-sticky" role="dialog" aria-label="Paused">
+          <h2>BRB</h2>
+          <button type="button" className="bk-link" onClick={resume}>
+            Back to it
+          </button>
+          <button type="button" className="bk-link" onClick={start}>
+            Start over
+          </button>
         </div>
       )}
 
       {over && game && (
-        <div className="game-panel game-panel-small" role="status">
-          <h2 className="h-pixel game-title">{over === "won" ? "Cleared" : "Buried"}</h2>
-          <p className="range-note">
+        <div className="bk-ticket" data-won={over === "won" ? "" : undefined} role="status">
+          <p className="bk-ticket-id">BKLG-{String(open).padStart(3, "0")}</p>
+          <h2>Everything</h2>
+          <span className="bk-verdict">{over === "won" ? "Done" : "Reopened"}</span>
+          <p>
             {over === "won"
-              ? `${rank}. The Backlog is empty, for now.${best > 0 && game.time <= best ? " That is your fastest." : ""}`
-              : `It had ${Math.max(1, Math.round(game.boss * 100))}% left. It telegraphs everything, so watch the floor.`}
+              ? `${rank} The Backlog is at zero, for now.${best > 0 && game.time <= best ? " That is your fastest." : ""}`
+              : `${open} tickets still open. It shows you everything before it lands, so watch the mat.`}
           </p>
-          <dl className="game-result">
+          <dl className="bk-memo-lines">
             <div>
               <dt>Time</dt>
               <dd>{clock(game.time)}</dd>
@@ -293,12 +342,14 @@ export default function BossGame() {
               <dt>Hits taken</dt>
               <dd>{game.hits}</dd>
             </div>
+            <div>
+              <dt>Refills left</dt>
+              <dd>{game.flasks}</dd>
+            </div>
           </dl>
-          <div className="game-actions">
-            <button type="button" className="btn btn-solid" onClick={start}>
-              {over === "won" ? "Again" : "Try again"}
-            </button>
-          </div>
+          <button type="button" className="bk-stamp" onClick={start}>
+            {over === "won" ? "Clock in again" : "Try again"}
+          </button>
         </div>
       )}
     </div>

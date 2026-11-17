@@ -1,0 +1,806 @@
+/*
+ * Live Ops. The board is drawn in the style of the game you are running: a harbor master's ledger,
+ * cream paper and navy ink, with signal flags for the kinds of thing you can ship.
+ * Nothing here is shared with the rest of the site.
+ */
+
+.hb {
+  --hb-paper: #f7edd8;
+  --hb-card: #fffaf0;
+  --hb-ink: #1d2b4f;
+  --hb-soft: #4a5673;
+  --hb-red: #e2513b;
+  --hb-gold: #e9b23c;
+  --hb-sea: #2f8f9d;
+  --hb-good: #1f6b49;
+  --hb-bad: #b5301f;
+  --hb-serif: var(--font-hb-serif), Georgia, "Times New Roman", serif;
+  --hb-round: var(--font-hb-round), "Trebuchet MS", "Helvetica Neue", sans-serif;
+  display: grid;
+  gap: 16px;
+  padding: clamp(14px, 2.4vw, 26px);
+  border: 2px solid var(--hb-ink);
+  border-radius: 16px;
+  color: var(--hb-ink);
+  font-family: var(--hb-round);
+  font-weight: 600;
+  /* Ruled like a ledger, faintly. */
+  background: repeating-linear-gradient(transparent 0 31px, rgba(29, 43, 79, 0.07) 31px 32px), var(--hb-paper);
+  box-shadow: 6px 6px 0 var(--hb-sea);
+}
+
+:where(.hb) :where(h1, h2, h3, h4) {
+  color: inherit;
+}
+
+/* Start every paragraph and list from nothing, without outranking the rules below. */
+:where(.hb) :where(p, ol, ul, dl, dd) {
+  margin: 0;
+  padding: 0;
+}
+
+:where(.hb) :where(ol, ul) {
+  list-style: none;
+}
+
+.hb-kicker {
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: var(--hb-soft);
+}
+
+.hb-name,
+.hb-week,
+.hb-report-title,
+.hb-log-title {
+  margin: 0;
+  font-family: var(--hb-serif);
+  font-variation-settings: "SOFT" 100;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+/* ---------- the cover ---------- */
+
+.hb-cover {
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.hb-cover-text {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+  padding: clamp(18px, 3vw, 34px);
+}
+
+.hb-name {
+  font-size: clamp(3rem, 9vw, 6rem);
+  /* A wavy line under the name, like the waterline. */
+  text-decoration: underline wavy var(--hb-sea) 4px;
+  text-underline-offset: 0.14em;
+}
+
+.hb-lede {
+  max-width: 62ch;
+  line-height: 1.5;
+}
+
+/* ---------- the harbor ---------- */
+
+.hb-harbor {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 2px solid var(--hb-ink);
+  border-radius: 10px;
+}
+
+.hb-cover .hb-harbor {
+  border-width: 0 0 2px;
+  border-radius: 0;
+}
+
+.hb-sky {
+  transition: fill 0.6s ease;
+}
+
+.hb-cloud {
+  fill: #fffaf0;
+  stroke: #1d2b4f;
+  stroke-width: 2;
+}
+
+.hb-harbor[data-weather="raining"] .hb-cloud {
+  fill: #c9d1d8;
+}
+
+.hb-beam {
+  fill: #ffe9a8;
+  opacity: 0.55;
+  transform-origin: 66px 42px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hb-boat {
+    animation: hb-bob 2.4s ease-in-out infinite;
+  }
+
+  .hb-waves {
+    animation: hb-drift 5s linear infinite;
+  }
+
+  .hb-kite {
+    animation: hb-sway 3.6s ease-in-out infinite;
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+  }
+
+  .hb-harbor[data-light="steady"] .hb-beam {
+    animation: hb-sweep 6s ease-in-out infinite;
+  }
+
+  .hb-harbor[data-light="flickering"] .hb-beam {
+    animation: hb-flicker 1.1s steps(2, jump-none) infinite;
+  }
+
+  .hb-rain {
+    animation: hb-rain 0.5s linear infinite;
+  }
+}
+
+@keyframes hb-bob {
+  50% {
+    transform: translateY(3px) rotate(2.5deg);
+  }
+}
+
+@keyframes hb-drift {
+  to {
+    transform: translateX(-80px);
+  }
+}
+
+@keyframes hb-sway {
+  50% {
+    transform: rotate(7deg) translateX(6px);
+  }
+}
+
+@keyframes hb-sweep {
+  50% {
+    transform: rotate(9deg);
+  }
+}
+
+@keyframes hb-flicker {
+  0%,
+  30% {
+    opacity: 0.55;
+  }
+  45%,
+  60% {
+    opacity: 0.08;
+  }
+  100% {
+    opacity: 0.4;
+  }
+}
+
+@keyframes hb-rain {
+  to {
+    transform: translate(-5px, 14px);
+  }
+}
+
+/* ---------- head ---------- */
+
+.hb-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 20px;
+}
+
+.hb-week {
+  font-size: clamp(2rem, 5vw, 3.25rem);
+}
+
+/* The season as a line of buoys. */
+.hb-buoys {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.hb-buoys li {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 2px solid var(--hb-ink);
+  border-radius: 50%;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  background: var(--hb-card);
+}
+
+.hb-buoys li[data-state="past"] {
+  color: var(--hb-card);
+  background: var(--hb-ink);
+}
+
+.hb-buoys li[data-state="now"] {
+  background: var(--hb-gold);
+  box-shadow: 0 0 0 3px var(--hb-paper), 0 0 0 5px var(--hb-red);
+}
+
+.hb-quiet {
+  padding: 6px 4px;
+  border: 0;
+  font-family: var(--hb-round);
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: var(--hb-ink);
+  background: none;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+.hb-go {
+  padding: 11px 24px;
+  border: 2px solid var(--hb-ink);
+  border-radius: 10px;
+  font-family: var(--hb-round);
+  font-weight: 700;
+  font-size: 1.0625rem;
+  color: var(--hb-card);
+  background: var(--hb-ink);
+  box-shadow: 4px 4px 0 var(--hb-gold);
+  cursor: pointer;
+  transition:
+    translate 0.08s ease,
+    box-shadow 0.08s ease;
+}
+
+.hb-go:active {
+  translate: 3px 3px;
+  box-shadow: 1px 1px 0 var(--hb-gold);
+}
+
+.hb-go:focus-visible,
+.hb-quiet:focus-visible,
+.hb-tag:focus-visible {
+  outline: 3px solid #0b62d6;
+  outline-offset: 3px;
+}
+
+/* ---------- the figures ---------- */
+
+.hb-entries {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border: 2px solid var(--hb-ink);
+  border-radius: 10px;
+  background: var(--hb-card);
+  overflow: hidden;
+}
+
+@media (min-width: 760px) {
+  .hb-entries {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+.hb-entry {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  padding: 10px 14px 12px;
+  box-shadow:
+    1px 0 0 var(--hb-ink),
+    0 1px 0 var(--hb-ink);
+}
+
+.hb-entry dt {
+  font-weight: 700;
+  font-size: 0.8125rem;
+  color: var(--hb-soft);
+}
+
+.hb-entry dd {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--hb-serif);
+  font-variation-settings: "SOFT" 100;
+  font-weight: 800;
+  font-size: 2rem;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+
+.hb-flash {
+  font-family: var(--hb-round);
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.hb-flash[data-tone="good"],
+.hb-changes [data-tone="good"] {
+  color: var(--hb-good);
+}
+
+.hb-flash[data-tone="bad"],
+.hb-changes [data-tone="bad"] {
+  color: var(--hb-bad);
+}
+
+.hb-rule {
+  display: block;
+  height: 6px;
+  margin-top: 4px;
+  border: 1.5px solid var(--hb-ink);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.hb-rule span {
+  display: block;
+  height: 100%;
+  background: var(--hb-sea);
+  transition: width 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.hb-entry[data-low] .hb-rule span {
+  background: var(--hb-red);
+}
+
+/* ---------- the week's plan ---------- */
+
+/* News comes in by bottle. */
+.hb-bottle {
+  position: relative;
+  padding: 10px 14px 10px 46px;
+  border: 2px dashed var(--hb-ink);
+  border-radius: 10px;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  background: var(--hb-card);
+}
+
+.hb-bottle::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  width: 18px;
+  height: 26px;
+  translate: 0 -50%;
+  rotate: 24deg;
+  border: 2px solid var(--hb-ink);
+  border-radius: 5px 5px 7px 7px;
+  background: linear-gradient(var(--hb-ink), var(--hb-ink)) center 0 / 8px 5px no-repeat, linear-gradient(transparent 45%, #bfe3e6 0);
+}
+
+.hb-bottle[data-known] {
+  border-style: solid;
+  background: #fff2c9;
+}
+
+.hb-hand {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+@media (min-width: 620px) {
+  .hb-hand {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 980px) {
+  .hb-hand {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.hb-hand li {
+  display: grid;
+}
+
+/* Each thing you could ship is a cargo tag, flying the flag of its kind. */
+.hb-tag,
+.hb-season-flags,
+.hb-key span {
+  --flag: linear-gradient(135deg, var(--hb-red) 50%, var(--hb-gold) 0);
+  --kind: var(--hb-red);
+}
+
+.hb-tag[data-kind="store"],
+.hb-flag[data-kind="store"] {
+  --flag: linear-gradient(90deg, var(--hb-gold) 50%, var(--hb-ink) 0);
+  --kind: var(--hb-gold);
+}
+
+.hb-tag[data-kind="health"],
+.hb-flag[data-kind="health"] {
+  --flag: linear-gradient(var(--hb-card), var(--hb-card)) center / 44% 44% no-repeat, var(--hb-ink);
+  --kind: var(--hb-ink);
+}
+
+.hb-tag[data-kind="community"],
+.hb-flag[data-kind="community"] {
+  --flag: linear-gradient(var(--hb-sea) 33%, var(--hb-card) 0 66%, var(--hb-sea) 0);
+  --kind: var(--hb-sea);
+}
+
+.hb-flag[data-kind="content"] {
+  --flag: linear-gradient(135deg, var(--hb-red) 50%, var(--hb-gold) 0);
+}
+
+.hb-flag[data-kind="none"] {
+  --flag: repeating-linear-gradient(45deg, rgba(29, 43, 79, 0.25) 0 3px, transparent 3px 6px);
+}
+
+.hb-flag {
+  flex: none;
+  display: inline-block;
+  width: 26px;
+  height: 18px;
+  border: 2px solid var(--hb-ink);
+  border-radius: 2px;
+  background: var(--flag);
+}
+
+.hb-tag {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  padding: 12px 14px 14px;
+  border: 2px solid var(--hb-ink);
+  border-radius: 4px 14px 14px 4px;
+  font-family: var(--hb-round);
+  font-weight: 600;
+  text-align: left;
+  color: var(--hb-ink);
+  background: var(--hb-card);
+  box-shadow: 3px 3px 0 rgba(29, 43, 79, 0.25);
+  cursor: pointer;
+  transition:
+    translate 0.14s ease,
+    rotate 0.14s ease,
+    box-shadow 0.14s ease,
+    background-color 0.14s ease,
+    opacity 0.14s ease;
+}
+
+.hb-tag[aria-pressed="true"] {
+  translate: -2px -3px;
+  rotate: -1deg;
+  background: color-mix(in srgb, var(--kind) 16%, var(--hb-card));
+  box-shadow: 6px 7px 0 var(--kind);
+}
+
+/* Going out this week: a tick in the corner. */
+.hb-tag[aria-pressed="true"]::after {
+  content: "";
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  width: 9px;
+  height: 17px;
+  rotate: 40deg;
+  border: solid var(--hb-good);
+  border-width: 0 4px 4px 0;
+}
+
+.hb-tag[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.hb-tag-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hb-kind {
+  font-weight: 700;
+  font-size: 0.8125rem;
+  color: var(--hb-soft);
+}
+
+/* How many of the crew it ties up. */
+.hb-hands {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.hb-hands i {
+  width: 11px;
+  height: 11px;
+  border: 2px solid var(--hb-ink);
+  border-radius: 50%;
+  background: var(--hb-ink);
+}
+
+.hb-hands-big {
+  margin: 0 10px 0 0;
+  vertical-align: -2px;
+}
+
+.hb-hands-big i {
+  width: 15px;
+  height: 15px;
+  background: none;
+}
+
+.hb-hands-big i[data-used] {
+  background: var(--hb-ink);
+}
+
+.hb-tag-name {
+  font-family: var(--hb-serif);
+  font-variation-settings: "SOFT" 100;
+  font-weight: 700;
+  font-size: 1.1875rem;
+  line-height: 1.15;
+}
+
+.hb-tag-line {
+  font-size: 0.875rem;
+  line-height: 1.35;
+  color: var(--hb-soft);
+}
+
+.hb-changes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+  font-weight: 700;
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.hb-changes span {
+  white-space: nowrap;
+}
+
+.hb-tag .hb-changes {
+  padding-right: 24px;
+}
+
+.hb-plan {
+  display: grid;
+  align-items: center;
+  gap: 10px 20px;
+  padding-top: 14px;
+  border-top: 2px solid var(--hb-ink);
+}
+
+@media (min-width: 860px) {
+  .hb-plan {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+}
+
+.hb-crew,
+.hb-forecast {
+  font-size: 0.9375rem;
+}
+
+/* ---------- the log of the week ---------- */
+
+.hb-log {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+}
+
+.hb-log-title,
+.hb-report-title {
+  font-size: clamp(1.375rem, 3vw, 1.875rem);
+}
+
+.hb-log ol {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  min-height: 230px;
+  align-content: start;
+}
+
+.hb-log li {
+  --tone: var(--hb-soft);
+  display: grid;
+  gap: 2px 20px;
+  padding: 8px 12px 8px 16px;
+  border: 2px solid var(--hb-ink);
+  border-left: 8px solid var(--tone);
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  background: var(--hb-card);
+}
+
+@media (min-width: 860px) {
+  .hb-log li {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: baseline;
+  }
+}
+
+.hb-log li[data-tone="good"] {
+  --tone: var(--hb-good);
+}
+
+.hb-log li[data-tone="bad"] {
+  --tone: var(--hb-red);
+}
+
+.hb-log b {
+  font-weight: 700;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hb-log li {
+    animation: hb-in 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+
+  .hb-flash {
+    animation: hb-flash 0.6s ease both;
+  }
+}
+
+@keyframes hb-in {
+  from {
+    opacity: 0;
+    translate: 0 8px;
+  }
+}
+
+@keyframes hb-flash {
+  from {
+    opacity: 0;
+    scale: 1.7;
+  }
+}
+
+/* ---------- the season report ---------- */
+
+.hb-report {
+  display: grid;
+  gap: 16px 30px;
+  align-items: start;
+  padding-top: 16px;
+  border-top: 2px solid var(--hb-ink);
+}
+
+@media (min-width: 760px) {
+  .hb-report {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+}
+
+/* The grade, pressed on like a wax seal. */
+.hb-seal {
+  display: grid;
+  place-items: center;
+  width: 2.2ch;
+  aspect-ratio: 1;
+  rotate: -8deg;
+  border: 5px double var(--hb-card);
+  border-radius: 50%;
+  font-family: var(--hb-serif);
+  font-variation-settings: "SOFT" 100;
+  font-weight: 900;
+  font-size: clamp(4.5rem, 11vw, 7rem);
+  line-height: 1;
+  color: var(--hb-card);
+  background: var(--hb-red);
+  box-shadow: 0 0 0 3px var(--hb-red), 4px 5px 0 3px rgba(29, 43, 79, 0.3);
+}
+
+.hb-seal[data-grade="S"],
+.hb-seal[data-grade="A"] {
+  background: var(--hb-good);
+  box-shadow: 0 0 0 3px var(--hb-good), 4px 5px 0 3px rgba(29, 43, 79, 0.3);
+}
+
+.hb-seal[data-grade="B"] {
+  background: var(--hb-ink);
+  box-shadow: 0 0 0 3px var(--hb-ink), 4px 5px 0 3px rgba(29, 43, 79, 0.3);
+}
+
+.hb-report-body {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+}
+
+.hb-notes {
+  display: grid;
+  gap: 6px;
+  max-width: 62ch;
+  line-height: 1.45;
+}
+
+.hb .hb-notes {
+  padding-left: 1.1em;
+  list-style: disc;
+}
+
+.hb-season {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  width: 100%;
+  border: 2px solid var(--hb-ink);
+  border-radius: 10px;
+  background: var(--hb-card);
+  overflow: hidden;
+}
+
+@media (min-width: 760px) {
+  .hb-season {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+  }
+}
+
+.hb-season li {
+  display: grid;
+  gap: 5px;
+  padding: 8px 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--hb-soft);
+  box-shadow:
+    1px 0 0 var(--hb-ink),
+    0 1px 0 var(--hb-ink);
+}
+
+.hb-season-flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  min-height: 14px;
+}
+
+.hb-season .hb-flag,
+.hb-key .hb-flag {
+  width: 18px;
+  height: 13px;
+  border-width: 1.5px;
+}
+
+.hb-season b {
+  font-family: var(--hb-serif);
+  font-variation-settings: "SOFT" 100;
+  font-weight: 800;
+  font-size: 1.125rem;
+  line-height: 1;
+  color: var(--hb-ink);
+}
+
+.hb-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--hb-soft);
+}
+
+.hb-key span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}

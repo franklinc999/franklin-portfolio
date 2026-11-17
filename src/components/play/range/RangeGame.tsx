@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { sound } from "@/components/play/sound";
 import { RangeEngine, type Drill, type RangeStats } from "./RangeEngine";
+import "./range.css";
 
 /* Degrees turned per mouse count at sensitivity 1, as each game defines it. */
 const GAMES = [
@@ -12,10 +13,10 @@ const GAMES = [
 ] as const;
 
 const DRILLS: { id: Drill; name: string; what: string }[] = [
-  { id: "pop", name: "Pop", what: "Three targets up at once. Flick, click, next." },
-  { id: "pin", name: "Pin", what: "One small target, far away. Slow down and be exact." },
-  { id: "ride", name: "Ride", what: "Hold fire and stay on a target that keeps changing its mind." },
-  { id: "peek", name: "Peek", what: "Something leans out from cover for a second. Punish it." },
+  { id: "pop", name: "Pop", what: "Three clays up at once. Flick, break, next." },
+  { id: "pin", name: "Pin", what: "One small clay, a long way out. Slow down and be exact." },
+  { id: "ride", name: "Ride", what: "Hold fire and stay on a clay that keeps changing its mind." },
+  { id: "peek", name: "Peek", what: "A clay leans out from behind plywood for a second. Punish it." },
 ];
 
 const ROUND = 30;
@@ -51,6 +52,7 @@ export default function RangeGame() {
   const [best, setBest] = useState(0);
   const [locked, setLocked] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [holes, setHoles] = useState<{ x: number; y: number }[]>([]);
 
   const game = GAMES[settings.game];
   const sens = parseFloat(settings.sens);
@@ -95,6 +97,7 @@ export default function RangeGame() {
         (s) => {
           if (document.pointerLockElement) document.exitPointerLock();
           setStats(s);
+          setHoles(engine.holes());
           setBest((b) => {
             const key = `range-best-${currentDrill.current}`;
             let stored = 0;
@@ -219,20 +222,31 @@ export default function RangeGame() {
   const accuracy = stats && stats.shots ? Math.round((stats.hits / stats.shots) * 100) : 0;
   const drill = DRILLS.find((d) => d.id === settings.drill) ?? DRILLS[0];
 
+  // Where the group sits on the target, in words.
+  const group = (() => {
+    if (holes.length < 4) return "";
+    const mx = holes.reduce((a, h) => a + h.x, 0) / holes.length;
+    const my = holes.reduce((a, h) => a + h.y, 0) / holes.length;
+    const spread = Math.sqrt(holes.reduce((a, h) => a + (h.x - mx) ** 2 + (h.y - my) ** 2, 0) / holes.length);
+    const where = [my > 0.1 ? "high" : my < -0.1 ? "low" : "", mx > 0.1 ? "right" : mx < -0.1 ? "left" : ""].filter(Boolean).join(" and ");
+    return `${spread < 0.42 ? "A tight group" : spread < 0.6 ? "A fair group" : "A loose group"}, ${where ? `sitting ${where}` : "on centre"}.`;
+  })();
+  const stage = DRILLS.findIndex((d) => d.id === settings.drill) + 1;
+
   return (
-    <div ref={stageRef} className="game-stage range" data-phase={phase} data-locked={locked ? "" : undefined}>
-      <canvas ref={canvasRef} className="game-canvas" onPointerDown={onPointerDown} aria-label="The firing range" />
+    <div ref={stageRef} className="rg" data-phase={phase} data-locked={locked ? "" : undefined}>
+      <canvas ref={canvasRef} className="rg-canvas" onPointerDown={onPointerDown} aria-label="A firing range in the desert" />
 
       {phase === "playing" && stats && (
-        <div className="game-hud" aria-hidden="true">
-          <p className="game-hud-main">{Math.ceil(stats.left)}</p>
-          <dl className="game-hud-side">
+        <div className="rg-hud" aria-hidden="true">
+          <p className="rg-clock">{Math.ceil(stats.left)}</p>
+          <dl className="rg-tag">
             <div>
               <dt>Score</dt>
               <dd>{stats.score}</dd>
             </div>
             <div>
-              <dt>Accuracy</dt>
+              <dt>Hits</dt>
               <dd>{accuracy}%</dd>
             </div>
             <div>
@@ -240,122 +254,143 @@ export default function RangeGame() {
               <dd>{stats.streak}</dd>
             </div>
           </dl>
-          {locked && <span className="range-cross" />}
-          <p className="game-hud-foot">
-            {drill.name}
+          {locked && <span className="rg-cross" />}
+          <p className="rg-foot">
+            Stage 0{stage}, {drill.name}
             {locked ? ". Esc to pause." : ""}
           </p>
         </div>
       )}
 
       {failed && (
-        <div className="game-panel">
-          <h2 className="h-pixel game-title">No 3D here</h2>
-          <p>This browser would not start WebGL, so the range cannot draw. It works in current Chrome, Edge, Safari and Firefox.</p>
+        <div className="rg-card rg-card-small">
+          <h2 className="rg-title">No 3D here</h2>
+          <p>This browser would not start WebGL, so the range cannot be drawn. It works in current Chrome, Edge, Safari and Firefox.</p>
         </div>
       )}
 
       {phase === "menu" && !failed && (
-        <div className="game-panel range-menu">
-          <fieldset className="range-drills">
-            <legend className="meta">Pick a drill</legend>
-            {DRILLS.map((d) => (
-              <label key={d.id} className="range-drill">
-                <input type="radio" name="drill" checked={settings.drill === d.id} onChange={() => set("drill", d.id)} />
+        <div className="rg-card">
+          <header className="rg-head">
+            <p className="rg-lane">Lane 07</p>
+            <h2 className="rg-title">The Range</h2>
+            <p>Four stages. Thirty seconds each.</p>
+          </header>
+
+          <fieldset className="rg-stages">
+            <legend>Course of fire</legend>
+            {DRILLS.map((d, i) => (
+              <label key={d.id}>
+                <input type="radio" name="rg-stage" checked={settings.drill === d.id} onChange={() => set("drill", d.id)} />
                 <span>
+                  <i>0{i + 1}</i>
                   <b>{d.name}</b>
-                  {d.what}
+                  <em>{d.what}</em>
                 </span>
               </label>
             ))}
           </fieldset>
 
-          <div className="range-settings">
-            <fieldset className="seg range-mouse-only" aria-label="Match the sensitivity of">
+          <section className="rg-zero">
+            <h3>Zero your sights</h3>
+            <fieldset className="rg-tabs rg-mouse" aria-label="Match the sensitivity of">
               {GAMES.map((g, i) => (
-                <label key={g.name} className="seg-item">
-                  <input
-                    type="radio"
-                    name="range-game"
-                    checked={settings.game === i}
-                    onChange={() => setSettings((s) => ({ ...s, game: i, sens: String(g.sens), hfov: g.hfov }))}
-                  />
+                <label key={g.name}>
+                  <input type="radio" name="rg-game" checked={settings.game === i} onChange={() => setSettings((s) => ({ ...s, game: i, sens: String(g.sens), hfov: g.hfov }))} />
                   <span>{g.name}</span>
                 </label>
               ))}
             </fieldset>
-            <div className="range-fields range-mouse-only">
-              <label className="field-row">
-                <span>Sensitivity in {game.name}</span>
+            <div className="rg-fields rg-mouse">
+              <label>
+                <span>Sensitivity</span>
                 <input inputMode="decimal" value={settings.sens} onChange={(e) => set("sens", e.target.value)} aria-invalid={!(sens > 0)} />
               </label>
-              <label className="field-row">
+              <label>
                 <span>Mouse DPI</span>
                 <input inputMode="numeric" value={settings.dpi} onChange={(e) => set("dpi", e.target.value)} aria-invalid={!(dpi > 0)} />
               </label>
             </div>
-            <label className="dial">
+            <label className="rg-fov">
               <span>Field of view</span>
-              <output>{settings.hfov}°</output>
               <input type="range" min={70} max={120} step={1} value={settings.hfov} onChange={(e) => set("hfov", Number(e.target.value))} />
+              <output>{settings.hfov}°</output>
             </label>
-            <p className="range-note range-touch-only">Tap a target to shoot it. With a mouse, the range matches your sensitivity from the game you play.</p>
-            <p className="range-note range-mouse-only">{valid ? `One full turn takes ${turn.toFixed(1)} cm of mouse, the same as in ${game.name}.` : "Enter a sensitivity and DPI above zero."}</p>
-            <div className="game-actions">
-              <button type="button" className="btn btn-solid" onClick={start} disabled={!valid}>
-                Start, 30 seconds
-              </button>
-              <button type="button" className="btn btn-glass" aria-pressed={settings.muted} onClick={() => set("muted", !settings.muted)}>
-                {settings.muted ? "Sound off" : "Sound on"}
-              </button>
-            </div>
-          </div>
+            <p className="rg-note rg-touch">Tap a clay to shoot it. With a mouse, the range matches your sensitivity from the game you play.</p>
+            <p className="rg-note rg-mouse">{valid ? `One full turn is ${turn.toFixed(1)} cm of mouse, same as ${game.name}.` : "Enter a sensitivity and DPI above zero."}</p>
+          </section>
+
+          <footer className="rg-foot-row">
+            <button type="button" className="rg-go" onClick={start} disabled={!valid}>
+              Shooter ready
+            </button>
+            <button type="button" className="rg-plain" aria-pressed={!settings.muted} onClick={() => set("muted", !settings.muted)}>
+              Sound {settings.muted ? "off" : "on"}
+            </button>
+          </footer>
         </div>
       )}
 
       {phase === "paused" && (
-        <div className="game-panel game-panel-small">
-          <h2 className="h-pixel game-title">Paused</h2>
-          <div className="game-actions">
-            <button type="button" className="btn btn-solid" onClick={resume}>
-              Back in
+        <div className="rg-card rg-card-small rg-cease" role="dialog" aria-label="Paused">
+          <h2 className="rg-title">Cease fire</h2>
+          <footer className="rg-foot-row">
+            <button type="button" className="rg-go" onClick={resume}>
+              Range is hot
             </button>
-            <button type="button" className="btn btn-glass" onClick={toMenu}>
-              Change drill
+            <button type="button" className="rg-plain" onClick={toMenu}>
+              Change stage
             </button>
-          </div>
+          </footer>
         </div>
       )}
 
       {phase === "done" && stats && (
-        <div className="game-panel game-panel-small" role="status">
-          <h2 className="h-pixel game-title">{stats.score}</h2>
-          <p className="range-note">{stats.score >= best && stats.score > 0 ? `New best on ${drill.name}.` : `Your best on ${drill.name} is ${best}.`}</p>
-          <dl className="game-result">
-            <div>
-              <dt>Accuracy</dt>
-              <dd>{accuracy}%</dd>
-            </div>
-            <div>
-              <dt>Hits</dt>
-              <dd>{stats.hits}</dd>
-            </div>
-            <div>
-              <dt>Best streak</dt>
-              <dd>{stats.bestStreak}</dd>
-            </div>
-            <div>
-              <dt>Between hits</dt>
-              <dd>{stats.pace ? `${stats.pace} ms` : "n/a"}</dd>
-            </div>
-          </dl>
-          <div className="game-actions">
-            <button type="button" className="btn btn-solid" onClick={start}>
-              Again
-            </button>
-            <button type="button" className="btn btn-glass" onClick={toMenu}>
-              Change drill
-            </button>
+        <div className="rg-card rg-result" role="status">
+          <figure className="rg-paper">
+            <svg viewBox="-1.25 -1.25 2.5 2.5" aria-hidden="true">
+              <rect x="-1.25" y="-1.25" width="2.5" height="2.5" className="rg-paper-sheet" />
+              <circle r="1" className="rg-paper-ring" />
+              <circle r="0.75" className="rg-paper-ring" />
+              <circle r="0.5" className="rg-paper-black" />
+              <circle r="0.25" className="rg-paper-inner" />
+              <path d="M-1.15 0 H-1.02 M1.02 0 H1.15 M0 -1.15 V-1.02 M0 1.02 V1.15" className="rg-paper-ring" />
+              {holes.map((h, i) => (
+                <circle key={i} cx={h.x} cy={-h.y} r="0.04" className="rg-paper-hole" />
+              ))}
+            </svg>
+            <figcaption>{group || "Every hit, plotted on one target."}</figcaption>
+          </figure>
+          <div className="rg-sheet">
+            <p className="rg-lane">
+              Stage 0{stage}, {drill.name}
+            </p>
+            <h2 className="rg-score">{stats.score}</h2>
+            <p>{stats.score >= best && stats.score > 0 ? "A new best on this stage." : `Your best on this stage is ${best}.`}</p>
+            <dl className="rg-lines">
+              <div>
+                <dt>Hits</dt>
+                <dd>
+                  {stats.hits} of {stats.shots}, {accuracy}%
+                </dd>
+              </div>
+              <div>
+                <dt>Best streak</dt>
+                <dd>{stats.bestStreak}</dd>
+              </div>
+              <div>
+                <dt>Between hits</dt>
+                <dd>{stats.pace ? `${stats.pace} ms` : "n/a"}</dd>
+              </div>
+            </dl>
+            <footer className="rg-foot-row">
+              <button type="button" className="rg-go" onClick={start}>
+                Shoot it again
+              </button>
+              <button type="button" className="rg-plain" onClick={toMenu}>
+                Change stage
+              </button>
+            </footer>
           </div>
         </div>
       )}

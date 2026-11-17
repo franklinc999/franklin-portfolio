@@ -1,0 +1,627 @@
+/*
+ * Dink. A 1970s rec league poster: four flat inks, a fat display face, hard offset shadows.
+ * Nothing here is shared with the rest of the site.
+ */
+
+.dk {
+  --dk-navy: #1d2a44;
+  --dk-cream: #fff3d6;
+  --dk-mustard: #f4b83a;
+  --dk-tomato: #e4572e;
+  --dk-teal: #1a9a8f;
+  --dk-display: var(--font-dk-display), "Arial Black", Impact, sans-serif;
+  --dk-text: var(--font-dk-text), "Trebuchet MS", "Helvetica Neue", sans-serif;
+  position: relative;
+  display: grid;
+  width: calc(100% - 10px);
+  aspect-ratio: 3 / 4.3;
+  overflow: hidden;
+  border: 6px solid var(--dk-navy);
+  border-radius: 20px;
+  background: #fff1cf;
+  color: var(--dk-navy);
+  font-family: var(--dk-text);
+  font-weight: 500;
+  /* A hard shadow, like a print slightly out of register. */
+  box-shadow: 10px 10px 0 var(--dk-tomato);
+}
+
+@media (min-width: 760px) {
+  .dk {
+    aspect-ratio: 16 / 9;
+  }
+}
+
+/* On a phone the flyer decides how tall the stage is. */
+@media (max-width: 759px) {
+  .dk[data-phase="menu"] {
+    aspect-ratio: auto;
+  }
+}
+
+.dk-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+.dk[data-phase="playing"] .dk-canvas {
+  cursor: crosshair;
+}
+
+.dk-hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* The scoreboard: two numbers on cards you could flip by hand. */
+.dk-board {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  display: flex;
+  gap: 8px;
+  translate: -50% 0;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: var(--dk-navy);
+  box-shadow: 5px 5px 0 rgba(29, 42, 68, 0.35);
+}
+
+.dk-side {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dk-side small {
+  position: relative;
+  min-width: 3.6em;
+  font-family: var(--dk-display);
+  font-size: 0.8125rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--dk-cream);
+}
+
+.dk-side:first-child small {
+  text-align: right;
+}
+
+/* A ball next to the name of whoever is serving. */
+.dk-side[data-serving] small::before {
+  content: "";
+  position: absolute;
+  top: -11px;
+  left: 0;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #f2ff5a;
+}
+
+.dk-side:first-child[data-serving] small::before {
+  left: auto;
+  right: 0;
+}
+
+.dk-flip {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 1.5em;
+  padding: 0 0.16em;
+  border-radius: 6px;
+  font-family: var(--dk-display);
+  font-weight: 400;
+  font-size: 2.25rem;
+  line-height: 1.25;
+  color: var(--dk-navy);
+  background: var(--dk-cream);
+}
+
+.dk-flip::after {
+  content: "";
+  position: absolute;
+  inset: 50% 0 auto 0;
+  height: 2px;
+  background: rgba(29, 42, 68, 0.45);
+}
+
+/* The call on a point, shouted out of a starburst. */
+.dk-call {
+  position: absolute;
+  top: 30%;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: clamp(190px, 30%, 330px);
+  aspect-ratio: 1.5;
+  margin: 0;
+  translate: -50% 0;
+  rotate: -7deg;
+  background: var(--dk-tomato);
+  clip-path: polygon(50% 0, 58% 13%, 71% 4%, 74% 19%, 89% 14%, 87% 30%, 100% 34%, 91% 47%, 100% 60%, 87% 65%, 91% 82%, 76% 79%, 72% 96%, 59% 85%, 50% 100%, 41% 85%, 28% 96%, 24% 79%, 9% 82%, 13% 65%, 0 60%, 9% 47%, 0 34%, 13% 30%, 11% 14%, 26% 19%, 29% 4%, 42% 13%);
+}
+
+.dk-call[data-won] {
+  background: var(--dk-teal);
+}
+
+.dk-call span {
+  max-width: 62%;
+  font-family: var(--dk-display);
+  font-size: clamp(1.25rem, 3vw, 2.25rem);
+  line-height: 0.95;
+  text-align: center;
+  text-transform: uppercase;
+  color: var(--dk-cream);
+}
+
+.dk-timing {
+  position: absolute;
+  left: 50%;
+  bottom: 15%;
+  margin: 0;
+  padding: 4px 16px;
+  translate: -50% 0;
+  rotate: -3deg;
+  border: 3px solid var(--dk-navy);
+  border-radius: 999px;
+  font-family: var(--dk-display);
+  font-size: 1.125rem;
+  text-transform: uppercase;
+  color: var(--dk-navy);
+  background: var(--dk-cream);
+  box-shadow: 3px 3px 0 var(--dk-navy);
+}
+
+.dk-timing[data-timing="Clean"] {
+  background: var(--dk-mustard);
+}
+
+.dk-timing[data-timing="Whiff"] {
+  color: var(--dk-cream);
+  background: var(--dk-tomato);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .dk-call,
+  .dk-timing {
+    animation: dk-pop 0.2s cubic-bezier(0.2, 1.5, 0.4, 1) both;
+  }
+}
+
+@keyframes dk-pop {
+  from {
+    opacity: 0;
+    scale: 0.5;
+  }
+}
+
+.dk-hint {
+  position: absolute;
+  left: 14px;
+  bottom: 12px;
+  margin: 0;
+  padding: 4px 12px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--dk-cream);
+  background: var(--dk-navy);
+}
+
+.dk-pause {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  padding: 6px 14px;
+  border: 3px solid var(--dk-navy);
+  border-radius: 999px;
+  font-family: var(--dk-display);
+  font-size: 0.8125rem;
+  text-transform: uppercase;
+  color: var(--dk-navy);
+  background: var(--dk-cream);
+  box-shadow: 3px 3px 0 var(--dk-navy);
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+/* ---------- the flyer ---------- */
+
+.dk-flyer {
+  position: relative;
+  display: grid;
+  gap: 16px;
+  align-content: center;
+  padding: clamp(16px, 2.6vw, 30px);
+  /* Rays from behind the title. */
+  background: repeating-conic-gradient(from 0deg at 18% 20%, rgba(244, 184, 58, 0.34) 0 7.5deg, transparent 7.5deg 15deg), rgba(255, 243, 214, 0.93);
+}
+
+@media (min-width: 900px) {
+  .dk-flyer {
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.5fr);
+    grid-template-rows: 1fr auto;
+    gap: 14px 30px;
+  }
+
+  .dk-flyer-foot {
+    grid-column: 1 / -1;
+  }
+}
+
+.dk-flyer-head {
+  display: grid;
+  align-content: center;
+  gap: 8px;
+}
+
+.dk-kicker {
+  margin: 0;
+  font-weight: 700;
+  font-size: 0.9375rem;
+  color: var(--dk-tomato);
+}
+
+.dk-logo,
+.dk-shout {
+  margin: 0;
+  font-family: var(--dk-display);
+  font-weight: 400;
+  line-height: 0.9;
+  text-transform: uppercase;
+  color: var(--dk-tomato);
+  text-shadow:
+    3px 3px 0 var(--dk-cream),
+    7px 7px 0 var(--dk-navy);
+}
+
+.dk-logo {
+  font-size: clamp(3.5rem, 8vw, 6.4rem);
+  rotate: -4deg;
+  transform-origin: left bottom;
+}
+
+.dk-shout {
+  font-size: clamp(2.5rem, 6vw, 4rem);
+}
+
+.dk-how {
+  max-width: 34ch;
+  margin: 10px 0 0;
+  font-size: 0.9375rem;
+  line-height: 1.45;
+}
+
+.dk-rivals {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  align-items: stretch;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.dk-rivals legend,
+.dk-stubs legend {
+  padding: 0 0 8px;
+  font-family: var(--dk-display);
+  font-size: 0.875rem;
+  text-transform: uppercase;
+}
+
+.dk-rival {
+  position: relative;
+  display: grid;
+  cursor: pointer;
+}
+
+.dk-rival input,
+.dk-stubs input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.dk-rival-card {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 2px;
+  padding: 10px 10px 12px;
+  border: 4px solid var(--dk-navy);
+  border-radius: 14px;
+  text-align: center;
+  background: var(--dk-cream);
+  box-shadow: 5px 5px 0 var(--dk-navy);
+  transition:
+    translate 0.14s ease,
+    box-shadow 0.14s ease,
+    background-color 0.14s ease;
+}
+
+.dk-rival input:checked + .dk-rival-card {
+  translate: -2px -4px;
+  background: var(--dk-mustard);
+  box-shadow: 9px 10px 0 var(--dk-tomato);
+}
+
+.dk-rival input:focus-visible + .dk-rival-card,
+.dk-stubs input:focus-visible + span,
+.dk-btn:focus-visible,
+.dk-pause:focus-visible {
+  outline: 4px solid #1466d8;
+  outline-offset: 3px;
+}
+
+.dk-veg {
+  width: clamp(54px, 9vw, 96px);
+  height: auto;
+}
+
+.dk-rival b {
+  font-family: var(--dk-display);
+  font-weight: 400;
+  font-size: clamp(1rem, 2vw, 1.5rem);
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.dk-rival small {
+  padding: 1px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--dk-cream);
+  background: var(--dk-navy);
+}
+
+.dk-rival-line {
+  margin-top: 6px;
+  font-size: 0.8125rem;
+  line-height: 1.3;
+}
+
+.dk-stats {
+  display: grid;
+  gap: 3px;
+  width: 100%;
+  margin-top: 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-align: left;
+}
+
+.dk-stats > span {
+  display: grid;
+  grid-template-columns: 3.6em minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+}
+
+/* Five pips, filled up to the stat. */
+.dk-stats i {
+  height: 9px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--dk-navy) calc(var(--n) * 20%), rgba(29, 42, 68, 0.18) 0);
+  -webkit-mask: repeating-linear-gradient(90deg, #000 0 calc(20% - 3px), transparent 0 20%);
+  mask: repeating-linear-gradient(90deg, #000 0 calc(20% - 3px), transparent 0 20%);
+}
+
+.dk-flyer-foot,
+.dk-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+}
+
+.dk-flyer-foot .dk-btn:last-child {
+  margin-left: auto;
+}
+
+/* Game length, as two ticket stubs. */
+.dk-stubs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.dk-stubs legend {
+  float: left;
+  padding: 0 4px 0 0;
+}
+
+.dk-stubs label {
+  position: relative;
+}
+
+.dk-stubs span {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 44px;
+  border: 3px dashed var(--dk-navy);
+  border-radius: 8px;
+  font-family: var(--dk-display);
+  font-size: 1.25rem;
+  background: var(--dk-cream);
+}
+
+.dk-stubs input:checked + span {
+  border-style: solid;
+  color: var(--dk-cream);
+  background: var(--dk-tomato);
+}
+
+.dk-btn {
+  padding: 10px 24px;
+  border: 4px solid var(--dk-navy);
+  border-radius: 999px;
+  font-family: var(--dk-display);
+  font-size: 1.125rem;
+  line-height: 1.2;
+  text-transform: uppercase;
+  color: var(--dk-navy);
+  background: var(--dk-mustard);
+  box-shadow: 5px 5px 0 var(--dk-navy);
+  cursor: pointer;
+  transition:
+    translate 0.08s ease,
+    box-shadow 0.08s ease;
+}
+
+.dk-btn:active {
+  translate: 4px 4px;
+  box-shadow: 1px 1px 0 var(--dk-navy);
+}
+
+.dk-btn-quiet {
+  padding: 7px 16px;
+  font-size: 0.8125rem;
+  background: var(--dk-cream);
+  box-shadow: 3px 3px 0 var(--dk-navy);
+}
+
+/* ---------- time out and the final score ---------- */
+
+.dk-card {
+  position: relative;
+  place-self: center;
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+  width: min(100% - 28px, 440px);
+  padding: 26px 24px 24px;
+  border: 5px solid var(--dk-navy);
+  border-radius: 18px;
+  text-align: center;
+  background: var(--dk-cream);
+  box-shadow: 9px 9px 0 var(--dk-navy);
+}
+
+.dk-card p {
+  margin: 0;
+}
+
+.dk-final {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--dk-display);
+  text-transform: uppercase;
+}
+
+.dk-final .dk-flip {
+  font-size: 3rem;
+  color: var(--dk-cream);
+  background: var(--dk-navy);
+}
+
+.dk-final .dk-flip::after {
+  background: rgba(255, 243, 214, 0.4);
+}
+
+.dk-tally {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+  margin: 0;
+}
+
+.dk-tally div {
+  padding: 8px;
+  border: 3px dashed var(--dk-navy);
+  border-radius: 10px;
+}
+
+.dk-tally dt {
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.dk-tally dd {
+  margin: 0;
+  font-family: var(--dk-display);
+  font-size: 1.75rem;
+  line-height: 1.1;
+}
+
+.dk-row {
+  justify-content: center;
+}
+
+@media (max-width: 620px) {
+  .dk-rivals {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* One row per player on a phone: picture left, words right. */
+  .dk-rival-card {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    justify-items: start;
+    align-items: center;
+    column-gap: 12px;
+    text-align: left;
+  }
+
+  .dk-rival-card .dk-veg {
+    grid-row: span 3;
+  }
+
+  .dk-rival-line,
+  .dk-stats {
+    grid-column: 2 / -1;
+    margin-top: 2px;
+  }
+
+  .dk-stats {
+    display: none;
+  }
+
+  .dk-board {
+    left: 10px;
+    translate: 0 0;
+    gap: 6px;
+    padding: 6px 8px;
+  }
+
+  .dk-side {
+    gap: 6px;
+  }
+
+  .dk-side small {
+    min-width: 0;
+    font-size: 0.6875rem;
+  }
+
+  .dk-flip {
+    font-size: 1.75rem;
+  }
+
+  .dk-pause {
+    top: 12px;
+    right: 10px;
+    padding: 5px 10px;
+  }
+}
+
+/* The site colours its headings. Inside the game they take the game's ink, unless a rule here says otherwise. */
+:where(.dk) :where(h1, h2, h3, h4) {
+  color: inherit;
+}

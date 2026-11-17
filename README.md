@@ -98,35 +98,45 @@ The Vercel project `franklin-portfolio` serves franklin.rocks. It is deployed wi
 
 ## Games
 
-Each game lives in `src/components/play/<name>` as a plain engine class (three.js, its own frame loop,
-no React inside) plus a small React shell for menus, HUD and results. `src/lib/games.ts` is the list
-the cards on the home page, `/play` and `/projects` are drawn from. Sounds are synthesised in
+Each game is its own world. Nothing in a game borrows from the site: every one has its own fonts
+(loaded only on its route, from `src/app/play/<name>/fonts`), its own stylesheet next to its component,
+its own menus, HUD and results. The only thing they share is how they are built: a plain engine class
+(three.js, its own frame loop, no React inside) plus a small React shell. `src/lib/games.ts` is the
+list the cards on the home page, `/play` and `/projects` are drawn from. Sounds are synthesised in
 `src/components/play/sound.ts`, so there are no audio files.
 
-- **The Range** (`/play/range`): four aim drills. Mouse counts are turned into view angle with the
-  same degrees-per-count as Valorant, Call of Duty or Apex, and pointer lock asks for raw input.
-  Without pointer lock (touch, trackpad) a tap shoots where it lands. Append `?aim=cursor` to force
-  that mode and `?debug` to expose the engine as `window.__range` for automated play.
-- **Live Ops** (`/play/ops`): an eight week strategy game about running a live season of an invented
-  game. The rules are a pure model in `ops/model.ts` (state in, state out, seeded), so balance can be
-  simulated outside the browser; the grade thresholds come from doing exactly that. `?seed=7` replays
+| Game | Looks like | Faces |
+| ---- | ---------- | ----- |
+| The Range (`/play/range`) | a desert range at noon: clays, a dirt backstop, a range card | Saira Stencil One, Saira Condensed |
+| Live Ops (`/play/ops`) | a harbor master's ledger, with the harbor drawn from the state of the season | Fraunces, Nunito |
+| Dink (`/play/dink`) | a 1970s rec league poster with vegetables for players | Bowlby One, Rubik |
+| The Backlog (`/play/backlog`) | a photo of a desk: cutting mat, sticky notes, label tape, a memo | Permanent Marker, Special Elite |
+
+- **The Range**: four stages. Mouse counts become view angle with the same degrees-per-count as
+  Valorant, Call of Duty or Apex, and pointer lock asks for raw input. Without pointer lock (touch,
+  trackpad) a tap shoots where it lands. Every hit is recorded as an offset from the centre of its
+  target, and the results screen plots them on one paper target. `?aim=cursor` forces tap mode and
+  `?debug` exposes the engine as `window.__range`.
+- **Live Ops**: an eight week strategy game. The rules are a pure seeded model in `ops/model.ts`
+  (state in, state out), so the balance could be simulated outside the browser; the grade thresholds
+  come from doing that. `Harbor.tsx` draws the scene from the meters: boats for players, weather for
+  mood, the lighthouse for stability, lit windows for the team, crates for revenue. `?seed=7` replays
   a season.
-- **Dink** (`/play/dink`): singles pickleball on a court built to scale. Both players run on their
-  own; you choose the spot and the moment. Three opponents differ in speed, reaction time and how
-  often they miss. `?debug` exposes the engine as `window.__pickle`; the levels were tuned by stepping
-  it without drawing through a few hundred matches, with an autopilot whose timing is deliberately
-  off by different amounts.
-- **The Backlog** (`/play/backlog`): a boss fight on one round arena. All combat is worked out on
-  the ground plane; every attack is a shape on the floor that fills before it lands. `?debug` exposes
-  the engine as `window.__boss`. Its health, stamina costs and the ring's point-blank grace were set
-  by fighting it a few dozen times with bots of different reaction speed, stepping the engine without
-  drawing: a bot that never dodges loses with over half the boss left, and bots that read the floor
-  win most fights in about a minute and a half.
+- **Dink**: singles pickleball on a court built to scale. Both players run on their own; you choose
+  the spot and the moment. The three opponents differ in speed, reaction time and how often they
+  miss, and were tuned by stepping the engine through a few hundred matches without drawing.
+  `?debug` exposes it as `window.__pickle`.
+- **The Backlog**: a boss fight worked out on the ground plane. Every attack is something a desk
+  would have on it, shown on the mat before it lands. The boss's health is drawn as a burndown
+  chart. Health, stamina costs and the ring's point-blank grace were set by fighting it with bots of
+  different reaction speed. `?debug` exposes it as `window.__boss`.
 
 ## Tools
 
 Three small tools live under `/tools`, in the paper zone: a gratitude journal
-(`three-good-things`), a days-since-you-called counter (`call-home`) and a GPA calculator (`gpa`).
+(`three-good-things`), a days-since-you-called counter (`call-home`) and a PTO planner (`pto`), which
+picks the working days to take so a leave budget turns into the most days away (the search is in
+`src/components/tools/pto.ts`).
 They replace links to older versions hosted elsewhere. The first two keep their data in
 `localStorage` and send nothing anywhere; the calendar file from `call-home` is built in the page.
 `src/lib/tools.ts` is the list the cards are drawn from.
