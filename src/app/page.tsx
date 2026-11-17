@@ -4,10 +4,10 @@ import { FieldHeading } from "@/components/FieldHeading";
 import { Glass, GlassLink } from "@/components/Glass";
 import { HeroName } from "@/components/HeroName";
 import { Rotator } from "@/components/Rotator";
+import { GameCards } from "@/components/GameCards";
 import { Contact, PageWrapper } from "@/components/Shared";
 import { Stickers } from "@/components/Stickers";
 import { Trail } from "@/components/Trail";
-import { SHOTS } from "@/lib/shots";
 import { Zone } from "@/components/Zone";
 import { PenFactory } from "@/components/lab/PenFactory";
 import { SensConverter } from "@/components/lab/SensConverter";
@@ -154,41 +154,12 @@ export default function Home() {
           <div className="zone-intro">
             <FieldHeading className="h-pixel">Press start</FieldHeading>
             <p className="lede on-map">
-              Two games I made, playable right here. One is a shooter built around a single mechanic. The other is the
-              warmup I use before I queue.
+              Games I made, playable right here. I build them to learn why the good ones feel good, and because it
+              is the most fun way to test an idea.
             </p>
           </div>
 
-          <div className="card-grid two">
-            <GlassLink href="/play/signal" className="shot">
-              <span className="shot-frame">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/assets/shots/signal.jpg" alt={SHOTS.signal} width={1200} height={750} loading="lazy" />
-              </span>
-              <div className="shot-body">
-                <h3 className="h3">Signal // Noise</h3>
-                <p>
-                  A twin-stick shooter where enemies are sound waves and you tune your weapon to their band. It ships
-                  with its design doc.
-                </p>
-                <p className="meta">Keyboard and mouse</p>
-              </div>
-            </GlassLink>
-            <GlassLink href="/play/warmup" className="shot">
-              <span className="shot-frame">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/assets/shots/warmup.jpg" alt={SHOTS.warmup} width={1200} height={750} loading="lazy" />
-              </span>
-              <div className="shot-body">
-                <h3 className="h3">Range Warmup</h3>
-                <p>
-                  An aim trainer that matches your real sensitivity in Valorant, Call of Duty, or Apex, so the muscle
-                  memory carries over.
-                </p>
-                <p className="meta">Mouse required</p>
-              </div>
-            </GlassLink>
-          </div>
+          <GameCards lazy />
 
           <Glass kind="card" className="demo">
             <div className="demo-head">

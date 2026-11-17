@@ -1,6 +1,7 @@
 # franklin.rocks
 
-Personal site for Franklin Cheng. Next.js (App Router), Tailwind v4, no animation or 3D libraries.
+Personal site for Franklin Cheng. Next.js (App Router), Tailwind v4. The site itself uses no animation
+or 3D libraries; the games under `/play` use three.js, which loads only on their pages.
 
 ```bash
 npm install
@@ -82,17 +83,27 @@ falls back to a flat colour of its own (see "Fallback grounds" in `globals.css`)
 by the DOM again.
 
 Add `?still` to any URL for a motionless, full-quality render. The share image
-(`src/app/opengraph-image.jpg`) is a capture of the home page in that mode, and the game screenshots in
-`public/assets/shots` are crops of real frames from the two games.
+(`src/app/opengraph-image.jpg`) is a capture of the home page in that mode, and the game pictures in
+`public/assets/shots` are real frames captured from each game.
 
 ## Fonts
 
 All self-hosted from `src/app/fonts`, all under the SIL Open Font License (licence files sit next to the
 fonts): Archivo (the site's voice, used across its width and weight axes), Newsreader (the personal
 zone), Caveat (margin notes), Jersey 25 (the arcade) and JetBrains Mono (figures and annotations).
-Instrument Serif is loaded only on `/play`, because the Signal // Noise canvas draws with it.
-
 ## Deploying
 
 The Vercel project `franklin-portfolio` serves franklin.rocks. It is deployed with the Vercel CLI
 (`vercel` for a preview, `vercel --prod` for production).
+
+## Games
+
+Each game lives in `src/components/play/<name>` as a plain engine class (three.js, its own frame loop,
+no React inside) plus a small React shell for menus, HUD and results. `src/lib/games.ts` is the list
+the cards on the home page, `/play` and `/projects` are drawn from. Sounds are synthesised in
+`src/components/play/sound.ts`, so there are no audio files.
+
+- **The Range** (`/play/range`): four aim drills. Mouse counts are turned into view angle with the
+  same degrees-per-count as Valorant, Call of Duty or Apex, and pointer lock asks for raw input.
+  Without pointer lock (touch, trackpad) a tap shoots where it lands. Append `?aim=cursor` to force
+  that mode and `?debug` to expose the engine as `window.__range` for automated play.

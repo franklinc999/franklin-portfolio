@@ -1410,6 +1410,331 @@
     max-width: 54ch;
   }
 
+  /* ---------- Games ---------- */
+
+  .card-grid.one {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  @media (min-width: 900px) {
+    /* A single game gets the picture beside the words instead of a lonely column. */
+    .card-grid.one .shot {
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+      align-items: center;
+      padding: 12px;
+    }
+
+    .card-grid.one .shot-body {
+      padding: 12px 20px 12px 28px;
+    }
+  }
+
+  /* The frame a game is played in. Each game draws to the canvas and lays its own panels over it. */
+  .game-stage {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    overflow: hidden;
+    border-radius: 22px;
+    background: #14060d;
+    color: #fff3ef;
+    box-shadow:
+      0 0 0 1px rgba(255, 214, 220, 0.22),
+      0 30px 60px -30px rgba(0, 0, 0, 0.8);
+    --color-text: #fff3ef;
+    --color-text-muted: #f1ccd1;
+    --color-text-faint: #efc6cd;
+    --signal: #ff4d5e;
+  }
+
+  @media (min-width: 760px) {
+    .game-stage {
+      aspect-ratio: 16 / 9;
+    }
+  }
+
+  .game-loading {
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    color: #efc6cd;
+  }
+
+  .game-canvas {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+  }
+
+  .game-stage[data-phase="playing"] .game-canvas {
+    cursor: crosshair;
+  }
+
+  .game-stage[data-locked] .game-canvas {
+    cursor: none;
+  }
+
+  /* Menus, pause and results sit over the scene on smoked glass. */
+  .game-panel {
+    position: relative;
+    display: grid;
+    gap: 16px;
+    width: min(100% - 28px, 880px);
+    max-height: calc(100% - 28px);
+    overflow-y: auto;
+    padding: clamp(18px, 2.6vw, 30px);
+    border-radius: 20px;
+    background: rgba(20, 6, 13, 0.78);
+    -webkit-backdrop-filter: blur(14px) saturate(1.3);
+    backdrop-filter: blur(14px) saturate(1.3);
+    box-shadow: inset 0 0 0 1px rgba(255, 214, 220, 0.2);
+  }
+
+  .game-panel-small {
+    width: min(100% - 28px, 430px);
+    justify-items: center;
+    text-align: center;
+  }
+
+  .game-title {
+    font-size: clamp(3rem, 7vw, 5.25rem);
+    line-height: 0.9;
+  }
+
+  .game-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .game-panel-small .game-actions {
+    justify-content: center;
+  }
+
+  .game-result {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 24px;
+    width: 100%;
+    padding-block: 14px;
+    border-block: 1px solid rgba(255, 214, 220, 0.2);
+    text-align: left;
+  }
+
+  .game-result dt,
+  .game-hud-side dt {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: #efc6cd;
+  }
+
+  .game-result dd {
+    font-family: var(--font-pixel);
+    font-size: 1.75rem;
+    line-height: 1.1;
+  }
+
+  .game-hud {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.7);
+  }
+
+  .game-hud-main {
+    position: absolute;
+    top: 14px;
+    left: 20px;
+    font-family: var(--font-pixel);
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    line-height: 1;
+  }
+
+  .game-hud-side {
+    position: absolute;
+    top: 16px;
+    right: 20px;
+    display: flex;
+    gap: 22px;
+    text-align: right;
+  }
+
+  .game-hud-side dd {
+    font-family: var(--font-pixel);
+    font-size: 1.625rem;
+    line-height: 1.05;
+  }
+
+  .game-hud-foot {
+    position: absolute;
+    bottom: 14px;
+    left: 20px;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    color: #f1ccd1;
+  }
+
+  .game-notes ul {
+    display: grid;
+    gap: 8px;
+    margin-top: 12px;
+    padding-left: 1.1em;
+    list-style: disc;
+    max-width: 62ch;
+  }
+
+  /* ---------- Game: the range ---------- */
+
+  .range-cross {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 22px;
+    height: 22px;
+    translate: -50% -50%;
+    background:
+      linear-gradient(#fff, #fff) center / 2px 100% no-repeat,
+      linear-gradient(#fff, #fff) center / 100% 2px no-repeat;
+    -webkit-mask: radial-gradient(circle, transparent 3.5px, #000 4px);
+    mask: radial-gradient(circle, transparent 3.5px, #000 4px);
+    filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.9));
+  }
+
+  .range-cross::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 2px;
+    height: 2px;
+    translate: -50% -50%;
+    background: #fff;
+  }
+
+  .range-menu {
+    align-items: start;
+  }
+
+  @media (min-width: 860px) {
+    .range-menu {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+      gap: 28px;
+    }
+  }
+
+  .range-drills {
+    display: grid;
+    gap: 8px;
+  }
+
+  .range-drills legend {
+    margin-bottom: 8px;
+  }
+
+  .range-drill {
+    position: relative;
+    display: block;
+    cursor: pointer;
+  }
+
+  .range-drill input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .range-drill span {
+    display: block;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    line-height: 1.35;
+    color: #f1ccd1;
+    box-shadow: inset 0 0 0 1px rgba(255, 214, 220, 0.2);
+    transition:
+      background-color 0.16s ease,
+      box-shadow 0.16s ease;
+  }
+
+  .range-drill b {
+    display: block;
+    font-family: var(--font-pixel);
+    font-weight: 400;
+    font-size: 1.5rem;
+    line-height: 1;
+    color: #fff3ef;
+  }
+
+  .range-drill input:checked + span {
+    background: rgba(255, 77, 94, 0.2);
+    box-shadow: inset 0 0 0 2px #ff4d5e;
+  }
+
+  .range-drill input:focus-visible + span {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+  }
+
+  .range-settings {
+    display: grid;
+    gap: 14px;
+  }
+
+  .range-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  /* On a phone the menu sets the height of the stage, so nothing has to scroll inside it. */
+  @media (max-width: 759px) {
+    .game-stage[data-phase="menu"] {
+      aspect-ratio: auto;
+    }
+
+    .game-stage[data-phase="menu"] .game-panel {
+      max-height: none;
+      margin-block: 14px;
+    }
+  }
+
+  .range-touch-only {
+    display: none;
+  }
+
+  /* Sensitivity matching means nothing without a mouse. */
+  @media (hover: none) and (pointer: coarse) {
+    .range-settings .range-mouse-only {
+      display: none;
+    }
+
+    .range-touch-only {
+      display: block;
+    }
+  }
+
+  .range-fields .field-row {
+    min-width: 0;
+  }
+
+  .range-fields input {
+    width: 100%;
+    min-width: 0;
+    background: rgba(0, 0, 0, 0.35);
+  }
+
+  .range-note {
+    font-size: 0.875rem;
+    line-height: 1.4;
+    color: #f1ccd1;
+  }
+
   /* ---------- Lab: shared controls ---------- */
 
   .seg {
@@ -2872,102 +3197,11 @@
 
   /* ---------- Game pages ---------- */
 
-  .play-grid {
-    grid-template-columns: 1fr;
-  }
-
-  @media (min-width: 860px) {
-    .play-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
-
   .contact-page {
     display: grid;
     align-content: center;
     min-height: calc(100svh - 120px);
     padding-top: 120px;
-  }
-
-  .doc-wrap {
-    padding-top: clamp(112px, 15vh, 160px);
-    padding-bottom: 40px;
-  }
-
-  .game-doc {
-    padding: clamp(22px, 4vw, 56px);
-  }
-
-  .game-doc p,
-  .game-doc li {
-    max-width: 58ch;
-  }
-
-  .doc-h {
-    margin-bottom: 16px;
-    font-stretch: 110%;
-    font-weight: 700;
-    font-size: 1.5rem;
-    line-height: 1.15;
-    letter-spacing: -0.012em;
-  }
-
-  .doc-steps {
-    padding-left: 1.4rem;
-    list-style: decimal;
-  }
-
-  .doc-steps li::marker {
-    font-variant-numeric: tabular-nums;
-    color: var(--color-text-faint);
-  }
-
-  .game-loading {
-    display: grid;
-    place-items: center;
-    width: 100%;
-    max-width: 960px;
-    margin-inline: auto;
-    border-radius: 20px;
-    color: var(--color-text-faint);
-  }
-
-  .keys {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px 26px;
-    max-width: 960px;
-    margin: 18px auto 0;
-    font-size: 0.875rem;
-    color: var(--color-text-muted);
-  }
-
-  .keys li {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-  }
-
-  .keys span {
-    margin-left: 4px;
-  }
-
-  kbd {
-    display: inline-grid;
-    place-items: center;
-    min-width: 26px;
-    height: 26px;
-    padding: 0 7px;
-    border-radius: 8px;
-    background: var(--well);
-    box-shadow:
-      inset 0 0 0 1px var(--color-border-glow),
-      inset 0 -2px 0 var(--color-border);
-    font-family: var(--font-mono);
-    font-weight: 600;
-    font-size: 0.75rem;
-    color: var(--color-text);
   }
 
   .font-serif {

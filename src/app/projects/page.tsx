@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
+import { GameCards } from "@/components/GameCards";
 import { Glass, GlassLink } from "@/components/Glass";
 import { PageIntro, PageWrapper } from "@/components/Shared";
-import { SHOTS } from "@/lib/shots";
 import { Zone } from "@/components/Zone";
 import { AgentLine } from "@/components/lab/AgentLine";
 import { PenFactory } from "@/components/lab/PenFactory";
@@ -10,7 +10,7 @@ import { SlabAnatomy } from "@/components/lab/SlabAnatomy";
 
 export const metadata: Metadata = {
   title: "Projects",
-  description: "Things Franklin Cheng has built: two browser games, an interview copilot, and a handful of small tools.",
+  description: "Things Franklin Cheng has built: browser games, an always-on team of agents, and a handful of small tools.",
 };
 
 type Project = {
@@ -113,35 +113,8 @@ export default function ProjectsPage() {
         </PageIntro>
 
         <div className="wrap stack">
-          <section className="card-grid two" aria-label="Games">
-            <GlassLink href="/play/signal" className="shot">
-              <span className="shot-frame">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/assets/shots/signal.jpg" alt={SHOTS.signal} width={1200} height={750} />
-              </span>
-              <div className="shot-body">
-                <h2 className="h3">Signal // Noise</h2>
-                <p>
-                  A twin-stick shooter where enemies are sound waves you tune your weapon to. I built it to study
-                  readability, telegraphing, and the tuning numbers behind game feel. It ships with a full design doc.
-                </p>
-                <p className="meta">Game, canvas and Web Audio, 2026</p>
-              </div>
-            </GlassLink>
-            <GlassLink href="/play/warmup" className="shot">
-              <span className="shot-frame">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/assets/shots/warmup.jpg" alt={SHOTS.warmup} width={1200} height={750} />
-              </span>
-              <div className="shot-body">
-                <h2 className="h3">Range Warmup</h2>
-                <p>
-                  A browser aim trainer that matches your real game sensitivity. Pick Valorant, Call of Duty, or Apex,
-                  enter your DPI and sens, and the cm/360 math scales mouse input so muscle memory carries over.
-                </p>
-                <p className="meta">Game, canvas, 2026</p>
-              </div>
-            </GlassLink>
+          <section aria-label="Games">
+            <GameCards as="h2" />
           </section>
 
           <section id="pen-factory" aria-labelledby="pen-title">
