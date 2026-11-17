@@ -125,6 +125,12 @@ list the cards on the home page, `/play` and `/projects` are drawn from. Sounds 
   all four by painting each figure into the rectangle of its own slot in the page, so the layout is
   ordinary CSS and each cell is a real link. Drag spins a figure, the pause switch stops them, and
   `?debug` exposes the engine as `window.__cast`.
+- **The scroll tour** (`Tour.tsx`, `TourEngine.ts`, same folder): the games section of the home
+  page. A sticky, transparent canvas sits behind four ordinary blocks of text and links; as they
+  scroll past, one camera travels along a row of floating islands built from the same figures as
+  the cast (`figures.ts`). The page passes in scroll progress and the engine eases toward it, so
+  the move is one unbroken shot in either direction. With reduced motion, or without WebGL, the
+  section is the plain game cards. `?debug` exposes the engine as `window.__tour`.
 - **Live Ops**: an eight week strategy game. The rules are a pure seeded model in `ops/model.ts`
   (state in, state out), so the balance could be simulated outside the browser; the grade thresholds
   come from doing that. `Harbor.tsx` draws the scene from the meters: boats for players, weather for

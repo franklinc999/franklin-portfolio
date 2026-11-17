@@ -4,7 +4,7 @@ import { FieldHeading } from "@/components/FieldHeading";
 import { Glass, GlassLink } from "@/components/Glass";
 import { HeroName } from "@/components/HeroName";
 import { Rotator } from "@/components/Rotator";
-import { GameCards } from "@/components/GameCards";
+import { Tour } from "@/components/play/cast/Tour";
 import { TOOLS } from "@/lib/tools";
 import { Contact, PageWrapper } from "@/components/Shared";
 import { Stickers } from "@/components/Stickers";
@@ -143,8 +143,11 @@ export default function Home() {
             </p>
           </div>
 
-          <GameCards lazy />
+        </div>
 
+        <Tour />
+
+        <div className="wrap stack">
           <Glass kind="card" className="demo">
             <div className="demo-head">
               <h3 className="h3">Carry your aim between games</h3>

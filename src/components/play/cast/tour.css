@@ -1,0 +1,87 @@
+/*
+  The scroll tour on the home page. The stage sticks to the screen while the four steps scroll past
+  in front of it; the canvas inside it is transparent, so the arcade ground shows between islands.
+*/
+
+.tour {
+  position: relative;
+  margin-block: clamp(0px, 2vw, 24px) clamp(36px, 6vw, 72px);
+}
+
+.tour-stage {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100svh;
+  margin-bottom: -100vh;
+  margin-bottom: -100svh;
+  pointer-events: none;
+}
+
+.tour-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+
+.tour[data-ready] .tour-canvas {
+  opacity: 1;
+}
+
+.tour-steps {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tour-step {
+  display: grid;
+  align-items: end;
+  min-height: 100vh;
+  min-height: 100svh;
+  /* Clear of the dock along the bottom of a phone. */
+  padding-bottom: calc(108px + env(safe-area-inset-bottom, 0px));
+}
+
+.tour-words {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  max-width: 30rem;
+}
+
+.tour-kind {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.tour .tour-name {
+  font-size: clamp(2.75rem, 11vw, 4.5rem);
+  line-height: 0.92;
+}
+
+.tour-blurb {
+  margin-bottom: 8px;
+  font-size: 1.0625rem;
+  line-height: 1.45;
+  color: var(--color-text);
+}
+
+@media (min-width: 900px) {
+  .tour-step {
+    align-items: center;
+    padding-bottom: 0;
+  }
+
+  .tour-words {
+    max-width: 24rem;
+  }
+
+  .tour .tour-name {
+    font-size: clamp(3.5rem, 6vw, 5.25rem);
+  }
+}
