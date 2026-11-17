@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 // Degrees turned per mouse count at sensitivity 1, the same constants the
-// Range Warmup trainer uses.
+// Range aim trainer uses.
 const YAW = { Valorant: 0.07, "Call of Duty": 0.0066, Apex: 0.022 } as const;
 type Game = keyof typeof YAW;
 const GAMES = Object.keys(YAW) as Game[];
