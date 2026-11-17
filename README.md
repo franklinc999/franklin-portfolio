@@ -107,3 +107,7 @@ the cards on the home page, `/play` and `/projects` are drawn from. Sounds are s
   same degrees-per-count as Valorant, Call of Duty or Apex, and pointer lock asks for raw input.
   Without pointer lock (touch, trackpad) a tap shoots where it lands. Append `?aim=cursor` to force
   that mode and `?debug` to expose the engine as `window.__range` for automated play.
+- **Live Ops** (`/play/ops`): an eight week strategy game about running a live season of an invented
+  game. The rules are a pure model in `ops/model.ts` (state in, state out, seeded), so balance can be
+  simulated outside the browser; the grade thresholds come from doing exactly that. `?seed=7` replays
+  a season.

@@ -19,4 +19,13 @@ export const GAMES: GameCard[] = [
     needs: "Best with a mouse",
     alt: "The Range: three glowing coral targets on a far wall, seen over the sights of a rifle in a dark plum hall",
   },
+  {
+    slug: "ops",
+    name: "Live Ops",
+    kind: "Strategy, about ten minutes",
+    blurb:
+      "Run eight weeks of a live game that does not exist. Ship new things, sell a little, fix what is broken, and try to have a team left at the end.",
+    needs: "Works on a phone",
+    alt: "Live Ops: a board of cards to ship this week, above meters for players, mood, stability, team and revenue",
+  },
 ];
