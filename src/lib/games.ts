@@ -28,4 +28,13 @@ export const GAMES: GameCard[] = [
     needs: "Works on a phone",
     alt: "Live Ops: a board of cards to ship this week, above meters for players, mood, stability, team and revenue",
   },
+  {
+    slug: "dink",
+    name: "Dink",
+    kind: "3D pickleball",
+    blurb:
+      "Singles against the computer on a real-size court at dusk. Pick your spot, time the swing, and work the other player out of position.",
+    needs: "Mouse, finger or keyboard",
+    alt: "Dink: a pickleball court at dusk seen from behind the near baseline, with palms against a coral sky",
+  },
 ];

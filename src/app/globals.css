@@ -1735,6 +1735,130 @@
     color: #f1ccd1;
   }
 
+  /* ---------- Game: dink ---------- */
+
+  .pickle[data-phase="playing"] .game-canvas {
+    cursor: crosshair;
+  }
+
+  .pickle-score {
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    display: flex;
+    gap: 6px;
+    translate: -50% 0;
+  }
+
+  .pickle-score span {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 14px;
+    border-radius: 12px;
+    background: rgba(20, 6, 13, 0.72);
+    box-shadow: inset 0 0 0 1px rgba(255, 214, 220, 0.2);
+  }
+
+  @media (max-width: 600px) {
+    .pickle-score {
+      left: 14px;
+      translate: 0 0;
+    }
+  }
+
+  /* The server's side of the scoreboard is lit. */
+  .pickle-score span[data-serving] {
+    box-shadow: inset 0 0 0 2px #e9ff5c;
+  }
+
+  .pickle-score b {
+    min-width: 1.1ch;
+    font-family: var(--font-pixel);
+    font-weight: 400;
+    font-size: 2.25rem;
+    line-height: 1;
+    text-align: center;
+  }
+
+  .pickle-score small {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: #f1ccd1;
+  }
+
+  .pickle-call,
+  .pickle-timing {
+    position: absolute;
+    left: 50%;
+    translate: -50% 0;
+    padding: 4px 16px;
+    border-radius: 12px;
+    font-family: var(--font-pixel);
+    line-height: 1.1;
+    white-space: nowrap;
+    background: rgba(20, 6, 13, 0.72);
+  }
+
+  .pickle-call {
+    top: 34%;
+    font-size: clamp(2rem, 5vw, 3.25rem);
+    color: #ff97a1;
+  }
+
+  .pickle-call[data-won] {
+    color: #8fe3c0;
+  }
+
+  .pickle-timing {
+    bottom: 16%;
+    font-size: 1.5rem;
+    color: #ffd9a3;
+  }
+
+  .pickle-timing[data-timing="Clean"] {
+    color: #8fe3c0;
+  }
+
+  .pickle-timing[data-timing="Whiff"] {
+    color: #ff97a1;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .pickle-call,
+    .pickle-timing {
+      animation: pickle-pop 0.22s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    }
+  }
+
+  @keyframes pickle-pop {
+    from {
+      opacity: 0;
+      scale: 0.8;
+    }
+  }
+
+  .pickle-pause {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    min-height: 40px;
+    padding-inline: 14px;
+    font-size: 0.8125rem;
+    pointer-events: auto;
+  }
+
+  .pickle-menu {
+    align-items: start;
+  }
+
+  @media (min-width: 860px) {
+    .pickle-menu {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+      gap: 28px;
+    }
+  }
+
   /* ---------- Game: live ops ---------- */
 
   .ops {

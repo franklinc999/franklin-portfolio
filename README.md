@@ -111,3 +111,8 @@ the cards on the home page, `/play` and `/projects` are drawn from. Sounds are s
   game. The rules are a pure model in `ops/model.ts` (state in, state out, seeded), so balance can be
   simulated outside the browser; the grade thresholds come from doing exactly that. `?seed=7` replays
   a season.
+- **Dink** (`/play/dink`): singles pickleball on a court built to scale. Both players run on their
+  own; you choose the spot and the moment. Three opponents differ in speed, reaction time and how
+  often they miss. `?debug` exposes the engine as `window.__pickle`; the levels were tuned by stepping
+  it without drawing through a few hundred matches, with an autopilot whose timing is deliberately
+  off by different amounts.
