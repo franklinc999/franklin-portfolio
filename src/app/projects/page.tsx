@@ -4,6 +4,7 @@ import { PageIntro, PageWrapper } from "@/components/Shared";
 import { SHOTS } from "@/lib/shots";
 import { Zone } from "@/components/Zone";
 import { AgentLine } from "@/components/lab/AgentLine";
+import { PenFactory } from "@/components/lab/PenFactory";
 import { GlassPlayground } from "@/components/lab/GlassPlayground";
 import { SlabAnatomy } from "@/components/lab/SlabAnatomy";
 
@@ -75,7 +76,7 @@ const MORE: Project[] = [
 ];
 
 const HERE = [
-  { name: "The agent line", where: "/#workshop", description: "A toy pipeline you can break, to show why the checks around an agent matter more than the agent." },
+  { name: "The Pen Factory", where: "/#workshop", description: "A model of my always-on agent team: nine operators, a self-check, a fixer, and one switch that stands it all down." },
   { name: "Sensitivity converter", where: "/#arcade", description: "Carries your mouse sensitivity from one shooter to another by matching the distance of a full turn." },
   { name: "Gongfu timer", where: "/#off-the-clock", description: "Counts tea steeps in a glass cup that fills as the seconds run." },
 ];
@@ -143,10 +144,26 @@ export default function ProjectsPage() {
             </GlassLink>
           </section>
 
+          <section id="pen-factory" aria-labelledby="pen-title">
+            <Glass kind="sheet" className="demo">
+              <div className="demo-head">
+                <p className="annot">fig. 1: a model of the real thing, with made-up work</p>
+                <h2 id="pen-title" className="h3">
+                  The Pen Factory
+                </h2>
+                <p>
+                  An always-on team of agents that runs on my laptop: one process, nine operators, 26 scheduled jobs.
+                  Always on, draft first, self-healing. The work on screen is invented.
+                </p>
+              </div>
+              <PenFactory />
+            </Glass>
+          </section>
+
           <section aria-labelledby="line-title">
             <Glass kind="sheet" className="demo">
               <div className="demo-head">
-                <p className="annot">fig. 1: a toy model, not a real system</p>
+                <p className="annot">fig. 2: a toy model, not a real system</p>
                 <h2 id="line-title" className="h3">
                   Try to break this pipeline
                 </h2>
@@ -162,7 +179,7 @@ export default function ProjectsPage() {
           <section id="glass" aria-labelledby="glass-title">
             <Glass kind="sheet" className="demo">
               <div className="demo-head">
-                <p className="annot">fig. 2: the glass on this site</p>
+                <p className="annot">fig. 3: the glass on this site</p>
                 <h2 id="glass-title" className="h3">
                   How the glass works
                 </h2>

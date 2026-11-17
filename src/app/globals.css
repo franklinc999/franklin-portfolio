@@ -1720,6 +1720,281 @@
     gap: 10px;
   }
 
+  /* ---------- Lab: the Pen Factory ---------- */
+
+  .pen {
+    display: grid;
+    gap: 22px 28px;
+  }
+
+  @media (min-width: 1000px) {
+    .pen {
+      grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+      align-items: start;
+    }
+  }
+
+  .pen-floor {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  @media (min-width: 520px) {
+    .pen-floor {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  /* One operator's room. Its outline says what it is doing. */
+  .pen-room {
+    display: grid;
+    gap: 4px;
+    align-content: start;
+    min-width: 0;
+    padding: 12px;
+    border-radius: 14px;
+    background: var(--well);
+    box-shadow: inset 0 0 0 1px var(--color-border);
+    transition: box-shadow 0.2s ease;
+  }
+
+  .pen-room[data-state="work"] {
+    box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--signal) 75%, transparent);
+  }
+
+  .pen-room[data-state="silent"] {
+    box-shadow: inset 0 0 0 1.5px #ff8a96;
+  }
+
+  .pen-room[data-state="wait"] {
+    box-shadow: inset 0 0 0 1.5px var(--color-text);
+  }
+
+  .pen-sprite {
+    width: 66px;
+    height: 48px;
+    margin-bottom: 4px;
+    shape-rendering: crispEdges;
+  }
+
+  .pen-metal {
+    fill: #dfe7ff;
+  }
+
+  .pen-eye {
+    fill: #0a2478;
+  }
+
+  .pen-desk {
+    fill: color-mix(in srgb, var(--color-text) 50%, transparent);
+  }
+
+  .pen-monitor {
+    fill: #06103d;
+  }
+
+  .pen-screen {
+    opacity: 0.22;
+  }
+
+  .pen-sprite[data-state="work"] .pen-screen,
+  .pen-sprite[data-state="wait"] .pen-screen {
+    opacity: 1;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .pen[data-running] .pen-sprite[data-state="work"] .pen-arms {
+      animation: pen-type 0.3s steps(2, jump-none) infinite;
+    }
+
+    .pen[data-running] .pen-sprite[data-state="work"] .pen-screen {
+      animation: pen-screen 0.9s steps(2, jump-none) infinite;
+    }
+  }
+
+  @keyframes pen-type {
+    to {
+      transform: translateY(1px);
+    }
+  }
+
+  @keyframes pen-screen {
+    to {
+      opacity: 0.6;
+    }
+  }
+
+  .pen-role {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 0.8125rem;
+    color: var(--color-text);
+  }
+
+  .pen-lamp {
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--color-text) 30%, transparent);
+  }
+
+  .pen-room[data-state="work"] .pen-lamp {
+    background: var(--signal);
+  }
+
+  .pen-room[data-state="silent"] .pen-lamp {
+    background: #ff6272;
+  }
+
+  .pen-room[data-state="wait"] .pen-lamp {
+    background: var(--color-text);
+  }
+
+  .pen-job {
+    font-size: 0.8125rem;
+    line-height: 1.35;
+    color: var(--color-text-muted);
+  }
+
+  .pen-level {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 3px 7px;
+    margin-top: 2px;
+    font-size: 0.75rem;
+    line-height: 1.3;
+    color: var(--color-text-faint);
+  }
+
+  .pen-level span {
+    display: inline-flex;
+    gap: 2px;
+  }
+
+  .pen-level i {
+    width: 6px;
+    height: 6px;
+    background: color-mix(in srgb, var(--color-text) 24%, transparent);
+  }
+
+  .pen-level i[data-on] {
+    background: var(--signal);
+  }
+
+  .pen-side {
+    display: grid;
+    gap: 16px;
+    align-content: start;
+  }
+
+  .pen-counts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .pen-counts dt {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    line-height: 1.3;
+    color: var(--color-text-faint);
+  }
+
+  .pen-counts dd {
+    font-stretch: 78%;
+    font-weight: 700;
+    font-size: 2.25rem;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .pen-counts dd[data-bump] {
+      transform-origin: left bottom;
+      animation: count-bump 0.24s var(--ease-out);
+    }
+  }
+
+  .pen-approvals {
+    display: grid;
+    gap: 8px;
+    padding-top: 14px;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .pen-approvals ul {
+    display: grid;
+    gap: 8px;
+  }
+
+  .pen-approvals li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 12px;
+    font-size: 0.9375rem;
+    color: var(--color-text);
+  }
+
+  .pen-approvals .btn {
+    min-height: 40px;
+    padding: 0 16px;
+  }
+
+  .pen-empty {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+  }
+
+  .pen-log {
+    display: grid;
+    gap: 6px;
+    min-height: 7.4rem;
+    align-content: start;
+    padding-top: 14px;
+    border-top: 1px solid var(--color-border);
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    color: var(--color-text-muted);
+  }
+
+  .pen-log li:first-child {
+    color: var(--color-text);
+  }
+
+  .pen-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  /* What the real one promises, in its owner's words. */
+  .pen-rules {
+    display: grid;
+    gap: 10px 28px;
+    margin-top: clamp(18px, 2.4vw, 28px);
+    padding-top: 18px;
+    border-top: 1px solid var(--color-border);
+    font-size: 0.9375rem;
+    line-height: 1.45;
+    color: var(--color-text);
+  }
+
+  @media (min-width: 860px) {
+    .pen-rules {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
   /* ---------- Lab: anatomy of a slab ---------- */
 
   .anatomy {

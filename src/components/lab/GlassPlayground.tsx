@@ -63,7 +63,7 @@ export function GlassPlayground() {
   return (
     <div className="playground">
       <div ref={stageRef} className="playground-stage">
-        <p className="annot on-map playground-caption">fig. 3: a live slab on open ground</p>
+        <p className="annot on-map playground-caption">fig. 4: a live slab on open ground</p>
         <div
           ref={slabRef}
           className="glass playground-slab"

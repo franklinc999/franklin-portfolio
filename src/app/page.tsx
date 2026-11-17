@@ -9,7 +9,7 @@ import { Stickers } from "@/components/Stickers";
 import { Trail } from "@/components/Trail";
 import { SHOTS } from "@/lib/shots";
 import { Zone } from "@/components/Zone";
-import { AgentLine } from "@/components/lab/AgentLine";
+import { PenFactory } from "@/components/lab/PenFactory";
 import { SensConverter } from "@/components/lab/SensConverter";
 import { TeaTimer } from "@/components/lab/TeaTimer";
 
@@ -87,7 +87,7 @@ export default function Home() {
       <Zone theme="blueprint" id="workshop">
         <div className="wrap stack">
           <div className="zone-intro">
-            <p className="annot on-map">fig. 1: a toy model, not a real system</p>
+            <p className="annot on-map">fig. 1: a model of the real thing, with made-up work</p>
             <FieldHeading className="h-zone">From the workshop</FieldHeading>
             <p className="lede on-map">
               I build agents for work that repeats. The agent is the easy part. What decides whether you can trust
@@ -97,13 +97,19 @@ export default function Home() {
 
           <Glass kind="sheet" className="demo">
             <div className="demo-head">
-              <h3 className="h3">Try to break this pipeline</h3>
+              <h3 className="h3">The Pen Factory</h3>
               <p>
-                Tasks ride the line from intake to ship. Send a bad one, switch the checker off, or stall the writer,
-                and watch what the line does about it.
+                An always-on team of agents that runs on my laptop: one process, nine operators, 26 scheduled jobs.
+                Each operator has a job and an autonomy level. This is a model of it, and the work on screen is
+                invented.
               </p>
             </div>
-            <AgentLine />
+            <PenFactory />
+            <ul className="pen-rules">
+              <li>Every finished report lands in Deliverables, self-checked.</li>
+              <li>Exit 0 is not success: the fixer watches outcomes.</li>
+              <li>One click stands everything down. Nothing posts without my approval.</li>
+            </ul>
           </Glass>
 
           <div>
