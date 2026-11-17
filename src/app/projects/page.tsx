@@ -4,6 +4,7 @@ import { PageIntro, PageWrapper } from "@/components/Shared";
 import { SHOTS } from "@/lib/shots";
 import { Zone } from "@/components/Zone";
 import { AgentLine } from "@/components/lab/AgentLine";
+import { GlassPlayground } from "@/components/lab/GlassPlayground";
 import { SlabAnatomy } from "@/components/lab/SlabAnatomy";
 
 export const metadata: Metadata = {
@@ -173,6 +174,7 @@ export default function ProjectsPage() {
               </div>
               <SlabAnatomy />
             </Glass>
+            <GlassPlayground />
           </section>
 
           <section aria-labelledby="more-title">

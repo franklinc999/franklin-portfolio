@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { Field } from "@/components/Field";
 import { MotionToggle } from "@/components/MotionToggle";
+import { Sparks } from "@/components/Sparks";
 import { Nav } from "@/components/Nav";
 import "./globals.css";
 
@@ -82,6 +83,7 @@ export default function RootLayout({
         <Field />
         <Nav />
         <MotionToggle />
+        <Sparks />
         <div className="app">{children}</div>
       </body>
     </html>

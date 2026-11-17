@@ -6,6 +6,7 @@ import { HeroName } from "@/components/HeroName";
 import { Rotator } from "@/components/Rotator";
 import { Contact, PageWrapper } from "@/components/Shared";
 import { Stickers } from "@/components/Stickers";
+import { Trail } from "@/components/Trail";
 import { SHOTS } from "@/lib/shots";
 import { Zone } from "@/components/Zone";
 import { AgentLine } from "@/components/lab/AgentLine";
@@ -19,6 +20,7 @@ const LOVES = ["Valorant", "League of Legends", "Call of Duty", "Cooking", "Tea"
 export default function Home() {
   return (
     <PageWrapper ground="sunset">
+      <Trail />
       <Zone theme="abyss">
         <section className="hero">
           <Badge />

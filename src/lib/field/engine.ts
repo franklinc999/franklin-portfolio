@@ -10,7 +10,7 @@ import type { ThemeName } from "./shader";
 
 export type GlassKind = "panel" | "card" | "sheet" | "badge" | "pill" | "drop";
 
-type Params = {
+export type Params = {
   bezel: number;
   strength: number;
   frost: number;
@@ -49,6 +49,8 @@ type Entry = {
   geom: Geometry | null;
   explicit: boolean;
   live: boolean;
+  /** Optics set by hand for this one slab, over its preset. */
+  tune: Partial<Params> | null;
   /** null until first seen; true if the slab starts below the fold and should rise in. */
   rise: boolean | null;
 };
@@ -119,6 +121,13 @@ let pointerX = -1e5;
 let pointerY = -1e5;
 let pointerOn = 0;
 let pointerTarget = 0;
+// The footpath: how far down the page the reader is, the furthest they have
+// been, and how visible the path is.
+let trailOn = false;
+let trailFresh = false;
+let trailHead = 0;
+let trailFar = 0;
+let trailAmount = 0;
 let pointerBusy = false; // the pointer is over a slab or a control
 const light = { x: -0.55, y: -0.835 };
 
@@ -196,6 +205,7 @@ function makeEntry(el: HTMLElement, kind: GlassKind, order: number, explicit: bo
     geom: null,
     explicit,
     live: false,
+    tune: null,
     rise: null,
   };
 }
@@ -254,6 +264,8 @@ function setupGL() {
     "uTU",
     "uTP",
     "uTextScale",
+    "uTrail",
+    "uTrailFar",
   ]) {
     uni[name] = gl.getUniformLocation(program, name);
   }
@@ -470,7 +482,7 @@ function collectGlass(top: number, sy: number, dt: number) {
       e.hover = e.hoverTarget;
     }
 
-    const p = PRESETS[e.kind];
+    const p = e.tune ? { ...PRESETS[e.kind], ...e.tune } : PRESETS[e.kind];
     const half = Math.min(g.w, g.h) / 2;
     const radius = Math.min(e.radius, half);
     const o = i * 4;
@@ -626,6 +638,33 @@ function frame(now: number) {
 
   updateDrop(dt, sy);
 
+  // The marker walks to where the reader is; the path stays drawn as far as
+  // they have been. With reduced motion the whole path is simply there.
+  if (trailOn || trailAmount > 0.004) {
+    const end = Math.max(0, (canvas.parentElement?.offsetHeight ?? cssH) - 190);
+    const want = Math.min(end, sy + vh * 0.6);
+    if (trailFresh) {
+      trailFresh = false;
+      trailHead = want;
+      trailFar = reduced ? end : want;
+    }
+    if (reduced) {
+      trailHead = want;
+      trailFar = end;
+    } else if (Math.abs(want - trailHead) > 0.4) {
+      trailHead += (want - trailHead) * (1 - Math.exp(-dt * 7));
+      dirty = true;
+    }
+    if (trailHead > trailFar) trailFar = trailHead;
+    const amount = trailOn ? 1 : 0;
+    if (Math.abs(amount - trailAmount) > 0.004) {
+      trailAmount += (amount - trailAmount) * (1 - Math.exp(-dt * 5));
+      dirty = true;
+    } else {
+      trailAmount = amount;
+    }
+  }
+
   // The ground drifts on its own clock, which stops when motion is paused.
   const drifting = !reduced && !paused;
   if (drifting) {
@@ -636,6 +675,7 @@ function frame(now: number) {
 
   const docH = canvas.parentElement?.offsetHeight ?? cssH;
   const top = clamp(sy - over, 0, Math.max(0, docH - cssH));
+  const trailStart = vh * 0.94;
   const glass = collectGlass(top, sy, dt);
   const zoneCount = collectZones(top, sy);
   const text = collectTexts(top, sy, dt);
@@ -662,6 +702,8 @@ function frame(now: number) {
   gl.uniform4fv(uni.uTU, bufTU);
   gl.uniform4fv(uni.uTP, bufTP);
   gl.uniform1f(uni.uTextScale, textScale);
+  gl.uniform4f(uni.uTrail, top, trailHead, trailAmount, trailStart);
+  gl.uniform1f(uni.uTrailFar, trailFar);
 
   gl.drawArrays(gl.TRIANGLES, 0, 3);
   // The canvas is revealed on its second drawn frame, so that has to happen
@@ -847,6 +889,23 @@ export const field = {
     const e = entries.get(el);
     if (!e) return;
     e.geom = geom;
+    dirty = true;
+  },
+
+  /** Override one slab's optics, and optionally its corner radius, while it is registered. */
+  tune(el: HTMLElement, params: Partial<Params> & { radius?: number }) {
+    const e = entries.get(el);
+    if (!e) return;
+    const { radius, ...optics } = params;
+    e.tune = { ...e.tune, ...optics };
+    if (radius !== undefined) e.radius = radius;
+    dirty = true;
+  },
+
+  /** Draw the footpath that follows the reader down the page. */
+  setTrail(on: boolean) {
+    trailOn = on;
+    if (on) trailFresh = true;
     dirty = true;
   },
 

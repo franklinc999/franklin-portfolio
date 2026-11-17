@@ -1452,6 +1452,25 @@
     box-shadow: none;
   }
 
+  /* The chosen option lands with a small squash. */
+  @media (prefers-reduced-motion: no-preference) {
+    .seg-item input:checked + span {
+      animation: seg-land 0.2s var(--ease-out);
+    }
+
+    .tea-seconds[data-bump] {
+      display: inline-block;
+      transform-origin: left bottom;
+      animation: count-bump 0.28s var(--ease-out);
+    }
+  }
+
+  @keyframes seg-land {
+    from {
+      scale: 0.9;
+    }
+  }
+
   .seg-item input:focus-visible + span {
     outline: 2px solid var(--color-accent);
     outline-offset: 3px;
@@ -1877,6 +1896,124 @@
     from {
       opacity: 0;
     }
+  }
+
+  /* ---------- Lab: glass playground ---------- */
+
+  .playground {
+    display: grid;
+    gap: 18px;
+    margin-top: 18px;
+  }
+
+  @media (min-width: 900px) {
+    .playground {
+      grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+    }
+  }
+
+  /* Open ground, marked off like a specimen area, for the slab to move over. */
+  .playground-stage {
+    position: relative;
+    display: grid;
+    place-items: center;
+    min-height: 340px;
+    border-radius: 28px;
+    outline: 1.5px dashed color-mix(in srgb, var(--color-text) 30%, transparent);
+    outline-offset: -1px;
+  }
+
+  .playground-caption {
+    position: absolute;
+    top: 16px;
+    left: 20px;
+  }
+
+  .playground-slab {
+    display: grid;
+    place-items: center;
+    width: min(300px, 76%);
+    height: 190px;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .playground-slab[data-dragging] {
+    cursor: grabbing;
+  }
+
+  .playground-slab .note {
+    text-shadow: none;
+    pointer-events: none;
+  }
+
+  .playground-controls {
+    display: grid;
+    gap: 14px;
+    align-content: start;
+    padding: clamp(20px, 2.4vw, 28px);
+  }
+
+  .playground-controls .demo-head {
+    margin-bottom: 4px;
+  }
+
+  .playground-controls .btn {
+    justify-self: start;
+    margin-top: 4px;
+  }
+
+  .dial {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 2px 12px;
+    align-items: baseline;
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+  }
+
+  .dial b {
+    display: inline-block;
+    min-width: 2.4em;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    color: var(--color-text);
+  }
+
+  .dial output {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    color: var(--signal);
+  }
+
+  .dial input {
+    grid-column: 1 / -1;
+    width: 100%;
+    height: 28px;
+    accent-color: var(--signal);
+    cursor: pointer;
+  }
+
+  /* ---------- Sparks ---------- */
+
+  .sparks span {
+    position: fixed;
+    z-index: 45;
+    width: 7px;
+    height: 7px;
+    background: #ff4d5e;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .sparks span:nth-child(3n + 1) {
+    background: #ffd9a3;
+  }
+
+  .sparks span:nth-child(3n + 2) {
+    background: #fff3ef;
   }
 
   /* ---------- Lab: sensitivity ---------- */

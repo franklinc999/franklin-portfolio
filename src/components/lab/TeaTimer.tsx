@@ -133,7 +133,9 @@ export function TeaTimer() {
         </fieldset>
 
         <p className="tea-clock" aria-live="off">
-          <span className="tea-seconds">{left}</span>
+          <span className="tea-seconds" data-bump={done ? "" : undefined}>
+            {left}
+          </span>
           <span className="tea-unit">{done ? "Pour." : running ? "seconds left" : "second steep"}</span>
         </p>
         <p className="tea-meta">

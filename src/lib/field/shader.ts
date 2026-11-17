@@ -48,6 +48,8 @@ uniform vec4 uTR[MAXT];   // headline rect: xy, wh canvas-local css px
 uniform vec4 uTU[MAXT];   // its place in the atlas: uv origin, uv size
 uniform vec4 uTP[MAXT];   // reveal 0..1, unused
 uniform float uTextScale; // atlas px per css px
+uniform vec4 uTrail;      // canvas top (document y), marker (document y), visibility, start (document y)
+uniform float uTrailFar;  // furthest point reached (document y)
 
 out vec4 outColor;
 
@@ -241,6 +243,20 @@ void zoneAt(float y, float band, out int a, out int b, out float w) {
 }
 
 // The ground at a point, headlines included.
+// The footpath: where it is, and how steeply it is turning, at a given
+// distance down the page. On a wide screen it wanders down the right-hand
+// side, clear of the copy; on a phone it keeps to the gutter.
+vec2 trailAt(float y) {
+  float w = uRes.x * uPx;
+  float wide = smoothstep(700.0, 1100.0, w);
+  float mid = mix(w - 13.0, w * 0.885, wide);
+  float a1 = mix(5.0, w * 0.075, wide);
+  float a2 = mix(2.0, w * 0.03, wide);
+  float a = y * 0.0029 + 0.6;
+  float b = y * 0.0071 + 2.1;
+  return vec2(mid + a1 * sin(a) + a2 * sin(b), a1 * 0.0029 * cos(a) + a2 * 0.0071 * cos(b));
+}
+
 vec3 scene(vec2 p, float soft) {
   vec2 pf = p + uFieldOff;
   vec3 T = terrain(pf / uS);
@@ -258,6 +274,41 @@ vec3 scene(vec2 p, float soft) {
     halo = mix(halo, tb.halo, zw);
     // A bright shoreline where two zones meet.
     col = mix(col, mix(ta.line, tb.line, zw), (1.0 - abs(zw * 2.0 - 1.0)) * 0.22);
+  }
+
+  // A dashed footpath, the way a trail is drawn on a survey map. It is part
+  // of the ground, so every slab it passes under bends it.
+  if (uTrail.z > 0.004) {
+    float dy = p.y + uTrail.x;
+    if (dy > uTrail.w - 30.0 && dy < uTrailFar + 26.0) {
+      vec3 hot = ta.hot;
+      if (zw > 0.0) hot = mix(hot, themeOf(zb).hot, zw);
+      float aa = uPx * 0.9 + soft;
+      // Frost takes most of it away, so it never competes with copy on a slab.
+      float keep = 2.0 / (2.0 + soft * 1.6);
+      float small = mix(0.72, 1.0, smoothstep(700.0, 1100.0, uRes.x * uPx));
+      vec2 tr = trailAt(dy);
+      float dx = p.x - tr.x;
+      float k = 1.0 + tr.y * tr.y;
+      float dist = abs(dx) / sqrt(k);
+      float lineA = 1.0 - smoothstep(1.35, 1.35 + aa, dist);
+      // Dashes are cut square to the path: measure them at the nearest point on it.
+      float along = dy - dx * tr.y / k;
+      float dash = 1.0 - smoothstep(0.29, 0.33, abs(fract(along / 24.0) - 0.5));
+      float begin = smoothstep(uTrail.w - 30.0, uTrail.w + 150.0, dy);
+      float reach = 1.0 - smoothstep(uTrailFar - 5.0, uTrailFar, dy);
+      col = mix(col, hot, lineA * dash * begin * reach * keep * 0.9 * uTrail.z);
+
+      // Where the reader is now.
+      vec2 at = vec2(trailAt(uTrail.y).x, uTrail.y - uTrail.x);
+      float hd = length(p - at);
+      float beat = 0.5 + 0.5 * sin(uTime * 2.2);
+      float ring = 1.0 - smoothstep(1.3, 1.3 + aa, abs(hd - (10.0 + 3.0 * beat) * small));
+      float core = 1.0 - smoothstep(4.6 * small, 4.6 * small + aa, hd);
+      float seen = smoothstep(uTrail.w - 30.0, uTrail.w + 60.0, uTrail.y);
+      col = mix(col, halo, (1.0 - smoothstep(7.5 * small, 8.5 * small + aa, hd)) * 0.85 * keep * seen * uTrail.z);
+      col = mix(col, hot, max(ring * (0.9 - 0.4 * beat), core) * keep * seen * uTrail.z);
+    }
   }
 
   for (int i = 0; i < MAXT; i++) {

@@ -55,6 +55,10 @@ The glass is liquid glass, not a blur filter. The ground is there so the glass h
   or onto the badge. Stickers on the badge ride along with it and are kept in `localStorage`.
 - Pictures drift inside their frames and the glass drawing draws itself as it scrolls into view. Both are
   CSS scroll-driven animations behind `@supports`, so browsers without them simply show the final state.
+- A dashed footpath follows the reader down the home page (`Trail.tsx` switches it on; the shader draws
+  it as part of the ground, so glass bends it). The marker walks to where you are and the path stays drawn
+  as far as you have been. On phones it keeps to the right-hand gutter.
+- Pressing a control in the arcade zone knocks a few pixels loose (`Sparks.tsx`).
 - `MotionToggle` (top right) pauses everything that moves on its own, and remembers the choice.
 - `prefers-reduced-motion` removes movement and keeps fades. Use `useMotionOff()` in any new component
   that animates by itself.
@@ -63,7 +67,8 @@ The glass is liquid glass, not a blur filter. The ground is there so the glass h
 
 `src/components/lab/` holds the pieces made to be played with: `AgentLine` (a toy pipeline you can
 break), `SensConverter` (mouse sensitivity between shooters), `TeaTimer` (gongfu steeps) and
-`SlabAnatomy` (the glass drawing).
+`SlabAnatomy` (the glass drawing) and `GlassPlayground` (a live slab with dials for the same variables
+the drawing names; it uses `field.tune()` to override one slab's optics).
 
 Two things on the site are paper instead of glass, because they are for hands: the sticker sheet
 (`Stickers.tsx`) and the postcard in the contact block (`Postcard.tsx`). The postcard has no backend. Its
