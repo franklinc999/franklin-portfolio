@@ -37,4 +37,13 @@ export const GAMES: GameCard[] = [
     needs: "Mouse, finger or keyboard",
     alt: "Dink: a pickleball court at dusk seen from behind the near baseline, with palms against a coral sky",
   },
+  {
+    slug: "backlog",
+    name: "The Backlog",
+    kind: "3D boss fight",
+    blurb:
+      "One arena and one boss: a tower of blocks that gets faster as you cut it down. Every attack is drawn on the floor before it lands.",
+    needs: "Keyboard and mouse, or thumbs",
+    alt: "The Backlog: a small figure with a sword facing a tower of coloured blocks on a round arena, with a red circle filling in on the floor",
+  },
 ];

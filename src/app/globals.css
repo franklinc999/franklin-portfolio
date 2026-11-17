@@ -1859,6 +1859,218 @@
     }
   }
 
+  /* ---------- Game: the backlog ---------- */
+
+  .boss-top {
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    display: grid;
+    gap: 6px;
+    width: min(60%, 560px);
+    translate: -50% 0;
+  }
+
+  .boss-name {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    font-family: var(--font-pixel);
+    font-size: 1.5rem;
+    line-height: 1;
+  }
+
+  .boss-name b {
+    font-weight: 400;
+  }
+
+  .boss-name span {
+    color: #ff97a1;
+  }
+
+  .boss-bar,
+  .boss-hp,
+  .boss-stamina {
+    position: relative;
+    display: block;
+    border-radius: 4px;
+    background: rgba(20, 6, 13, 0.7);
+    box-shadow: inset 0 0 0 1px rgba(255, 214, 220, 0.3);
+    overflow: hidden;
+  }
+
+  .boss-bar {
+    height: 14px;
+  }
+
+  .boss-bar > span,
+  .boss-hp > span,
+  .boss-stamina > span {
+    display: block;
+    height: 100%;
+    background: #ff4d5e;
+    transition: width 0.18s ease;
+  }
+
+  /* Notches where the fight changes. */
+  .boss-bar i {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: rgba(255, 243, 239, 0.7);
+  }
+
+  .boss-you {
+    position: absolute;
+    left: 18px;
+    bottom: 16px;
+    display: grid;
+    gap: 5px;
+    width: min(42%, 260px);
+  }
+
+  .boss-hp {
+    height: 12px;
+  }
+
+  .boss-hp > span {
+    background: #8fe3c0;
+  }
+
+  .boss-stamina {
+    height: 7px;
+  }
+
+  .boss-stamina > span {
+    background: #ffd9a3;
+    transition: none;
+  }
+
+  .boss-flasks {
+    display: flex;
+    gap: 6px;
+  }
+
+  .boss-flasks i {
+    width: 12px;
+    height: 16px;
+    border-radius: 3px 3px 6px 6px;
+    box-shadow: inset 0 0 0 2px #8fe3c0;
+  }
+
+  .boss-flasks i[data-full] {
+    background: #8fe3c0;
+  }
+
+  .boss-menu {
+    width: min(100% - 28px, 520px);
+  }
+
+  .boss-keys {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 20px;
+    padding-block: 14px;
+    border-block: 1px solid rgba(255, 214, 220, 0.2);
+  }
+
+  .boss-keys dt {
+    font-family: var(--font-pixel);
+    font-size: 1.375rem;
+    line-height: 1.1;
+  }
+
+  .boss-keys dd {
+    font-size: 0.8125rem;
+    color: #f1ccd1;
+  }
+
+  /* Thumb controls, for screens with no keyboard. */
+  .boss-stick,
+  .boss-pad {
+    display: none;
+  }
+
+  @media (hover: none) and (pointer: coarse) {
+    .boss-keys {
+      display: none;
+    }
+
+    .boss-stick {
+      position: absolute;
+      inset: 30% 50% 0 0;
+      display: block;
+      pointer-events: auto;
+      touch-action: none;
+    }
+
+    .boss-knob {
+      position: absolute;
+      width: 84px;
+      height: 84px;
+      translate: -50% -50%;
+      border-radius: 50%;
+      background: rgba(20, 6, 13, 0.4);
+      box-shadow: inset 0 0 0 2px rgba(255, 243, 239, 0.5);
+      pointer-events: none;
+    }
+
+    .boss-knob i {
+      position: absolute;
+      inset: 24px;
+      border-radius: 50%;
+      background: rgba(255, 243, 239, 0.85);
+    }
+
+    .boss-pad {
+      position: absolute;
+      right: 12px;
+      bottom: 14px;
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      pointer-events: auto;
+      touch-action: none;
+    }
+
+    .boss-pad button {
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      font-size: 0.8125rem;
+      font-weight: 640;
+      color: #fff3ef;
+      background: rgba(20, 6, 13, 0.6);
+      box-shadow: inset 0 0 0 2px rgba(255, 243, 239, 0.5);
+      text-shadow: none;
+    }
+
+    .boss-pad button:disabled {
+      opacity: 0.4;
+    }
+
+    .boss-pad .boss-pad-main {
+      width: 78px;
+      height: 78px;
+      font-size: 1rem;
+      background: rgba(255, 77, 94, 0.75);
+    }
+
+    .boss-you {
+      bottom: auto;
+      top: 80px;
+    }
+
+    /* Keep the boss's bar clear of the pause button. */
+    .boss-top {
+      left: 14px;
+      width: calc(100% - 112px);
+      translate: 0 0;
+    }
+  }
+
   /* ---------- Game: live ops ---------- */
 
   .ops {

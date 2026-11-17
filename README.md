@@ -116,3 +116,9 @@ the cards on the home page, `/play` and `/projects` are drawn from. Sounds are s
   often they miss. `?debug` exposes the engine as `window.__pickle`; the levels were tuned by stepping
   it without drawing through a few hundred matches, with an autopilot whose timing is deliberately
   off by different amounts.
+- **The Backlog** (`/play/backlog`): a boss fight on one round arena. All combat is worked out on
+  the ground plane; every attack is a shape on the floor that fills before it lands. `?debug` exposes
+  the engine as `window.__boss`. Its health, stamina costs and the ring's point-blank grace were set
+  by fighting it a few dozen times with bots of different reaction speed, stepping the engine without
+  drawing: a bot that never dodges loses with over half the boss left, and bots that read the floor
+  win most fights in about a minute and a half.
