@@ -120,6 +120,11 @@ list the cards on the home page, `/play` and `/projects` are drawn from. Sounds 
   If the browser refuses pointer lock, a click shoots where it lands. Every hit is recorded as an
   offset from the centre of its target, and the results screen plots them on one paper target.
   `?aim=cursor` forces click-to-shoot and `?debug` exposes the engine as `window.__range`.
+- **The cast** (`src/components/play/cast`): the row of four figures above the cards on `/play`,
+  one from each game. Plain three.js, fetched only once the row is on the page. One renderer draws
+  all four by painting each figure into the rectangle of its own slot in the page, so the layout is
+  ordinary CSS and each cell is a real link. Drag spins a figure, the pause switch stops them, and
+  `?debug` exposes the engine as `window.__cast`.
 - **Live Ops**: an eight week strategy game. The rules are a pure seeded model in `ops/model.ts`
   (state in, state out), so the balance could be simulated outside the browser; the grade thresholds
   come from doing that. `Harbor.tsx` draws the scene from the meters: boats for players, weather for
@@ -143,3 +148,12 @@ picks the working days to take so a leave budget turns into the most days away (
 They replace links to older versions hosted elsewhere. The first two keep their data in
 `localStorage` and send nothing anywhere; the calendar file from `call-home` is built in the page.
 `src/lib/tools.ts` is the list the cards are drawn from.
+
+## Third-party notices
+
+- The seal on the badge (`src/components/Seal.tsx`) runs the Liquid Metal shader from
+  [Paper Shaders](https://shaders.paper.design) (`@paper-design/shaders`, Apache License 2.0,
+  Copyright 2026 Paper). Powered by Paper Shaders: https://shaders.paper.design. One line of the
+  shader is changed at load, noted in that file. The mark's edge map,
+  `public/assets/fc-mark-metal.png`, was made ahead of time from `public/assets/fc-mark.svg` with
+  the same package's `toProcessedLiquidMetal`, so visitors do not run that step.

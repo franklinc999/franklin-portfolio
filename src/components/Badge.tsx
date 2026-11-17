@@ -3,6 +3,10 @@
 import { useEffect, useRef } from "react";
 import { field } from "@/lib/field/engine";
 import { stickerStore } from "@/lib/stickerStore";
+import dynamic from "next/dynamic";
+
+// The foil stamp is a small WebGL shader, so it arrives after the card itself.
+const Seal = dynamic(() => import("@/components/Seal"), { ssr: false });
 
 const POINTS = 10;
 const GRAVITY = 3400;
@@ -378,6 +382,9 @@ export function Badge() {
         <span className="badge-clip" aria-hidden="true" />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className="badge-photo" src="/assets/badge.jpg" alt="Franklin Cheng on a cliff above the sea" width={720} height={540} draggable={false} />
+        <span className="badge-seal" aria-hidden="true">
+          <Seal />
+        </span>
         <p className="badge-name">Franklin Cheng</p>
         <p className="badge-role">Product, agents, games</p>
         <dl className="badge-facts">

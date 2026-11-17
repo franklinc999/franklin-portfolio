@@ -4,6 +4,7 @@ import { Glass } from "@/components/Glass";
 import { PageIntro, PageWrapper } from "@/components/Shared";
 import { Zone } from "@/components/Zone";
 import { SensConverter } from "@/components/lab/SensConverter";
+import { Cast } from "@/components/play/cast/Cast";
 
 export const metadata: Metadata = {
   title: "Play",
@@ -17,6 +18,8 @@ export default function PlayHub() {
         <PageIntro title="Press start" titleClass="h-pixel">
           Games I made, playable right here. I build them to learn why the good ones feel good.
         </PageIntro>
+
+        <Cast />
 
         <div className="wrap stack">
           <section aria-label="Games">

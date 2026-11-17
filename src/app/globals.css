@@ -1196,6 +1196,55 @@
     pointer-events: none;
   }
 
+  /* The foil stamp over the corner of the photo, as on a real ID. */
+  .badge-seal {
+    position: absolute;
+    top: calc(14px + (var(--badge-w) - 28px) * 0.75 - 37px);
+    right: 20px;
+    width: 44px;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: 50%;
+    background: rgba(5, 16, 28, 0.66);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 255, 255, 0.42),
+      inset 0 0 0 3px rgba(255, 255, 255, 0.07),
+      0 8px 16px -8px rgba(0, 0, 0, 0.7);
+    pointer-events: none;
+  }
+
+  /* A flat mark, for the moment before the metal arrives and for browsers without WebGL. */
+  .badge-seal::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(160deg, #f4f7fb 10%, #8d99a8 48%, #e9eef5 62%, #5b6675 100%);
+    -webkit-mask: url("/assets/fc-mark.svg") center / 74% auto no-repeat;
+    mask: url("/assets/fc-mark.svg") center / 74% auto no-repeat;
+    transition: opacity 0.4s ease;
+  }
+
+  .badge-seal:has([data-ready])::before {
+    opacity: 0;
+  }
+
+  .badge-seal-metal {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  @media (min-width: 760px) {
+    .badge-seal {
+      top: calc(14px + (var(--badge-w) - 28px) * 0.75 - 40px);
+      right: 22px;
+      width: 58px;
+    }
+  }
+
   .badge-name {
     margin-top: 12px;
     padding-inline: 6px;

@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@paper-design/shaders": "0.0.82",
     "@types/three": "^0.187.0",
     "lucide-react": "^1.7.0",
     "next": "16.2.2",

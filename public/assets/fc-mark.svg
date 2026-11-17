@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 200" width="520" height="400">
+  <!-- F: a stem and two arms. C: one heavy open ring. Drawn for the site, not set in a font. -->
+  <path d="M24 28h82v38H64v20h34v36H64v50H24z" fill="#000"/>
+  <path d="M213.2 60.6A56 56 0 1 0 213.2 139.4" fill="none" stroke="#000" stroke-width="40"/>
+</svg>
