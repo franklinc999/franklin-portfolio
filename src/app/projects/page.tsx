@@ -3,6 +3,7 @@ import { GameCards } from "@/components/GameCards";
 import { Glass, GlassLink } from "@/components/Glass";
 import { PageIntro, PageWrapper } from "@/components/Shared";
 import { Zone } from "@/components/Zone";
+import { TOOLS } from "@/lib/tools";
 import { AgentLine } from "@/components/lab/AgentLine";
 import { PenFactory } from "@/components/lab/PenFactory";
 import { GlassPlayground } from "@/components/lab/GlassPlayground";
@@ -10,98 +11,14 @@ import { SlabAnatomy } from "@/components/lab/SlabAnatomy";
 
 export const metadata: Metadata = {
   title: "Projects",
-  description: "Things Franklin Cheng has built: browser games, an always-on team of agents, and a handful of small tools.",
+  description: "Things Franklin Cheng has built: four browser games, an always-on team of agents, and a few small tools you can use.",
 };
-
-type Project = {
-  name: string;
-  year: string;
-  description: string;
-  link: string;
-  state: "live" | "building";
-};
-
-const MORE: Project[] = [
-  {
-    name: "Interview Copilot",
-    year: "2026",
-    description:
-      "A real-time copilot for meetings and interviews. It listens in, surfaces relevant context, and suggests responses on the fly.",
-    link: "https://interview-copilot.pplx.app",
-    state: "live",
-  },
-  {
-    name: "Automated Grocery Runner",
-    year: "2026",
-    description: "An agent that learns what I buy, writes the weekly grocery list, and schedules delivery.",
-    link: "",
-    state: "building",
-  },
-  {
-    name: "Three Good Things",
-    year: "2025",
-    description:
-      "A gratitude journal I built during a rough patch. Log three good moments a day, with a year-end recap planned.",
-    link: "https://steep-frost-2548.21st.app/",
-    state: "live",
-  },
-  {
-    name: "Did You Call Your Parents?",
-    year: "2025",
-    description: "A reminder app born from not calling home for two months. Gentle nudges to stay in touch with family.",
-    link: "https://noisy-sky-5988.21st.app/",
-    state: "live",
-  },
-  {
-    name: "Rate My Resume",
-    year: "2024",
-    description: "A resume grader for internship applicants who want a quick sense check before they hit submit.",
-    link: "https://resume-grader-0986b991.base44.app/",
-    state: "live",
-  },
-  {
-    name: "OptimizeAI Dashboard",
-    year: "2024",
-    description: "An analytics dashboard for a pre-seed AI startup, showing model performance and user engagement.",
-    link: "https://optimizeai.net/",
-    state: "live",
-  },
-  {
-    name: "GPA Calculator",
-    year: "2023",
-    description: "Works out the exact final grade you need to hit a target GPA. Built for stressed undergrads.",
-    link: "https://empty-smoke-6977.21st.app/",
-    state: "live",
-  },
-];
 
 const HERE = [
   { name: "The Pen Factory", where: "/#workshop", description: "A model of my always-on agent team: nine operators, a self-check, a fixer, and one switch that stands it all down." },
   { name: "Sensitivity converter", where: "/#arcade", description: "Carries your mouse sensitivity from one shooter to another by matching the distance of a full turn." },
   { name: "Gongfu timer", where: "/#off-the-clock", description: "Counts tea steeps in a glass cup that fills as the seconds run." },
 ];
-
-function Row({ project }: { project: Project }) {
-  const body = (
-    <>
-      <h3 className="h3">{project.name}</h3>
-      <p>{project.description}</p>
-      <p className="meta">
-        <span className="status" data-state={project.state}>
-          {project.state === "live" ? project.year : `Building, ${project.year}`}
-        </span>
-      </p>
-    </>
-  );
-  if (!project.link) return <li className="row">{body}</li>;
-  return (
-    <li>
-      <a className="row" href={project.link} target="_blank" rel="noopener noreferrer">
-        {body}
-      </a>
-    </li>
-  );
-}
 
 export default function ProjectsPage() {
   return (
@@ -170,16 +87,18 @@ export default function ProjectsPage() {
           <section aria-labelledby="more-title">
             <div className="section-head">
               <h2 id="more-title" className="h2 on-map">
-                Tools and experiments
+                Tools you can use
               </h2>
             </div>
-            <Glass kind="sheet" className="rows">
-              <ul>
-                {MORE.map((project) => (
-                  <Row key={project.name} project={project} />
-                ))}
-              </ul>
-            </Glass>
+            <div className="card-grid">
+              {TOOLS.map((tool) => (
+                <GlassLink key={tool.slug} href={`/tools/${tool.slug}`} className="tile">
+                  <h3 className="h3">{tool.name}</h3>
+                  <p>{tool.blurb}</p>
+                  <p className="meta">{tool.note}</p>
+                </GlassLink>
+              ))}
+            </div>
           </section>
 
           <section aria-labelledby="here-title">

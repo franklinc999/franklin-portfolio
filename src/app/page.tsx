@@ -5,6 +5,7 @@ import { Glass, GlassLink } from "@/components/Glass";
 import { HeroName } from "@/components/HeroName";
 import { Rotator } from "@/components/Rotator";
 import { GameCards } from "@/components/GameCards";
+import { TOOLS } from "@/lib/tools";
 import { Contact, PageWrapper } from "@/components/Shared";
 import { Stickers } from "@/components/Stickers";
 import { Trail } from "@/components/Trail";
@@ -120,30 +121,13 @@ export default function Home() {
               </Link>
             </div>
             <div className="card-grid">
-              <GlassLink href="https://interview-copilot.pplx.app" className="tile">
-                <h4 className="h3">Interview Copilot</h4>
-                <p>
-                  A real-time copilot for interviews and meetings. It listens in, surfaces context, and suggests what
-                  to say next.
-                </p>
-                <p className="meta">Opens in a new tab</p>
-              </GlassLink>
-              <Glass as="article" kind="card" className="tile">
-                <h4 className="h3">Automated Grocery Runner</h4>
-                <p>
-                  An agent that learns what I buy, writes the weekly list, and schedules the delivery. Still on the
-                  bench.
-                </p>
-                <p className="meta">In progress</p>
-              </Glass>
-              <GlassLink href="/projects#glass" className="tile">
-                <h4 className="h3">The glass you&rsquo;re looking through</h4>
-                <p>
-                  Every slab on this site is drawn by one shader that bends the page behind it. There&rsquo;s a spec
-                  drawing of how.
-                </p>
-                <p className="meta">See the drawing</p>
-              </GlassLink>
+              {TOOLS.map((tool) => (
+                <GlassLink key={tool.slug} href={`/tools/${tool.slug}`} className="tile">
+                  <h4 className="h3">{tool.name}</h4>
+                  <p>{tool.blurb}</p>
+                  <p className="meta">{tool.note}</p>
+                </GlassLink>
+              ))}
             </div>
           </div>
         </div>

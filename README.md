@@ -122,3 +122,11 @@ the cards on the home page, `/play` and `/projects` are drawn from. Sounds are s
   by fighting it a few dozen times with bots of different reaction speed, stepping the engine without
   drawing: a bot that never dodges loses with over half the boss left, and bots that read the floor
   win most fights in about a minute and a half.
+
+## Tools
+
+Three small tools live under `/tools`, in the paper zone: a gratitude journal
+(`three-good-things`), a days-since-you-called counter (`call-home`) and a GPA calculator (`gpa`).
+They replace links to older versions hosted elsewhere. The first two keep their data in
+`localStorage` and send nothing anywhere; the calendar file from `call-home` is built in the page.
+`src/lib/tools.ts` is the list the cards are drawn from.
