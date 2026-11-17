@@ -13,6 +13,9 @@ export type RangeStats = {
   left: number;
   /** Mean milliseconds between hits, 0 until there are two. */
   pace: number;
+  /** A clay is up but out of view to that side, so the player knows which way to turn. */
+  offLeft: boolean;
+  offRight: boolean;
 };
 
 export type RangeOptions = {
@@ -22,6 +25,8 @@ export type RangeOptions = {
   /** Horizontal field of view at 16:9, the way shooters state it. */
   hfov: number;
   duration: number;
+  /** The most the view may open vertically on a screen narrower than 16:9. 96 degrees unless set. */
+  tall?: number;
 };
 
 type Target = {
@@ -109,7 +114,7 @@ export class RangeEngine {
   private running = false;
   private paused = false;
   private options: RangeOptions = { drill: "pop", degPerCount: 0.035, hfov: 103, duration: 30 };
-  private stats: RangeStats = { score: 0, shots: 0, hits: 0, streak: 0, bestStreak: 0, left: 30, pace: 0 };
+  private stats: RangeStats = { score: 0, shots: 0, hits: 0, streak: 0, bestStreak: 0, left: 30, pace: 0, offLeft: false, offRight: false };
 
   constructor(
     private canvas: HTMLCanvasElement,
@@ -432,9 +437,7 @@ export class RangeEngine {
 
   setOptions(o: RangeOptions) {
     this.options = o;
-    // Shooters quote horizontal field of view at 16:9; the camera wants vertical.
-    this.camera.fov = (2 * Math.atan(Math.tan((o.hfov * DEG) / 2) / (16 / 9))) / DEG;
-    this.camera.updateProjectionMatrix();
+    this.frameView();
     for (const p of this.pillars) p.visible = o.drill === "peek";
     if (!this.running) this.layout();
   }
@@ -444,11 +447,24 @@ export class RangeEngine {
     const h = this.canvas.clientHeight || 1;
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
+    this.frameView();
+  }
+
+  /**
+   * Shooters quote horizontal field of view at 16:9; the camera wants vertical. On a screen narrower
+   * than 16:9 (a phone held upright) the same vertical angle would leave a slit to look through, so
+   * the view opens up vertically to keep its width, up to a point.
+   */
+  private frameView() {
+    const half = Math.tan((this.options.hfov * DEG) / 2);
+    const wide = (2 * Math.atan(half / (16 / 9))) / DEG;
+    const narrow = (2 * Math.atan(half / Math.max(0.3, this.camera.aspect))) / DEG;
+    this.camera.fov = this.camera.aspect >= 16 / 9 ? wide : Math.min(this.options.tall ?? 96, narrow);
     this.camera.updateProjectionMatrix();
   }
 
   start() {
-    this.stats = { score: 0, shots: 0, hits: 0, streak: 0, bestStreak: 0, left: this.options.duration, pace: 0 };
+    this.stats = { score: 0, shots: 0, hits: 0, streak: 0, bestStreak: 0, left: this.options.duration, pace: 0, offLeft: false, offRight: false };
     this.gaps = [];
     this.shots = [];
     this.lastHitAt = 0;
@@ -501,6 +517,30 @@ export class RangeEngine {
    * through that point instead of the middle of the view, which is how the
    * range is played without pointer lock and on touch screens.
    */
+  /** Turn the view by an angle in degrees. This is how a dragging thumb looks around. */
+  turn(right: number, down: number) {
+    if (!this.running || this.paused) return;
+    this.yaw -= right * DEG;
+    this.pitch = Math.max(-1.45, Math.min(1.45, this.pitch - down * DEG));
+    this.swayX += right * 0.008;
+    this.swayY += down * 0.008;
+  }
+
+  /**
+   * A thumb dragging across the glass. `ratio` is how far the picture slides for the distance the
+   * thumb moved, so the feel is the same on any screen, upright or sideways, at any field of view.
+   */
+  drag(dx: number, dy: number, ratio: number) {
+    const h = this.canvas.clientHeight || 1;
+    const degPerPx = (2 * Math.tan((this.camera.fov * DEG) / 2)) / h / DEG;
+    this.turn(dx * degPerPx * ratio, dy * degPerPx * ratio);
+  }
+
+  /** For the automated check: which way the view is pointing, in degrees. */
+  heading() {
+    return { yaw: this.yaw / DEG, pitch: this.pitch / DEG, fov: this.camera.fov };
+  }
+
   fire(down: boolean, at?: { x: number; y: number }) {
     if (!this.running || this.paused) return;
     if (!down) {
@@ -732,7 +772,25 @@ export class RangeEngine {
   }
 
   private push() {
+    this.flanks();
     this.onStats({ ...this.stats });
+  }
+
+  /** Is any live clay out of view to one side? Worked out from bearings, so it holds behind the player too. */
+  private flanks() {
+    const half = Math.atan(Math.tan((this.camera.fov * DEG) / 2) * this.camera.aspect);
+    let left = false;
+    let right = false;
+    for (const t of this.targets) {
+      if (!t.alive || !this.exposed(t)) continue;
+      const p = t.mesh.position;
+      let rel = Math.atan2(-(p.x - this.camera.position.x), -(p.z - this.camera.position.z)) - this.yaw;
+      rel = Math.atan2(Math.sin(rel), Math.cos(rel));
+      if (rel > half) left = true;
+      else if (rel < -half) right = true;
+    }
+    this.stats.offLeft = left;
+    this.stats.offRight = right;
   }
 
   /* ---------- loop ---------- */

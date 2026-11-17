@@ -112,11 +112,14 @@ list the cards on the home page, `/play` and `/projects` are drawn from. Sounds 
 | Dink (`/play/dink`) | a 1970s rec league poster with vegetables for players | Bowlby One, Rubik |
 | The Backlog (`/play/backlog`) | a photo of a desk: cutting mat, sticky notes, label tape, a memo | Permanent Marker, Special Elite |
 
-- **The Range**: four stages. Mouse counts become view angle with the same degrees-per-count as
-  Valorant, Call of Duty or Apex, and pointer lock asks for raw input. Without pointer lock (touch,
-  trackpad) a tap shoots where it lands. Every hit is recorded as an offset from the centre of its
-  target, and the results screen plots them on one paper target. `?aim=cursor` forces tap mode and
-  `?debug` exposes the engine as `window.__range`.
+- **The Range**: four stages, first person. With a mouse, pointer lock asks for raw input and mouse
+  counts become view angle with the same degrees-per-count as Valorant, Call of Duty or Apex. On a
+  touch screen the stage goes full screen, a dragging thumb turns the view (look speed is a ratio of
+  picture movement to thumb movement, so it feels the same upright or sideways), a Fire button or a
+  second thumb shoots at the crosshair, and the lens tightens so the clays stay big enough to hit.
+  If the browser refuses pointer lock, a click shoots where it lands. Every hit is recorded as an
+  offset from the centre of its target, and the results screen plots them on one paper target.
+  `?aim=cursor` forces click-to-shoot and `?debug` exposes the engine as `window.__range`.
 - **Live Ops**: an eight week strategy game. The rules are a pure seeded model in `ops/model.ts`
   (state in, state out), so the balance could be simulated outside the browser; the grade thresholds
   come from doing that. `Harbor.tsx` draws the scene from the meters: boats for players, weather for

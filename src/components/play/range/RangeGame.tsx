@@ -22,10 +22,26 @@ const DRILLS: { id: Drill; name: string; what: string }[] = [
 const ROUND = 30;
 const KEY = "range-settings";
 
-type Settings = { game: number; sens: string; dpi: string; hfov: number; drill: Drill; muted: boolean };
+type Settings = { game: number; sens: string; dpi: string; hfov: number; drill: Drill; muted: boolean; look: number };
+/**
+ * How the player aims. "lock": the mouse is captured and turns the view, as in any shooter.
+ * "touch": a thumb drags to turn the view and a trigger button fires. "cursor": the view stays put and a
+ * click shoots where the pointer is, for when the browser will not capture the mouse.
+ */
+type Mode = "lock" | "touch" | "cursor";
 type Phase = "menu" | "playing" | "paused" | "done";
 
-const DEFAULTS: Settings = { game: 0, sens: "0.5", dpi: "800", hfov: 103, drill: "pop", muted: false };
+const DEFAULTS: Settings = { game: 0, sens: "0.5", dpi: "800", hfov: 103, drill: "pop", muted: false, look: 5 };
+/**
+ * How far the picture slides for the distance a thumb drags, at look speed 1 to 10. At 1.3 the view
+ * runs a little ahead of the thumb, which crosses the whole line of clays in under half a phone's width.
+ */
+const slide = (look: number) => 0.3 + look * 0.2;
+/**
+ * A phone shows the range through a tighter lens than a monitor does. The clays are the same size out
+ * on the sand, so a narrower view is what keeps them big enough to hit on a small screen.
+ */
+const PHONE = { hfov: 80, tall: 84 };
 
 function load(): Settings {
   try {
@@ -51,6 +67,12 @@ export default function RangeGame() {
   const [stats, setStats] = useState<RangeStats | null>(null);
   const [best, setBest] = useState(0);
   const [locked, setLocked] = useState(false);
+  const [mode, setMode] = useState<Mode>("lock");
+  const modeRef = useRef<Mode>("lock");
+  const lookRef = useRef(DEFAULTS.look);
+  const drag = useRef<{ id: number; x: number; y: number; far: number; at: number } | null>(null);
+  const second = useRef<number | null>(null);
+  const [coarse, setCoarse] = useState(false);
   const [failed, setFailed] = useState(false);
   const [holes, setHoles] = useState<{ x: number; y: number }[]>([]);
 
@@ -70,6 +92,7 @@ export default function RangeGame() {
   useEffect(() => {
     const id = window.setTimeout(() => {
       setSettings(load());
+      setCoarse(!window.matchMedia("(pointer: fine)").matches);
       setReady(true);
     }, 0);
     return () => window.clearTimeout(id);
@@ -139,7 +162,11 @@ export default function RangeGame() {
         setPhase("paused");
       }
     };
-    const onUp = () => engine.fire(false);
+    // With a mouse, letting go anywhere stops the fire. Thumbs are tracked one by one instead, so
+    // lifting the looking thumb does not let go of the trigger.
+    const onUp = () => {
+      if (modeRef.current !== "touch") engine.fire(false);
+    };
     document.addEventListener("mousemove", onMove);
     document.addEventListener("pointerlockchange", onLock);
     window.addEventListener("pointerup", onUp);
@@ -155,25 +182,44 @@ export default function RangeGame() {
 
   useEffect(() => {
     currentDrill.current = settings.drill;
-    engineRef.current?.setOptions({ drill: settings.drill, degPerCount, hfov: settings.hfov, duration: ROUND });
-  }, [settings.drill, settings.hfov, degPerCount]);
+    engineRef.current?.setOptions({
+      drill: settings.drill,
+      degPerCount,
+      hfov: coarse ? PHONE.hfov : settings.hfov,
+      tall: coarse ? PHONE.tall : undefined,
+      duration: ROUND,
+    });
+  }, [settings.drill, settings.hfov, degPerCount, coarse]);
+
+  useEffect(() => {
+    lookRef.current = settings.look;
+  }, [settings.look]);
 
   const lock = async () => {
     const canvas = canvasRef.current;
     const cursorOnly = new URLSearchParams(window.location.search).get("aim") === "cursor";
     const fine = window.matchMedia("(pointer: fine)").matches;
+    const pick = (m: Mode) => {
+      modeRef.current = m;
+      setMode(m);
+    };
     wantsLock.current = fine && !cursorOnly && !!canvas?.requestPointerLock;
-    if (!canvas || !wantsLock.current) return;
+    // No mouse to capture: on a phone the thumbs do the looking.
+    if (!fine && !cursorOnly) return pick("touch");
+    if (!canvas || !wantsLock.current) return pick("cursor");
     try {
       // Raw counts, without the system's pointer acceleration, where the browser offers them.
       await (canvas as HTMLCanvasElement & { requestPointerLock(o?: { unadjustedMovement: boolean }): Promise<void> | void }).requestPointerLock({
         unadjustedMovement: true,
       });
+      pick("lock");
     } catch {
       try {
         await canvas.requestPointerLock();
+        pick("lock");
       } catch {
         wantsLock.current = false;
+        pick("cursor");
       }
     }
   };
@@ -205,6 +251,15 @@ export default function RangeGame() {
     go("menu");
   };
 
+  const pause = () => {
+    if (phaseRef.current !== "playing") return;
+    drag.current = null;
+    second.current = null;
+    engineRef.current?.fire(false);
+    engineRef.current?.setPaused(true);
+    go("paused");
+  };
+
   const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const engine = engineRef.current;
     if (!engine || phaseRef.current !== "playing") return;
@@ -213,9 +268,52 @@ export default function RangeGame() {
       engine.fire(true);
       return;
     }
-    // No pointer lock (touch, or the browser said no): shoot where the pointer is.
+    if (modeRef.current === "touch" && e.pointerType !== "mouse") {
+      // The first thumb on the range looks around. A second one, anywhere, is a trigger finger.
+      e.currentTarget.setPointerCapture(e.pointerId);
+      if (!drag.current) {
+        drag.current = { id: e.pointerId, x: e.clientX, y: e.clientY, far: 0, at: performance.now() };
+      } else if (second.current === null) {
+        second.current = e.pointerId;
+        engine.fire(true);
+      }
+      return;
+    }
+    // No way to capture the pointer: shoot where it is.
     const r = e.currentTarget.getBoundingClientRect();
     engine.fire(true, { x: ((e.clientX - r.left) / r.width) * 2 - 1, y: -(((e.clientY - r.top) / r.height) * 2 - 1) });
+  };
+
+  const onPointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const d = drag.current;
+    if (!d || d.id !== e.pointerId) return;
+    const dx = e.clientX - d.x;
+    const dy = e.clientY - d.y;
+    d.x = e.clientX;
+    d.y = e.clientY;
+    d.far += Math.abs(dx) + Math.abs(dy);
+    engineRef.current?.drag(dx, dy, slide(lookRef.current));
+  };
+
+  const onPointerEnd = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (second.current === e.pointerId) {
+      second.current = null;
+      engineRef.current?.fire(false);
+      return;
+    }
+    const d = drag.current;
+    if (!d || d.id !== e.pointerId) return;
+    drag.current = null;
+    // A quick touch that did not go anywhere is a shot, at the crosshair.
+    if (e.type === "pointerup" && d.far < 10 && performance.now() - d.at < 260) {
+      engineRef.current?.fire(true);
+      engineRef.current?.fire(false);
+    }
+  };
+
+  const trigger = (down: boolean) => (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (down) e.currentTarget.setPointerCapture(e.pointerId);
+    engineRef.current?.fire(down);
   };
 
   const set = <K extends keyof Settings>(key: K, value: Settings[K]) => setSettings((s) => ({ ...s, [key]: value }));
@@ -233,12 +331,34 @@ export default function RangeGame() {
   })();
   const stage = DRILLS.findIndex((d) => d.id === settings.drill) + 1;
 
+  // On a phone a live stage takes the whole screen, and the site's own controls step aside for it.
+  const full = mode === "touch" && (phase === "playing" || phase === "paused");
+  useEffect(() => {
+    if (!full) return;
+    const root = document.documentElement;
+    const stage = stageRef.current;
+    root.setAttribute("data-range-full", "");
+    return () => {
+      root.removeAttribute("data-range-full");
+      // Back on the page: bring the card to the top of the screen, so the result is what you see.
+      requestAnimationFrame(() => stage?.scrollIntoView({ block: "start" }));
+    };
+  }, [full]);
+
   return (
-    <div ref={stageRef} className="rg" data-phase={phase} data-locked={locked ? "" : undefined}>
-      <canvas ref={canvasRef} className="rg-canvas" onPointerDown={onPointerDown} aria-label="A firing range in the desert" />
+    <div ref={stageRef} className="rg" data-phase={phase} data-locked={locked ? "" : undefined} data-full={full ? "" : undefined}>
+      <canvas
+        ref={canvasRef}
+        className="rg-canvas"
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerEnd}
+        onPointerCancel={onPointerEnd}
+        aria-label="A firing range in the desert"
+      />
 
       {phase === "playing" && stats && (
-        <div className="rg-hud" aria-hidden="true">
+        <div className="rg-hud">
           <p className="rg-clock">{Math.ceil(stats.left)}</p>
           <dl className="rg-tag">
             <div>
@@ -254,11 +374,24 @@ export default function RangeGame() {
               <dd>{stats.streak}</dd>
             </div>
           </dl>
-          {locked && <span className="rg-cross" />}
-          <p className="rg-foot">
-            Stage 0{stage}, {drill.name}
-            {locked ? ". Esc to pause." : ""}
-          </p>
+          {(locked || mode === "touch") && <span className="rg-cross" />}
+          {stats.offLeft && <span className="rg-flank" data-side="left" />}
+          {stats.offRight && <span className="rg-flank" data-side="right" />}
+          {mode === "touch" ? (
+            <button type="button" className="rg-trigger" onPointerDown={trigger(true)} onPointerUp={trigger(false)} onPointerCancel={trigger(false)} onContextMenu={(e) => e.preventDefault()}>
+              Fire
+            </button>
+          ) : (
+            <p className="rg-foot">
+              Stage 0{stage}, {drill.name}
+              {locked ? ". Esc to pause." : ""}
+            </p>
+          )}
+          {!locked && (
+            <button type="button" className="rg-pause" onClick={pause}>
+              Pause
+            </button>
+          )}
         </div>
       )}
 
@@ -311,12 +444,20 @@ export default function RangeGame() {
                 <input inputMode="numeric" value={settings.dpi} onChange={(e) => set("dpi", e.target.value)} aria-invalid={!(dpi > 0)} />
               </label>
             </div>
-            <label className="rg-fov">
+            <label className="rg-fov rg-mouse">
               <span>Field of view</span>
               <input type="range" min={70} max={120} step={1} value={settings.hfov} onChange={(e) => set("hfov", Number(e.target.value))} />
               <output>{settings.hfov}°</output>
             </label>
-            <p className="rg-note rg-touch">Tap a clay to shoot it. With a mouse, the range matches your sensitivity from the game you play.</p>
+            <label className="rg-fov rg-touch">
+              <span>Look speed</span>
+              <input type="range" min={1} max={10} step={1} value={settings.look} onChange={(e) => set("look", Number(e.target.value))} />
+              <output>{settings.look}</output>
+            </label>
+            <p className="rg-note rg-touch">
+              Drag anywhere to look around and put the crosshair on a clay, then press Fire. Hold Fire down for the
+              Ride stage. Turn your phone sideways to see the whole line at once.
+            </p>
             <p className="rg-note rg-mouse">{valid ? `One full turn is ${turn.toFixed(1)} cm of mouse, same as ${game.name}.` : "Enter a sensitivity and DPI above zero."}</p>
           </section>
 

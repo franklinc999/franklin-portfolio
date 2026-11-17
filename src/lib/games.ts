@@ -16,7 +16,7 @@ export const GAMES: GameCard[] = [
     kind: "3D aim trainer",
     blurb:
       "Four stages on a desert range, breaking clays, with your Valorant, Call of Duty or Apex sensitivity carried over. Your shots come back plotted on a paper target.",
-    needs: "Best with a mouse",
+    needs: "Mouse, or thumbs on a phone",
     alt: "The Range: orange clay targets on rods in front of a dirt backstop under a blue sky, seen over a rifle, with a stencilled timer",
   },
   {
